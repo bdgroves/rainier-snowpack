@@ -1,0 +1,30 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Project specific
+data/raw/
+*.hdf
+*.hdf5
+*.h5
+*.nc
+.pixi/
+pixi.lock
+*.tif
+
+# Keep processed data
+!data/processed/*.csv
+!data/processed/*.json
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS
+.DS_Store
+Thumbs.db

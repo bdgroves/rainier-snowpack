@@ -1,0 +1,30 @@
+[workspace]
+name = "rainier-snowpack"
+version = "0.1.0"
+description = "Mt. Rainier snowpack monitoring"
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tasks]
+fetch     = "python src/python/fetch_snotel.py"
+process   = "python src/python/process_raster.py"
+analyze   = "Rscript src/r/snowpack_stats.R"
+dashboard = "python src/python/build_dashboard.py"
+update    = { depends-on = ["fetch", "process", "analyze", "dashboard"] }
+
+[dependencies]
+python      = ">=3.11"
+pandas      = ">=2.2"
+httpx       = ">=0.27"
+geopandas   = ">=0.14"
+rioxarray   = ">=0.15"
+xarray      = ">=2024.1"
+matplotlib  = ">=3.8"
+plotly      = ">=5.20"
+jinja2      = ">=3.1"
+earthaccess = ">=0.9"
+r-base      = ">=4.3"
+r-tidyverse = ">=2.0"
+r-sf        = ">=1.0"
+r-zoo       = ">=1.8"
+r-jsonlite  = ">=1.8"
