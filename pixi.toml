@@ -3,7 +3,7 @@ name = "rainier-snowpack"
 version = "0.1.0"
 description = "Mt. Rainier snowpack monitoring"
 channels = ["conda-forge"]
-platforms = ["win-64"]
+platforms = ["win-64", "linux-64"]
 
 [tasks]
 fetch     = "python src/python/fetch_snotel.py"
