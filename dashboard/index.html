@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mt. Rainier Snowpack Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ice: #a8d8ea;
+    --snow: #e8f4f8;
+    --deep: #060f1e;
+    --mid: #0d1f3c;
+    --slate: #1e3a5f;
+    --accent: #4fc3f7;
+    --cold: #81d4fa;
+    --melt: #ff8a65;
+    --green: #69f0ae;
+    --text: #cdd6f4;
+    --dim: #5a6a8a;
+    --grid: rgba(79,195,247,0.06);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background ── */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 100% 60% at 50% -5%, rgba(79,195,247,0.10) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 40% at 90% 90%, rgba(6,15,30,0.8) 0%, transparent 60%);
+    pointer-events:none; z-index:0;
+  }
+
+  .grid-bg {
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 44px 44px;
+    z-index:0; pointer-events:none;
+  }
+
+  .wrap { position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:0 28px 48px; }
+
+  /* ── Header ── */
+  header {
+    padding: 28px 0 22px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(79,195,247,0.12);
+    margin-bottom: 24px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:none; } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:none; } }
+
+  .brand h1 {
+    font-family:'Syne',sans-serif;
+    font-size:1.85rem; font-weight:800;
+    letter-spacing:-0.02em; color:#fff; line-height:1;
+  }
+  .brand h1 em { color:var(--accent); font-style:normal; }
+  .brand p { font-size:0.62rem; color:var(--dim); letter-spacing:0.14em; text-transform:uppercase; margin-top:5px; }
+
+  .header-right { text-align:right; font-size:0.65rem; color:var(--dim); line-height:2; }
+  .live { color:var(--green); }
+  .live::before {
+    content:''; display:inline-block; width:6px; height:6px;
+    border-radius:50%; background:var(--green);
+    box-shadow:0 0 8px var(--green);
+    margin-right:6px; animation:pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Loading / Error ── */
+  #loading {
+    display:flex; align-items:center; justify-content:center;
+    height:60vh; flex-direction:column; gap:16px;
+    font-size:0.75rem; color:var(--dim);
+  }
+  .spinner {
+    width:32px; height:32px; border-radius:50%;
+    border:2px solid rgba(79,195,247,0.15);
+    border-top-color:var(--accent);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  #dashboard { display:none; }
+
+  /* ── KPI strip ── */
+  .kpi-row {
+    display:grid; grid-template-columns:repeat(5,1fr);
+    gap:14px; margin-bottom:20px;
+  }
+
+  .kpi {
+    background:rgba(13,31,60,0.7);
+    border:1px solid rgba(79,195,247,0.1);
+    border-radius:8px; padding:16px 18px;
+    position:relative; overflow:hidden;
+    animation:fadeUp 0.5s ease both;
+    transition:border-color 0.2s, transform 0.2s;
+  }
+  .kpi:hover { border-color:rgba(79,195,247,0.3); transform:translateY(-2px); }
+  .kpi::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:var(--accent); opacity:0.5;
+  }
+  .kpi.warn::before  { background:var(--melt); }
+  .kpi.good::before  { background:var(--green); }
+
+  .kpi-label { font-size:0.58rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--dim); margin-bottom:7px; }
+  .kpi-val {
+    font-family:'Syne',sans-serif; font-size:1.8rem;
+    font-weight:700; color:#fff; line-height:1;
+  }
+  .kpi-unit { font-size:0.7rem; color:var(--dim); font-family:'JetBrains Mono',monospace; margin-left:3px; }
+  .kpi-sub  { font-size:0.62rem; margin-top:5px; color:var(--dim); }
+  .kpi-sub.up   { color:var(--green); }
+  .kpi-sub.down { color:var(--melt); }
+
+  /* ── Main grid ── */
+  .main-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr 360px;
+    gap:16px; margin-bottom:16px;
+  }
+
+  .panel {
+    background:rgba(13,31,60,0.65);
+    border:1px solid rgba(79,195,247,0.1);
+    border-radius:8px; padding:18px 20px;
+    backdrop-filter:blur(6px);
+    animation:fadeUp 0.6s ease both;
+  }
+  .panel-title {
+    font-size:0.6rem; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--dim);
+    margin-bottom:14px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-title span { color:var(--accent); font-size:0.58rem; }
+
+  .chart-wrap { position:relative; height:220px; }
+
+  /* ── Station list ── */
+  .station-list { display:flex; flex-direction:column; gap:9px; }
+
+  .station-card {
+    border:1px solid rgba(79,195,247,0.09);
+    border-radius:6px; padding:11px 13px;
+    transition:border-color 0.2s, background 0.2s; cursor:default;
+  }
+  .station-card:hover {
+    border-color:rgba(79,195,247,0.28);
+    background:rgba(79,195,247,0.03);
+  }
+
+  .sc-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+  .sc-name { font-family:'Syne',sans-serif; font-size:0.78rem; font-weight:600; color:#fff; }
+  .sc-elev { font-size:0.58rem; color:var(--dim); }
+  .sc-swe  { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--cold); }
+  .sc-swe span { font-size:0.6rem; color:var(--dim); font-family:'JetBrains Mono',monospace; }
+
+  .sc-bars { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; }
+  .bar-group label { font-size:0.52rem; color:var(--dim); letter-spacing:0.08em; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .bar-track { height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; margin-bottom:2px; }
+  .bar-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+  .bar-fill.swe   { background:linear-gradient(90deg,var(--accent),var(--cold)); }
+  .bar-fill.depth { background:linear-gradient(90deg,#29b6f6,#b3e5fc); }
+  .bar-val { font-size:0.6rem; color:var(--text); }
+
+  /* ── Bottom row ── */
+  .bottom-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+  /* ── Elevation gradient viz ── */
+  .elev-list { display:flex; flex-direction:column; gap:8px; }
+  .elev-row  { display:grid; grid-template-columns:130px 1fr 56px; align-items:center; gap:10px; font-size:0.63rem; }
+  .elev-name { color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .elev-track { height:6px; background:rgba(255,255,255,0.05); border-radius:3px; position:relative; }
+  .elev-fill  { height:100%; border-radius:3px; }
+  .elev-val   { text-align:right; color:var(--text); font-size:0.65rem; }
+
+  /* ── Temp strip ── */
+  .temp-list { display:flex; flex-direction:column; gap:8px; }
+  .temp-row  {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 12px; border-radius:5px;
+    border:1px solid transparent; font-size:0.65rem;
+  }
+  .temp-row.freezing { background:rgba(79,195,247,0.05); border-color:rgba(79,195,247,0.15); }
+  .temp-row.warm     { background:rgba(255,138,101,0.05); border-color:rgba(255,138,101,0.15); }
+  .temp-name { flex:1; color:var(--text); }
+  .temp-val  { font-family:'Syne',sans-serif; font-weight:700; font-size:0.9rem; }
+  .temp-val.cold { color:var(--cold); }
+  .temp-val.warm { color:var(--melt); }
+  .temp-icon { font-size:0.9rem; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top:24px; padding-top:14px;
+    border-top:1px solid rgba(79,195,247,0.07);
+    display:flex; justify-content:space-between;
+    font-size:0.56rem; color:var(--dim); letter-spacing:0.07em;
+  }
+
+  @media(max-width:1100px) {
+    .kpi-row  { grid-template-columns:repeat(3,1fr); }
+    .main-grid { grid-template-columns:1fr; }
+    .bottom-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>Mt. Rainier <em>Snowpack</em></h1>
+      <p>SNOTEL Network · 7 Stations · Continuous Monitoring · 46.85°N 121.73°W</p>
+    </div>
+    <div class="header-right">
+      <div class="live" id="live-status">Loading...</div>
+      <div id="updated-label">—</div>
+      <div>NRCS AWDB · WY<span id="wy-label">—</span></div>
+    </div>
+  </header>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <div>Fetching snowpack data...</div>
+  </div>
+
+  <div id="dashboard">
+
+    <!-- KPI Row -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- Main grid -->
+    <div class="main-grid">
+
+      <!-- SWE time series chart -->
+      <div class="panel" style="grid-column:span 2">
+        <div class="panel-title">Basin Average SWE — Water Year 2026 <span id="chart-subtitle"></span></div>
+        <div class="chart-wrap"><canvas id="sweChart"></canvas></div>
+      </div>
+
+      <!-- Station cards -->
+      <div class="panel">
+        <div class="panel-title">Station Conditions <span id="station-count"></span></div>
+        <div class="station-list" id="station-list"></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom row -->
+    <div class="bottom-grid">
+
+      <!-- SWE by elevation -->
+      <div class="panel">
+        <div class="panel-title">SWE by Station <span>sorted by elevation</span></div>
+        <div class="elev-list" id="elev-list"></div>
+      </div>
+
+      <!-- Temperatures -->
+      <div class="panel">
+        <div class="panel-title">Current Temperatures <span>above / below freezing</span></div>
+        <div class="temp-list" id="temp-list"></div>
+      </div>
+
+    </div>
+
+  </div><!-- /dashboard -->
+
+  <footer>
+    <span>Data: NRCS SNOTEL AWDB · Updated daily · github.com/bdgroves/rainier-snowpack</span>
+    <span id="footer-date"></span>
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+// ── Load data ──────────────────────────────────────────────────────────────
+async function loadData() {
+  // Try to load from generated JSON, fall back to demo data
+  try {
+    const r = await fetch('data/processed/snotel_latest.json');
+    if (!r.ok) throw new Error('not found');
+    return await r.json();
+  } catch(e) {
+    // Demo data so the dashboard works standalone
+    return DEMO_DATA;
+  }
+}
+
+async function loadBasin() {
+  try {
+    const r = await fetch('data/processed/basin_daily.csv');
+    if (!r.ok) throw new Error();
+    const text = await r.text();
+    return parseCSV(text);
+  } catch(e) {
+    return null;
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i]?.trim().replace(/"/g,''));
+    return obj;
+  });
+}
+
+// ── Demo data (fallback) ───────────────────────────────────────────────────
+const DEMO_DATA = {
+  updated: "2026-03-02",
+  water_year: 2026,
+  stations: [
+    { id:"679:WA:SNTL",  name:"Paradise",        elevation:5150, swe_in:23.7, depth_in:66,  temp_f:32.4 },
+    { id:"642:WA:SNTL",  name:"Morse Lake",       elevation:5400, swe_in:25.6, depth_in:76,  temp_f:28.2 },
+    { id:"672:WA:SNTL",  name:"Olallie Meadows",  elevation:4010, swe_in:15.4, depth_in:40,  temp_f:35.4 },
+    { id:"1085:WA:SNTL", name:"Cayuse Pass",       elevation:5260, swe_in:22.2, depth_in:64,  temp_f:37.6 },
+    { id:"418:WA:SNTL",  name:"Corral Pass",       elevation:5810, swe_in:17.7, depth_in:50,  temp_f:37.2 },
+    { id:"375:WA:SNTL",  name:"Bumping Ridge",     elevation:4600, swe_in:12.0, depth_in:44,  temp_f:29.8 },
+    { id:"420:WA:SNTL",  name:"Cougar Mountain",   elevation:3210, swe_in:0.9,  depth_in:4,   temp_f:38.7 },
+  ]
+};
+
+// ── Render ─────────────────────────────────────────────────────────────────
+async function init() {
+  const data  = await loadData();
+  const basin = await loadBasin();
+
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  const stations = data.stations || [];
+  const updated  = data.updated  || '—';
+  const wy       = data.water_year || 2026;
+
+  // Header
+  document.getElementById('live-status').textContent   = 'Live · ' + updated;
+  document.getElementById('updated-label').textContent = 'Updated: ' + updated;
+  document.getElementById('wy-label').textContent      = wy;
+  document.getElementById('footer-date').textContent   = 'Last run: ' + updated;
+
+  // KPIs
+  const validSWE   = stations.filter(s => s.swe_in   != null && s.swe_in   !== 'NA');
+  const validDepth = stations.filter(s => s.depth_in != null && s.depth_in !== 'NA');
+  const validTemp  = stations.filter(s => s.temp_f   != null && s.temp_f   !== 'NA');
+
+  const avgSWE   = validSWE.length   ? (validSWE.reduce((a,s)=>a+parseFloat(s.swe_in),0)   / validSWE.length).toFixed(1)   : '—';
+  const avgDepth = validDepth.length ? (validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0) / validDepth.length).toFixed(0) : '—';
+  const avgTemp  = validTemp.length  ? (validTemp.reduce((a,s)=>a+parseFloat(s.temp_f),0)   / validTemp.length).toFixed(1)  : '—';
+  const maxSWE   = validSWE.length   ? Math.max(...validSWE.map(s=>parseFloat(s.swe_in))).toFixed(1) : '—';
+  const freezing = validTemp.filter(s => parseFloat(s.temp_f) <= 32).length;
+
+  const kpis = [
+    { label:'Basin Avg SWE',    val:avgSWE,   unit:'in',  sub:`${validSWE.length} stations`, cls:'good' },
+    { label:'Avg Snow Depth',   val:avgDepth, unit:'in',  sub:'basin average',              cls:'' },
+    { label:'Peak SWE',         val:maxSWE,   unit:'in',  sub:'Morse Lake',                 cls:'' },
+    { label:'Avg Temperature',  val:avgTemp,  unit:'°F',  sub: parseFloat(avgTemp) <= 32 ? '↓ below freezing':'↑ above freezing', cls: parseFloat(avgTemp)<=32?'':'warn' },
+    { label:'Stations Freezing',val:freezing, unit:'',    sub:`of ${validTemp.length} reporting`, cls: freezing >= 4 ? 'good':'' },
+  ];
+
+  document.getElementById('kpi-row').innerHTML = kpis.map((k,i) => `
+    <div class="kpi ${k.cls}" style="animation-delay:${i*0.07}s">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val">${k.val}<span class="kpi-unit">${k.unit}</span></div>
+      <div class="kpi-sub ${k.cls==='warn'?'down':k.cls==='good'?'up':''}">${k.sub}</div>
+    </div>
+  `).join('');
+
+  // Station cards
+  const sorted = [...stations].sort((a,b) => parseFloat(b.swe_in||0) - parseFloat(a.swe_in||0));
+  const maxSweVal = Math.max(...stations.map(s=>parseFloat(s.swe_in||0)));
+  const maxDepVal = Math.max(...stations.map(s=>parseFloat(s.depth_in||0)));
+
+  document.getElementById('station-count').textContent = stations.length + ' active';
+  document.getElementById('station-list').innerHTML = sorted.map(s => {
+    const swe   = parseFloat(s.swe_in   || 0);
+    const dep   = parseFloat(s.depth_in || 0);
+    const swePct = maxSweVal > 0 ? (swe / maxSweVal * 100).toFixed(0) : 0;
+    const depPct = maxDepVal > 0 ? (dep / maxDepVal * 100).toFixed(0) : 0;
+    return `
+      <div class="station-card">
+        <div class="sc-top">
+          <span class="sc-name">${s.name}</span>
+          <span class="sc-elev">${s.elevation?.toLocaleString()} ft</span>
+        </div>
+        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>
+        <div class="sc-bars">
+          <div class="bar-group">
+            <label>SWE</label>
+            <div class="bar-track"><div class="bar-fill swe" style="width:${swePct}%"></div></div>
+            <span class="bar-val">${swe.toFixed(1)} in</span>
+          </div>
+          <div class="bar-group">
+            <label>Depth</label>
+            <div class="bar-track"><div class="bar-fill depth" style="width:${depPct}%"></div></div>
+            <span class="bar-val">${dep} in</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Elevation SWE bars
+  const elevSorted = [...stations].sort((a,b) => parseFloat(b.elevation||0) - parseFloat(a.elevation||0));
+  document.getElementById('elev-list').innerHTML = elevSorted.map(s => {
+    const swe    = parseFloat(s.swe_in || 0);
+    const pct    = maxSweVal > 0 ? (swe / maxSweVal * 100) : 0;
+    const hue    = Math.round(190 + (parseFloat(s.elevation||3000) - 3000) / 3000 * 30);
+    const color  = `hsl(${hue},80%,${55 + pct*0.2}%)`;
+    return `
+      <div class="elev-row">
+        <span class="elev-name">${s.name}</span>
+        <div class="elev-track">
+          <div class="elev-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <span class="elev-val">${swe.toFixed(1)}"</span>
+      </div>`;
+  }).join('');
+
+  // Temperature list
+  const tempSorted = [...stations].sort((a,b) => parseFloat(a.temp_f||99) - parseFloat(b.temp_f||99));
+  document.getElementById('temp-list').innerHTML = tempSorted.map(s => {
+    const t    = parseFloat(s.temp_f);
+    const cold = t <= 32;
+    return `
+      <div class="temp-row ${cold?'freezing':'warm'}">
+        <span class="temp-icon">${cold ? '❄' : '🌡'}</span>
+        <span class="temp-name">${s.name}</span>
+        <span class="temp-val ${cold?'cold':'warm'}">${t.toFixed(1)}°F</span>
+      </div>`;
+  }).join('');
+
+  // SWE chart
+  buildChart(basin, stations);
+}
+
+function buildChart(basin, stations) {
+  const ctx = document.getElementById('sweChart').getContext('2d');
+
+  let labels = [];
+  let sweVals = [];
+
+  if (basin && basin.length > 0) {
+    // Use real basin_daily.csv data
+    labels  = basin.map(r => r.date);
+    sweVals = basin.map(r => parseFloat(r.basin_swe) || null);
+    document.getElementById('chart-subtitle').textContent =
+      `${basin.length} days · through ${labels[labels.length-1]}`;
+  } else {
+    // Generate synthetic curve from station data
+    const avg = stations.reduce((a,s)=>a+parseFloat(s.swe_in||0),0)/stations.length;
+    for (let d=1; d<=152; d++) {
+      const dt = new Date(2025,9,1);
+      dt.setDate(dt.getDate() + d - 1);
+      labels.push(dt.toISOString().slice(0,10));
+      sweVals.push(+(avg * (d/152) + Math.sin(d*0.12)*1.5).toFixed(1));
+    }
+    document.getElementById('chart-subtitle').textContent = 'WY2026 · simulated';
+  }
+
+  new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Basin Avg SWE',
+        data: sweVals,
+        borderColor:'#81d4fa',
+        borderWidth:2,
+        backgroundColor:'rgba(79,195,247,0.08)',
+        fill:true,
+        tension:0.4,
+        pointRadius:0,
+        pointHoverRadius:4,
+        pointHoverBackgroundColor:'#fff',
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'rgba(6,15,30,0.95)',
+          borderColor:'rgba(79,195,247,0.2)',
+          borderWidth:1,
+          titleColor:'#81d4fa',
+          bodyColor:'#cdd6f4',
+          titleFont:{ family:'JetBrains Mono', size:10 },
+          bodyFont:{ family:'JetBrains Mono', size:10 },
+          callbacks:{
+            label: i => ` Basin avg SWE: ${i.raw?.toFixed(1) ?? '—'} in`
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{
+            color:'rgba(90,106,138,0.8)',
+            font:{ family:'JetBrains Mono', size:9 },
+            maxTicksLimit:10,
+            callback:(v,i,ticks) => {
+              // Show month label at start of each month
+              const d = labels[i];
+              if (!d) return '';
+              const day = d.slice(8);
+              return day === '01' || day === '02' ? d.slice(5,7)+'/'+d.slice(0,4) : '';
+            }
+          },
+          grid:{ color:'rgba(79,195,247,0.05)' },
+          border:{ color:'rgba(79,195,247,0.08)' }
+        },
+        y:{
+          ticks:{
+            color:'rgba(90,106,138,0.8)',
+            font:{ family:'JetBrains Mono', size:9 },
+            callback: v => v+'"'
+          },
+          grid:{ color:'rgba(79,195,247,0.05)' },
+          border:{ color:'rgba(79,195,247,0.08)' },
+        }
+      }
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
