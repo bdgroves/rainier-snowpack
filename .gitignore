@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -13,7 +13,6 @@ data/raw/
 *.h5
 *.nc
 .pixi/
-pixi.lock
 *.tif
 
 # Keep processed data
