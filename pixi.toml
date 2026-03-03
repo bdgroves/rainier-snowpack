@@ -6,11 +6,12 @@ channels = ["conda-forge"]
 platforms = ["win-64", "linux-64"]
 
 [tasks]
-fetch     = "python src/python/fetch_snotel.py"
-process   = "python src/python/process_raster.py"
-analyze   = "Rscript src/r/snowpack_stats.R"
-dashboard = "python src/python/build_dashboard.py"
-update    = { depends-on = ["fetch", "process", "analyze", "dashboard"] }
+fetch        = "python src/python/fetch_snotel.py"
+fetch-hourly = "python src/python/fetch_hourly.py"
+process      = "python src/python/process_raster.py"
+analyze      = "Rscript src/r/snowpack_stats.R"
+dashboard    = "python src/python/build_dashboard.py"
+update       = { depends-on = ["fetch", "fetch-hourly", "process", "analyze", "dashboard"] }
 
 [dependencies]
 python      = "3.12.*"

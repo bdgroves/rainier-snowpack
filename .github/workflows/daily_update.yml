@@ -26,17 +26,21 @@ jobs:
 
       - name: Fetch SNOTEL
         run: pixi run fetch
+        
+       - name: Fetch hourly temps
+        run: pixi run fetch-hourly
 
       - name: R analysis
         run: pixi run analyze
 
-      - name: Copy outputs to dashboard
+     - name: Copy outputs to dashboard
         run: |
           cp outputs/basin_swe_timeseries.png dashboard/
           cp outputs/all_stations_swe.png dashboard/
           cp outputs/station_swe_bars.png dashboard/
           cp data/processed/snotel_latest.json dashboard/
           cp data/processed/basin_daily.csv dashboard/
+          cp data/processed/hourly_temps.json dashboard/
 
       - name: Commit and push
         run: |
