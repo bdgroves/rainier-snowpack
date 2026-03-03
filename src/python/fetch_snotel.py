@@ -3,11 +3,17 @@ fetch_snotel.py
 Fetches daily SWE, snow depth, and temperature from NRCS SNOTEL
 for stations near Mt. Rainier using the AWDB REST API.
 No authentication required.
+
+Fixes:
+  - Always fetches through YESTERDAY (confirmed complete data)
+    since today's SNOTEL values are not posted until next day
+  - Always overwrites latest snapshot so updated daily values
+    (e.g. revised temps) are captured on each run
 """
 
 import json
 import logging
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import httpx
@@ -19,13 +25,13 @@ LOG = logging.getLogger(__name__)
 
 # ── SNOTEL stations near Mt. Rainier ─────────────────────────────────────────
 STATIONS = [
-    ("679:WA:SNTL",  "Paradise",       5150),
-    ("642:WA:SNTL",  "Morse Lake",     5400),
-    ("672:WA:SNTL",  "Olallie Meadows",4010),
-    ("1085:WA:SNTL", "Cayuse Pass",    5260),
-    ("418:WA:SNTL",  "Corral Pass",    5810),
-    ("375:WA:SNTL",  "Bumping Ridge",  4600),
-    ("420:WA:SNTL",  "Cougar Mountain",3210),
+    ("679:WA:SNTL",  "Paradise",        5150),
+    ("642:WA:SNTL",  "Morse Lake",      5400),
+    ("672:WA:SNTL",  "Olallie Meadows", 4010),
+    ("1085:WA:SNTL", "Cayuse Pass",     5260),
+    ("418:WA:SNTL",  "Corral Pass",     5810),
+    ("375:WA:SNTL",  "Bumping Ridge",   4600),
+    ("420:WA:SNTL",  "Cougar Mountain", 3210),
 ]
 
 ELEMENTS = ["WTEQ", "SNWD", "TOBS", "PRCP"]
@@ -35,9 +41,9 @@ RAW_DIR  = Path("data/raw/snotel")
 BASE_URL = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data"
 
 
-def water_year_start() -> date:
-    today = date.today()
-    year = today.year if today.month >= 10 else today.year - 1
+def water_year_start(ref: date) -> date:
+    """Return Oct 1 of the water year containing ref date."""
+    year = ref.year if ref.month >= 10 else ref.year - 1
     return date(year, 10, 1)
 
 
@@ -100,23 +106,26 @@ def fetch_station(client, triplet, name, elev_ft, start, end) -> pd.DataFrame | 
         "prcp": "precip_in",
     }, inplace=True)
 
-    LOG.info("  ✓ %d rows | SWE latest: %s in", len(combined),
-             combined["swe_in"].dropna().iloc[-1] if "swe_in" in combined.columns else "n/a")
+    latest_swe = combined["swe_in"].dropna().iloc[-1] if "swe_in" in combined.columns and not combined["swe_in"].dropna().empty else "n/a"
+    latest_tmp = combined["temp_f"].dropna().iloc[-1] if "temp_f" in combined.columns and not combined["temp_f"].dropna().empty else "n/a"
+    LOG.info("  ✓ %d rows | SWE: %s in | Temp: %s °F", len(combined), latest_swe, latest_tmp)
     return combined
 
 
 def main():
-    today = date.today()
-    start = water_year_start()
-    wy    = start.year + 1
+    # Use YESTERDAY as the confirmed end date — today's data isn't
+    # posted to SNOTEL until the following morning
+    yesterday = date.today() - timedelta(days=1)
+    start     = water_year_start(yesterday)
+    wy        = start.year + 1
 
     LOG.info("=== SNOTEL fetch — Water Year %d ===", wy)
-    LOG.info("Date range: %s → %s", start, today)
+    LOG.info("Date range: %s → %s (confirmed through yesterday)", start, yesterday)
 
     frames = []
     with httpx.Client(follow_redirects=True) as client:
         for triplet, name, elev in STATIONS:
-            df = fetch_station(client, triplet, name, elev, start, today)
+            df = fetch_station(client, triplet, name, elev, start, yesterday)
             if df is not None:
                 frames.append(df)
 
@@ -129,17 +138,21 @@ def main():
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Full water-year CSV
+    # Full water-year CSV — always overwrite so revised values are captured
     wy_path = OUT_DIR / f"snotel_wy{wy}.csv"
     combined.to_csv(wy_path, index=False)
     LOG.info("Saved: %s (%d rows, %d stations)", wy_path, len(combined), len(frames))
 
-    # Latest snapshot
+    # Latest snapshot — always the last row per station (= yesterday)
     latest = combined.groupby("station_triplet").last().reset_index()
     latest.to_csv(OUT_DIR / "snotel_latest.csv", index=False)
 
-    # JSON for dashboard
-    summary = {"updated": today.isoformat(), "water_year": wy, "stations": []}
+    # JSON for dashboard — use yesterday as the confirmed data date
+    summary = {
+        "updated":    yesterday.isoformat(),
+        "water_year": wy,
+        "stations":   []
+    }
     for _, row in latest.iterrows():
         summary["stations"].append({
             "id":        row["station_triplet"],
@@ -156,7 +169,7 @@ def main():
 
     # Print summary table
     print("\n" + "="*65)
-    print(f"  Mt. Rainier SNOTEL — {today}  (WY{wy})")
+    print(f"  Mt. Rainier SNOTEL — {yesterday} (confirmed)  WY{wy}")
     print("="*65)
     cols = ["station_name", "elevation_ft", "swe_in", "depth_in", "temp_f"]
     available = [c for c in cols if c in latest.columns]
