@@ -246,6 +246,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-03 10:00:00,42.6,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-03 11:00:00,42.4,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-03 12:00:00,43.3,False,Cougar Mountain,3210,420:WA:SNTL
+2026-03-03 13:00:00,42.6,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-01 00:00:00,30.6,True,Morse Lake,5400,642:WA:SNTL
 2026-03-01 01:00:00,30.0,True,Morse Lake,5400,642:WA:SNTL
 2026-03-01 02:00:00,29.8,True,Morse Lake,5400,642:WA:SNTL
@@ -369,6 +370,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-03 10:00:00,39.2,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-03 11:00:00,39.2,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-03 12:00:00,39.7,False,Olallie Meadows,4010,672:WA:SNTL
+2026-03-03 13:00:00,39.2,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-01 00:00:00,34.7,False,Paradise,5150,679:WA:SNTL
 2026-03-01 01:00:00,34.3,False,Paradise,5150,679:WA:SNTL
 2026-03-01 02:00:00,34.9,False,Paradise,5150,679:WA:SNTL
