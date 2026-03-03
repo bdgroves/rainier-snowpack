@@ -1,20 +1,16 @@
 name: Daily Snowpack Update
-
 on:
   schedule:
     - cron: "0 * * * *"   # Every hour
   workflow_dispatch:
     # Allows manual trigger from GitHub Actions tab
-
 jobs:
   update:
     name: Fetch · Analyze · Deploy
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -47,5 +43,12 @@ jobs:
           git config user.name  "snowpack-bot[bot]"
           git config user.email "snowpack-bot@users.noreply.github.com"
           git add data/processed/ outputs/ dashboard/
-          git diff --staged --quiet || git commit -m "data: hourly update $(date -u +%Y-%m-%dT%H:%M)Z"
-          git push
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "data: hourly update $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do
+            git push && break
+            echo "Push attempt $i failed, retrying in 15s..."
+            sleep 15
+            git fetch origin
+            git rebase origin/main
+          done
