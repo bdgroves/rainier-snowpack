@@ -77,10 +77,11 @@ def fetch_station_hourly(client, triplet, name, elev_ft, start, end):
 
 
 def main():
-    end   = date.today()
-    start = end - timedelta(days=2)
+    today = date.today()
+    start = today - timedelta(days=2)
+    end   = today + timedelta(days=1)  # fetch through "tomorrow" to get all of today's readings
 
-    LOG.info("=== Hourly temp fetch: %s to %s ===", start, end)
+    LOG.info("=== Hourly temp fetch: %s to %s ===", start, today)
 
     frames = []
     with httpx.Client(follow_redirects=True) as client:
@@ -120,7 +121,7 @@ def main():
 
     # Summary table
     print("\n" + "="*70)
-    print(f"  48-Hour Temperature Summary (through {end})")
+    print(f"  48-Hour Temperature Summary (through {today})")
     print("="*70)
     summary = combined.groupby("station_name").agg(
         elev_ft     =("elevation_ft", "first"),
