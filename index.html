@@ -296,10 +296,45 @@
 </div><!-- /wrap -->
 
 <script>
+// ── Timestamp formatter ────────────────────────────────────────────────────
+// Accepts either an ISO-8601 UTC string ("2026-03-04T18:00:00Z")
+// or a plain date string ("2026-03-03") as a fallback.
+// Returns a human-readable string like "Mar 4, 2026, 6:00 PM UTC".
+function formatUpdated(raw) {
+  if (!raw || raw === '—') return '—';
+
+  // Full ISO timestamp (has 'T' separator) → parse and format with time
+  if (raw.includes('T')) {
+    const d = new Date(raw);
+    if (isNaN(d)) return raw;
+    return d.toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit',
+      timeZone: 'UTC', timeZoneName: 'short',
+    });
+  }
+
+  // Plain date string ("2026-03-03") → format without time component
+  // Parse as UTC noon to avoid any timezone-shift date flip
+  const d = new Date(raw + 'T12:00:00Z');
+  if (isNaN(d)) return raw;
+  return d.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+  });
+}
+
+// ── Cache-buster ───────────────────────────────────────────────────────────
+// Appends ?v=<epoch-minutes> so browsers re-fetch every ~60 seconds
+// rather than serving a stale cached copy.
+function cacheBust(url) {
+  const v = Math.floor(Date.now() / 60000);
+  return `${url}?v=${v}`;
+}
+
 // ── Data loaders ───────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const r = await fetch('data/processed/snotel_latest.json');
+    const r = await fetch(cacheBust('data/processed/snotel_latest.json'));
     if (!r.ok) throw new Error();
     return await r.json();
   } catch(e) { return DEMO_DATA; }
@@ -307,7 +342,7 @@ async function loadData() {
 
 async function loadBasin() {
   try {
-    const r = await fetch('data/processed/basin_daily.csv');
+    const r = await fetch(cacheBust('data/processed/basin_daily.csv'));
     if (!r.ok) throw new Error();
     return parseCSV(await r.text());
   } catch(e) { return null; }
@@ -315,7 +350,7 @@ async function loadBasin() {
 
 async function loadHourly() {
   try {
-    const r = await fetch('data/processed/hourly_temps.json');
+    const r = await fetch(cacheBust('data/processed/hourly_temps.json'));
     if (!r.ok) throw new Error();
     return await r.json();
   } catch(e) { return null; }
@@ -334,7 +369,8 @@ function parseCSV(text) {
 
 // ── Demo fallback ──────────────────────────────────────────────────────────
 const DEMO_DATA = {
-  updated: "2026-03-03",
+  updated: "2026-03-03T18:00:00Z",
+  data_date: "2026-03-03",
   water_year: 2026,
   stations: [
     { id:"679:WA:SNTL",  name:"Paradise",        elevation:5150, swe_in:23.8, depth_in:64, temp_f:34.3 },
@@ -363,14 +399,19 @@ async function init() {
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  const stations = data.stations || [];
-  const updated  = data.updated  || '—';
+  const stations = data.stations  || [];
+  const updated  = data.updated   || '—';   // ISO-8601 UTC pipeline run time
+  const dataDate = data.data_date || updated; // SNOTEL observation date (fallback)
   const wy       = data.water_year || 2026;
 
-  document.getElementById('live-status').textContent   = 'Live · ' + updated;
-  document.getElementById('updated-label').textContent = 'Updated: ' + updated;
+  const updatedFormatted = formatUpdated(updated);
+  const dataDateFormatted = formatUpdated(dataDate);
+
+  // Header: show pipeline run time prominently; data date as sub-label
+  document.getElementById('live-status').textContent   = 'Live · data through ' + dataDateFormatted;
+  document.getElementById('updated-label').textContent = 'Updated: ' + updatedFormatted;
   document.getElementById('wy-label').textContent      = wy;
-  document.getElementById('footer-date').textContent   = 'Last run: ' + updated;
+  document.getElementById('footer-date').textContent   = 'Pipeline run: ' + updatedFormatted;
 
   // Use hourly latest temps where available for KPIs
   const validSWE   = stations.filter(s => s.swe_in   != null && s.swe_in   !== 'NA');

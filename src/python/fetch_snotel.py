@@ -13,7 +13,7 @@ Fixes:
 
 import json
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -113,6 +113,11 @@ def fetch_station(client, triplet, name, elev_ft, start, end) -> pd.DataFrame | 
 
 
 def main():
+    # Capture the actual UTC time this pipeline ran — used as the dashboard
+    # "updated" timestamp so users see when data was last refreshed, not just
+    # what date the SNOTEL data covers.
+    run_utc = datetime.now(timezone.utc)
+
     # Use YESTERDAY as the confirmed end date — today's data isn't
     # posted to SNOTEL until the following morning
     yesterday = date.today() - timedelta(days=1)
@@ -120,6 +125,7 @@ def main():
     wy        = start.year + 1
 
     LOG.info("=== SNOTEL fetch — Water Year %d ===", wy)
+    LOG.info("Pipeline run: %s UTC", run_utc.strftime("%Y-%m-%d %H:%M"))
     LOG.info("Date range: %s → %s (confirmed through yesterday)", start, yesterday)
 
     frames = []
@@ -147,9 +153,12 @@ def main():
     latest = combined.groupby("station_triplet").last().reset_index()
     latest.to_csv(OUT_DIR / "snotel_latest.csv", index=False)
 
-    # JSON for dashboard — use yesterday as the confirmed data date
+    # JSON for dashboard:
+    #   "updated"   → ISO-8601 UTC timestamp of when THIS pipeline run executed
+    #   "data_date" → the SNOTEL observation date the snapshot reflects (yesterday)
     summary = {
-        "updated":    yesterday.isoformat(),
+        "updated":    run_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),  # e.g. "2026-03-04T18:00:00Z"
+        "data_date":  yesterday.isoformat(),                   # e.g. "2026-03-03"
         "water_year": wy,
         "stations":   []
     }
@@ -170,6 +179,7 @@ def main():
     # Print summary table
     print("\n" + "="*65)
     print(f"  Mt. Rainier SNOTEL — {yesterday} (confirmed)  WY{wy}")
+    print(f"  Pipeline run: {run_utc.strftime('%Y-%m-%d %H:%M UTC')}")
     print("="*65)
     cols = ["station_name", "elevation_ft", "swe_in", "depth_in", "temp_f"]
     available = [c for c in cols if c in latest.columns]
