@@ -198,8 +198,8 @@
   .temp-val.cold { color:var(--cold); }
   .temp-val.warm { color:var(--melt); }
   .temp-icon { font-size:0.9rem; }
+  .temp-source { font-size:0.52rem; color:var(--dim); margin-left:4px; }
 
-  /* ── Hourly temp stat chips ── */
   .temp-stat-row {
     display:grid; grid-template-columns:repeat(4,1fr);
     gap:10px; margin-bottom:14px;
@@ -222,8 +222,8 @@
   }
 
   @media(max-width:1100px) {
-    .kpi-row   { grid-template-columns:repeat(3,1fr); }
-    .main-grid { grid-template-columns:1fr; }
+    .kpi-row     { grid-template-columns:repeat(3,1fr); }
+    .main-grid   { grid-template-columns:1fr; }
     .bottom-grid { grid-template-columns:1fr; }
     .temp-stat-row { grid-template-columns:repeat(2,1fr); }
   }
@@ -252,10 +252,8 @@
 
   <div id="dashboard">
 
-    <!-- KPI Row -->
     <div class="kpi-row" id="kpi-row"></div>
 
-    <!-- Main grid -->
     <div class="main-grid">
       <div class="panel" style="grid-column:span 2">
         <div class="panel-title">Basin Average SWE — Water Year 2026 <span id="chart-subtitle"></span></div>
@@ -267,14 +265,13 @@
       </div>
     </div>
 
-    <!-- Bottom row -->
     <div class="bottom-grid">
       <div class="panel">
         <div class="panel-title">SWE by Station <span>sorted by elevation</span></div>
         <div class="elev-list" id="elev-list"></div>
       </div>
       <div class="panel">
-        <div class="panel-title">Current Temperatures <span>above / below freezing</span></div>
+        <div class="panel-title">Current Temperatures <span id="temp-panel-subtitle">hourly latest</span></div>
         <div class="temp-list" id="temp-list"></div>
       </div>
     </div>
@@ -285,9 +282,7 @@
         48-Hour Diurnal Temperature — All Stations
         <span id="hourly-subtitle">freeze/thaw cycle</span>
       </div>
-      <!-- stat chips -->
       <div class="temp-stat-row" id="hourly-stats"></div>
-      <!-- chart -->
       <div class="chart-wrap tall"><canvas id="tempChart"></canvas></div>
     </div>
 
@@ -345,12 +340,21 @@ const DEMO_DATA = {
     { id:"679:WA:SNTL",  name:"Paradise",        elevation:5150, swe_in:23.8, depth_in:64, temp_f:34.3 },
     { id:"642:WA:SNTL",  name:"Morse Lake",       elevation:5400, swe_in:25.6, depth_in:74, temp_f:36.3 },
     { id:"672:WA:SNTL",  name:"Olallie Meadows",  elevation:4010, swe_in:15.4, depth_in:40, temp_f:37.4 },
-    { id:"1085:WA:SNTL", name:"Cayuse Pass",       elevation:5260, swe_in:21.9, depth_in:64, temp_f:36.3 },
-    { id:"418:WA:SNTL",  name:"Corral Pass",       elevation:5810, swe_in:17.7, depth_in:50, temp_f:34.3 },
+    { id:"1085:WA:SNTL", name:"Cayuse Pass",       elevation:5260, swe_in:21.9, depth_in:61, temp_f:36.3 },
+    { id:"418:WA:SNTL",  name:"Corral Pass",       elevation:5810, swe_in:17.7, depth_in:46, temp_f:34.3 },
     { id:"375:WA:SNTL",  name:"Bumping Ridge",     elevation:4600, swe_in:11.9, depth_in:43, temp_f:37.2 },
     { id:"420:WA:SNTL",  name:"Cougar Mountain",   elevation:3210, swe_in:0.8,  depth_in:4,  temp_f:39.7 },
   ]
 };
+
+// ── Helper: get best current temp for a station ────────────────────────────
+// Prefers hourly latest, falls back to daily snapshot
+function getCurrentTemp(stationName, dailyTempF, hourly) {
+  if (hourly && hourly[stationName] && hourly[stationName].latest != null) {
+    return { temp: hourly[stationName].latest, source: 'hourly' };
+  }
+  return { temp: parseFloat(dailyTempF), source: 'daily' };
+}
 
 // ── Main render ────────────────────────────────────────────────────────────
 async function init() {
@@ -368,23 +372,34 @@ async function init() {
   document.getElementById('wy-label').textContent      = wy;
   document.getElementById('footer-date').textContent   = 'Last run: ' + updated;
 
-  // KPIs
+  // Use hourly latest temps where available for KPIs
   const validSWE   = stations.filter(s => s.swe_in   != null && s.swe_in   !== 'NA');
   const validDepth = stations.filter(s => s.depth_in != null && s.depth_in !== 'NA');
-  const validTemp  = stations.filter(s => s.temp_f   != null && s.temp_f   !== 'NA');
 
   const avgSWE   = validSWE.length   ? (validSWE.reduce((a,s)=>a+parseFloat(s.swe_in),0)   / validSWE.length).toFixed(1) : '—';
   const avgDepth = validDepth.length ? (validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0)/ validDepth.length).toFixed(0): '—';
-  const avgTemp  = validTemp.length  ? (validTemp.reduce((a,s)=>a+parseFloat(s.temp_f),0)   / validTemp.length).toFixed(1) : '—';
   const maxSWE   = validSWE.length   ? Math.max(...validSWE.map(s=>parseFloat(s.swe_in))).toFixed(1) : '—';
-  const freezing = validTemp.filter(s => parseFloat(s.temp_f) <= 32).length;
+
+  // Avg temp — prefer hourly
+  let avgTemp, freezingCount;
+  if (hourly && Object.keys(hourly).length > 0) {
+    const hourlyTemps = Object.values(hourly).map(s => s.latest).filter(t => t != null);
+    avgTemp      = hourlyTemps.length ? (hourlyTemps.reduce((a,b)=>a+b,0)/hourlyTemps.length).toFixed(1) : '—';
+    freezingCount = hourlyTemps.filter(t => t <= 32).length;
+    document.getElementById('temp-panel-subtitle').textContent = 'hourly latest';
+  } else {
+    const validTemp = stations.filter(s => s.temp_f != null && s.temp_f !== 'NA');
+    avgTemp       = validTemp.length ? (validTemp.reduce((a,s)=>a+parseFloat(s.temp_f),0)/validTemp.length).toFixed(1) : '—';
+    freezingCount = validTemp.filter(s => parseFloat(s.temp_f) <= 32).length;
+    document.getElementById('temp-panel-subtitle').textContent = 'daily snapshot';
+  }
 
   const kpis = [
-    { label:'Basin Avg SWE',     val:avgSWE,   unit:'in', sub:`${validSWE.length} stations`,          cls:'good' },
-    { label:'Avg Snow Depth',    val:avgDepth, unit:'in', sub:'basin average',                        cls:'' },
-    { label:'Peak SWE',          val:maxSWE,   unit:'in', sub:'Morse Lake',                           cls:'' },
-    { label:'Avg Temperature',   val:avgTemp,  unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
-    { label:'Stations Freezing', val:freezing, unit:'',   sub:`of ${validTemp.length} reporting`,     cls:freezing>=4?'good':'' },
+    { label:'Basin Avg SWE',     val:avgSWE,       unit:'in', sub:`${validSWE.length} stations`,      cls:'good' },
+    { label:'Avg Snow Depth',    val:avgDepth,     unit:'in', sub:'basin average',                    cls:'' },
+    { label:'Peak SWE',          val:maxSWE,       unit:'in', sub:'Morse Lake',                       cls:'' },
+    { label:'Avg Temperature',   val:avgTemp,      unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
+    { label:'Stations Freezing', val:freezingCount,unit:'',   sub:`of ${stations.length} reporting`,  cls:freezingCount>=4?'good':'' },
   ];
 
   document.getElementById('kpi-row').innerHTML = kpis.map((k,i) => `
@@ -394,10 +409,10 @@ async function init() {
       <div class="kpi-sub ${k.cls==='warn'?'down':k.cls==='good'?'up':''}">${k.sub}</div>
     </div>`).join('');
 
-  // Station cards
-  const sorted    = [...stations].sort((a,b) => parseFloat(b.swe_in||0)-parseFloat(a.swe_in||0));
+  // Station cards — SWE from daily, temp from hourly
   const maxSweVal = Math.max(...stations.map(s=>parseFloat(s.swe_in||0)));
   const maxDepVal = Math.max(...stations.map(s=>parseFloat(s.depth_in||0)));
+  const sorted    = [...stations].sort((a,b) => parseFloat(b.swe_in||0)-parseFloat(a.swe_in||0));
 
   document.getElementById('station-count').textContent = stations.length + ' active';
   document.getElementById('station-list').innerHTML = sorted.map(s => {
@@ -405,11 +420,12 @@ async function init() {
     const dep    = parseFloat(s.depth_in || 0);
     const swePct = maxSweVal > 0 ? (swe/maxSweVal*100).toFixed(0) : 0;
     const depPct = maxDepVal > 0 ? (dep/maxDepVal*100).toFixed(0) : 0;
+    const { temp } = getCurrentTemp(s.name, s.temp_f, hourly);
     return `
       <div class="station-card">
         <div class="sc-top">
           <span class="sc-name">${s.name}</span>
-          <span class="sc-elev">${s.elevation?.toLocaleString()} ft</span>
+          <span class="sc-elev">${s.elevation?.toLocaleString()} ft · ${temp.toFixed(1)}°F</span>
         </div>
         <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>
         <div class="sc-bars">
@@ -427,7 +443,7 @@ async function init() {
       </div>`;
   }).join('');
 
-  // SWE by elevation bars
+  // SWE elevation bars
   const elevSorted = [...stations].sort((a,b)=>parseFloat(b.elevation||0)-parseFloat(a.elevation||0));
   document.getElementById('elev-list').innerHTML = elevSorted.map(s => {
     const swe   = parseFloat(s.swe_in || 0);
@@ -442,16 +458,20 @@ async function init() {
       </div>`;
   }).join('');
 
-  // Current temp list
-  const tempSorted = [...stations].sort((a,b)=>parseFloat(a.temp_f||99)-parseFloat(b.temp_f||99));
-  document.getElementById('temp-list').innerHTML = tempSorted.map(s => {
-    const t    = parseFloat(s.temp_f);
-    const cold = t <= 32;
+  // Current temp panel — hourly latest preferred
+  const tempData = stations.map(s => {
+    const { temp, source } = getCurrentTemp(s.name, s.temp_f, hourly);
+    return { name: s.name, temp, source };
+  }).sort((a,b) => a.temp - b.temp);
+
+  document.getElementById('temp-list').innerHTML = tempData.map(s => {
+    const cold = s.temp <= 32;
     return `
       <div class="temp-row ${cold?'freezing':'warm'}">
         <span class="temp-icon">${cold?'❄':'🌡'}</span>
         <span class="temp-name">${s.name}</span>
-        <span class="temp-val ${cold?'cold':'warm'}">${t.toFixed(1)}°F</span>
+        <span class="temp-val ${cold?'cold':'warm'}">${s.temp.toFixed(1)}°F</span>
+        <span class="temp-source">${s.source}</span>
       </div>`;
   }).join('');
 
@@ -532,25 +552,23 @@ function buildTempChart(hourly) {
   }
 
   const COLORS = ['#e8f4f8','#b3e5fc','#81d4fa','#4fc3f7','#29b6f6','#0288d1','#4dd0e1'];
-
-  // Sort stations by elevation descending
   const stationNames = Object.keys(hourly).sort((a,b) => hourly[b].elevation - hourly[a].elevation);
   const labels = hourly[stationNames[0]].labels;
 
-  // Stat chips — basin-wide min, max, avg latest, hrs freezing
-  let allMins = [], allMaxes = [], allLatest = [], totalFreezing = 0;
+  // Stat chips
+  let allMins=[], allMaxes=[], allLatest=[], totalFreezing=0;
   stationNames.forEach(n => {
     const s = hourly[n];
     if (s.min_temp != null) allMins.push(s.min_temp);
     if (s.max_temp != null) allMaxes.push(s.max_temp);
     if (s.latest   != null) allLatest.push(s.latest);
-    totalFreezing += (s.freezing || []).filter(Boolean).length;
+    totalFreezing += (s.freezing||[]).filter(Boolean).length;
   });
 
-  const basinMin    = allMins.length   ? Math.min(...allMins).toFixed(1)   : '—';
-  const basinMax    = allMaxes.length  ? Math.max(...allMaxes).toFixed(1)  : '—';
-  const basinLatest = allLatest.length ? (allLatest.reduce((a,b)=>a+b,0)/allLatest.length).toFixed(1) : '—';
-  const avgFreezeHrs = stationNames.length ? Math.round(totalFreezing / stationNames.length) : 0;
+  const basinMin     = allMins.length   ? Math.min(...allMins).toFixed(1)  : '—';
+  const basinMax     = allMaxes.length  ? Math.max(...allMaxes).toFixed(1) : '—';
+  const basinLatest  = allLatest.length ? (allLatest.reduce((a,b)=>a+b,0)/allLatest.length).toFixed(1) : '—';
+  const avgFreezeHrs = stationNames.length ? Math.round(totalFreezing/stationNames.length) : 0;
 
   document.getElementById('hourly-stats').innerHTML = `
     <div class="temp-stat">
@@ -585,13 +603,13 @@ function buildTempChart(hourly) {
     fill: false,
   }));
 
-  // Add freezing line dataset
+  // Dashed 32°F freezing line
   datasets.push({
     label:       '32°F Freezing',
     data:        labels.map(() => 32),
     borderColor: 'rgba(79,195,247,0.35)',
     borderWidth: 1,
-    borderDash:  [5, 5],
+    borderDash:  [5,5],
     pointRadius: 0,
     fill:        false,
     tension:     0,
