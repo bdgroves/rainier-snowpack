@@ -438,7 +438,7 @@ async function init() {
   const kpis = [
     { label:'Basin Avg SWE',     val:avgSWE,       unit:'in', sub:`${validSWE.length} stations`,      cls:'good' },
     { label:'Avg Snow Depth',    val:avgDepth,     unit:'in', sub:'basin average',                    cls:'' },
-    { label:'Peak SWE',          val:maxSWE,       unit:'in', sub:'Morse Lake',                       cls:'' },
+    { label:'Peak SWE',          val:maxSWE,       unit:'in', sub:validSWE.length ? validSWE.reduce((a,s)=>parseFloat(s.swe_in)>parseFloat(a.swe_in)?s:a).name : '—', cls:'' },
     { label:'Avg Temperature',   val:avgTemp,      unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
     { label:'Stations Freezing', val:freezingCount,unit:'',   sub:`of ${stations.length} reporting`,  cls:freezingCount>=4?'good':'' },
   ];
