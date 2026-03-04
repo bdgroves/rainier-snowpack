@@ -614,6 +614,7 @@ date,swe_in,depth_in,temp_f,precip_in,station_triplet,station_name,elevation_ft
 2026-02-28,1.1,5.0,37.9,0.0,420:WA:SNTL,Cougar Mountain,3210
 2026-03-01,0.9,4.0,38.7,0.0,420:WA:SNTL,Cougar Mountain,3210
 2026-03-02,0.8,4.0,39.7,0.0,420:WA:SNTL,Cougar Mountain,3210
+2026-03-03,0.4,2.0,39.6,0.1,420:WA:SNTL,Cougar Mountain,3210
 2025-10-01,0.1,0.0,39.6,0.5,642:WA:SNTL,Morse Lake,5400
 2025-10-02,0.1,0.0,38.7,0.1,642:WA:SNTL,Morse Lake,5400
 2025-10-03,0.1,0.0,41.4,0.0,642:WA:SNTL,Morse Lake,5400
@@ -1075,3 +1076,4 @@ date,swe_in,depth_in,temp_f,precip_in,station_triplet,station_name,elevation_ft
 2026-02-28,23.7,66.0,34.7,0.0,679:WA:SNTL,Paradise,5150
 2026-03-01,23.7,66.0,32.4,0.0,679:WA:SNTL,Paradise,5150
 2026-03-02,23.8,64.0,34.3,0.0,679:WA:SNTL,Paradise,5150
+2026-03-03,24.1,63.0,32.9,0.2,679:WA:SNTL,Paradise,5150
