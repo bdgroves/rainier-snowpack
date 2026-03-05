@@ -4,13 +4,14 @@ Downloads the latest MODIS MOD10A1 V061 daily snow cover tile (h09v04)
 for the Mt. Rainier area, reprojects to WGS84, clips to Rainier bbox,
 generates a snow cover map PNG, and saves summary stats to JSON.
 
-Auth: NASA Earthdata credentials via ~/.netrc or C:/Users/<user>/_netrc
-Uses bearer token from Earthdata token API for authenticated downloads.
+Auth: Reads EARTHDATA_TOKEN env var (set by GitHub Actions).
+      Falls back to netrc credentials + token API for local runs.
 """
 
 import json
 import logging
 import netrc
+import os
 import requests
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,35 +45,44 @@ STATIONS = [
 ]
 
 
-def get_credentials():
-    """Read NASA Earthdata credentials from _netrc or .netrc."""
+def get_token():
+    """
+    Get NASA Earthdata bearer token.
+    1. Check EARTHDATA_TOKEN environment variable (set by GitHub Actions)
+    2. Fall back to netrc credentials + token API for local runs
+    """
+    # Check env var first (GitHub Actions)
+    token = os.environ.get("EARTHDATA_TOKEN")
+    if token:
+        LOG.info("Using EARTHDATA_TOKEN from environment")
+        return token
+
+    # Fall back to netrc + token API
+    LOG.info("No env token found, trying netrc credentials...")
     for netrc_path in [Path.home() / "_netrc", Path.home() / ".netrc"]:
         if netrc_path.exists():
             try:
                 creds = netrc.netrc(str(netrc_path))
                 auth = creds.authenticators("urs.earthdata.nasa.gov")
                 if auth:
+                    username, _, password = auth[0], auth[1], auth[2]
                     LOG.info("Credentials loaded from %s", netrc_path)
-                    return auth[0], auth[2]
+                    r = requests.post(
+                        "https://urs.earthdata.nasa.gov/api/users/find_or_create_token",
+                        auth=(username, password),
+                        timeout=30
+                    )
+                    LOG.info("Token API status: %s", r.status_code)
+                    if r.status_code == 200:
+                        token = r.json().get("access_token")
+                        LOG.info("Got token from API: %s...", token[:8] if token else "None")
+                        return token
+                    else:
+                        LOG.error("Token API failed: %s", r.text[:200])
             except Exception as e:
-                LOG.warning("Could not read %s: %s", netrc_path, e)
-    raise FileNotFoundError("No netrc file with urs.earthdata.nasa.gov credentials found")
+                LOG.warning("netrc error: %s", e)
 
-
-def get_token(username, password):
-    """Get a bearer token from NASA Earthdata token API."""
-    token_url = "https://urs.earthdata.nasa.gov/api/users/find_or_create_token"
-    r = requests.post(token_url, auth=(username, password), timeout=30)
-    LOG.info("Token request status: %s", r.status_code)
-
-    if r.status_code != 200:
-        LOG.error("Token request failed: %s", r.text[:200])
-        return None
-
-    token = r.json().get("access_token")
-    if token:
-        LOG.info("Got bearer token: %s...", token[:8])
-    return token
+    raise RuntimeError("Could not obtain Earthdata token from env or netrc")
 
 
 def find_latest_granule(days_back=7):
@@ -264,13 +274,8 @@ def make_map(tif_path, stats, obs_date):
 def main():
     LOG.info("=== MODIS Snow Cover Fetch ===")
 
-    # Get credentials and bearer token
-    username, password = get_credentials()
-    LOG.info("Authenticated as: %s", username)
-
-    token = get_token(username, password)
-    if not token:
-        raise SystemExit(1)
+    # Get token — from env var (CI) or netrc (local)
+    token = get_token()
 
     # Search CMR — no auth needed
     title, download_url = find_latest_granule()
