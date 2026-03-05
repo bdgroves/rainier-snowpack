@@ -218,13 +218,14 @@
   .modis-grid {
     display:grid;
     grid-template-columns:1fr 340px;
-    gap:16px; margin-bottom:16px;
+    gap:16px;
   }
 
   .modis-img-wrap {
     position:relative; border-radius:6px; overflow:hidden;
     border:1px solid rgba(79,195,247,0.12);
-    background:#0a1628;
+    background:#0a1628; min-height:200px;
+    display:flex; align-items:center; justify-content:center;
   }
   .modis-img-wrap img {
     width:100%; display:block;
@@ -236,6 +237,9 @@
     background:linear-gradient(transparent, rgba(6,15,30,0.9));
     padding:12px 14px 10px;
     font-size:0.58rem; color:var(--dim); letter-spacing:0.08em;
+  }
+  .modis-img-error {
+    font-size:0.7rem; color:var(--dim); text-align:center; padding:40px 20px;
   }
 
   .modis-stats { display:flex; flex-direction:column; gap:12px; }
@@ -353,12 +357,8 @@
         <span>MOD10A1 V061 · 500m · NASA Earthdata</span>
       </div>
       <div class="modis-grid">
-        <div class="modis-img-wrap">
-          <img id="modis-img" src="modis_snow_cover.png" alt="MODIS Snow Cover Map"
-               onerror="this.parentElement.innerHTML='<div style=\'padding:40px;text-align:center;color:#5a6a8a;font-size:0.7rem\'>Satellite image not yet available</div>'">
-          <div class="modis-img-caption">
-            NDSI Snow Cover · h09v04 tile · Pacific Northwest · 500m resolution
-          </div>
+        <div class="modis-img-wrap" id="modis-img-wrap">
+          <div class="modis-img-error">Loading satellite image...</div>
         </div>
         <div class="modis-stats" id="modis-stats">
           <div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Loading satellite data...</div>
@@ -376,44 +376,30 @@
 </div><!-- /wrap -->
 
 <script>
-// ── Data loaders ────────────────────────────────────────────────────────────
-async function loadData() {
+// ── Paths — all relative to repo root ───────────────────────────────────────
+const PATHS = {
+  snotel:  'dashboard/snotel_latest.json',
+  basin:   'dashboard/basin_daily.csv',
+  hourly:  'dashboard/hourly_temps.json',
+  modis:   'dashboard/modis_latest.json',
+  modisPng:'dashboard/modis_snow_cover.png',
+};
+
+// ── Data loaders ─────────────────────────────────────────────────────────────
+async function loadJSON(path) {
   try {
-    const r = await fetch('data/processed/snotel_latest.json');
-    if (!r.ok) throw new Error();
+    const r = await fetch(path);
+    if (!r.ok) throw new Error(r.status);
     return await r.json();
-  } catch(e) { return DEMO_DATA; }
+  } catch(e) { return null; }
 }
 
-async function loadBasin() {
+async function loadCSV(path) {
   try {
-    const r = await fetch('data/processed/basin_daily.csv');
-    if (!r.ok) throw new Error();
+    const r = await fetch(path);
+    if (!r.ok) throw new Error(r.status);
     return parseCSV(await r.text());
   } catch(e) { return null; }
-}
-
-async function loadHourly() {
-  try {
-    const r = await fetch('data/processed/hourly_temps.json');
-    if (!r.ok) throw new Error();
-    return await r.json();
-  } catch(e) { return null; }
-}
-
-async function loadModis() {
-  try {
-    const r = await fetch('data/processed/modis/modis_latest.json');
-    if (!r.ok) throw new Error();
-    return await r.json();
-  } catch(e) {
-    // also try dashboard-local copy
-    try {
-      const r2 = await fetch('modis_latest.json');
-      if (!r2.ok) throw new Error();
-      return await r2.json();
-    } catch(e2) { return null; }
-  }
 }
 
 function parseCSV(text) {
@@ -427,7 +413,7 @@ function parseCSV(text) {
   });
 }
 
-// ── Demo fallback ────────────────────────────────────────────────────────────
+// ── Demo fallback ─────────────────────────────────────────────────────────────
 const DEMO_DATA = {
   updated: "2026-03-04",
   water_year: 2026,
@@ -442,7 +428,7 @@ const DEMO_DATA = {
   ]
 };
 
-// ── Helper: get best current temp ────────────────────────────────────────────
+// ── Helper ────────────────────────────────────────────────────────────────────
 function getCurrentTemp(stationName, dailyTempF, hourly) {
   if (hourly && hourly[stationName] && hourly[stationName].latest != null) {
     return { temp: hourly[stationName].latest, source: 'hourly' };
@@ -450,11 +436,29 @@ function getCurrentTemp(stationName, dailyTempF, hourly) {
   return { temp: parseFloat(dailyTempF), source: 'daily' };
 }
 
-// ── MODIS panel ──────────────────────────────────────────────────────────────
+// ── MODIS panel ───────────────────────────────────────────────────────────────
 function buildModisPanel(modis) {
+  // Image — load dynamically so we can handle errors gracefully
+  const imgWrap = document.getElementById('modis-img-wrap');
+  const img = new Image();
+  img.onload = () => {
+    imgWrap.innerHTML = '';
+    imgWrap.appendChild(img);
+    const cap = document.createElement('div');
+    cap.className = 'modis-img-caption';
+    cap.textContent = 'NDSI Snow Cover · h09v04 tile · Pacific Northwest · 500m resolution';
+    imgWrap.appendChild(cap);
+  };
+  img.onerror = () => {
+    imgWrap.innerHTML = '<div class="modis-img-error">Satellite image will appear after next pipeline run</div>';
+  };
+  img.src = PATHS.modisPng;
+  img.style.width = '100%';
+
+  // Stats
   const el = document.getElementById('modis-stats');
   if (!modis) {
-    el.innerHTML = '<div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Satellite data not yet available — will appear after next pipeline run.</div>';
+    el.innerHTML = '<div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Satellite stats not yet available.</div>';
     return;
   }
 
@@ -476,7 +480,7 @@ function buildModisPanel(modis) {
     <div class="modis-kpi cloud">
       <div class="modis-kpi-label">Cloud Cover</div>
       <div class="modis-kpi-val">${cloudPct}<span style="font-size:1rem;color:var(--dim)">%</span></div>
-      <div class="modis-kpi-sub">${cloudPct < 10 ? 'Clean pass ✓' : 'Partial cloud interference'}</div>
+      <div class="modis-kpi-sub">${parseFloat(cloudPct) < 10 ? 'Clean pass ✓' : 'Partial cloud interference'}</div>
     </div>
 
     <div class="modis-kpi ndsi">
@@ -491,7 +495,8 @@ function buildModisPanel(modis) {
       <div class="modis-kpi-sub">tile ${tile} · 500m resolution</div>
     </div>
 
-    <div style="font-size:0.55rem;color:var(--dim);line-height:1.7;margin-top:4px;padding:10px 12px;background:rgba(6,15,30,0.5);border-radius:6px;border:1px solid rgba(79,195,247,0.06)">
+    <div style="font-size:0.55rem;color:var(--dim);line-height:1.8;margin-top:4px;padding:10px 12px;
+                background:rgba(6,15,30,0.5);border-radius:6px;border:1px solid rgba(79,195,247,0.06)">
       <div style="color:var(--accent);margin-bottom:4px;letter-spacing:0.1em">PIXEL LEGEND</div>
       <div>⬜ 100% — Dense snow cover</div>
       <div>🟦 50% — Partial snow cover</div>
@@ -501,11 +506,16 @@ function buildModisPanel(modis) {
   `;
 }
 
-// ── Main render ──────────────────────────────────────────────────────────────
+// ── Main render ───────────────────────────────────────────────────────────────
 async function init() {
-  const [data, basin, hourly, modis] = await Promise.all([
-    loadData(), loadBasin(), loadHourly(), loadModis()
+  const [raw, basin, hourly, modis] = await Promise.all([
+    loadJSON(PATHS.snotel),
+    loadCSV(PATHS.basin),
+    loadJSON(PATHS.hourly),
+    loadJSON(PATHS.modis),
   ]);
+
+  const data = raw || DEMO_DATA;
 
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -522,9 +532,10 @@ async function init() {
   const validSWE   = stations.filter(s => s.swe_in   != null && s.swe_in   !== 'NA');
   const validDepth = stations.filter(s => s.depth_in != null && s.depth_in !== 'NA');
 
-  const avgSWE   = validSWE.length   ? (validSWE.reduce((a,s)=>a+parseFloat(s.swe_in),0)   / validSWE.length).toFixed(1) : '—';
-  const avgDepth = validDepth.length ? (validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0)/ validDepth.length).toFixed(0): '—';
+  const avgSWE   = validSWE.length   ? (validSWE.reduce((a,s)=>a+parseFloat(s.swe_in),0)/validSWE.length).toFixed(1) : '—';
+  const avgDepth = validDepth.length ? (validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0)/validDepth.length).toFixed(0) : '—';
   const maxSWE   = validSWE.length   ? Math.max(...validSWE.map(s=>parseFloat(s.swe_in))).toFixed(1) : '—';
+  const maxStation = validSWE.length ? validSWE.reduce((a,s)=>parseFloat(s.swe_in)>parseFloat(a.swe_in)?s:a).name : '—';
 
   let avgTemp, freezingCount;
   if (hourly && Object.keys(hourly).length > 0) {
@@ -540,11 +551,11 @@ async function init() {
   }
 
   const kpis = [
-    { label:'Basin Avg SWE',     val:avgSWE,       unit:'in', sub:`${validSWE.length} stations`,      cls:'good' },
-    { label:'Avg Snow Depth',    val:avgDepth,     unit:'in', sub:'basin average',                    cls:'' },
-    { label:'Peak SWE',          val:maxSWE,       unit:'in', sub:'Morse Lake',                       cls:'' },
-    { label:'Avg Temperature',   val:avgTemp,      unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
-    { label:'Stations Freezing', val:freezingCount,unit:'',   sub:`of ${stations.length} reporting`,  cls:freezingCount>=4?'good':'' },
+    { label:'Basin Avg SWE',     val:avgSWE,        unit:'in', sub:`${validSWE.length} stations`,     cls:'good' },
+    { label:'Avg Snow Depth',    val:avgDepth,      unit:'in', sub:'basin average',                   cls:'' },
+    { label:'Peak SWE',          val:maxSWE,        unit:'in', sub:maxStation,                        cls:'' },
+    { label:'Avg Temperature',   val:avgTemp,       unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
+    { label:'Stations Freezing', val:freezingCount, unit:'',   sub:`of ${stations.length} reporting`, cls:freezingCount>=4?'good':'' },
   ];
 
   document.getElementById('kpi-row').innerHTML = kpis.map((k,i) => `
@@ -556,7 +567,7 @@ async function init() {
 
   const maxSweVal = Math.max(...stations.map(s=>parseFloat(s.swe_in||0)));
   const maxDepVal = Math.max(...stations.map(s=>parseFloat(s.depth_in||0)));
-  const sorted    = [...stations].sort((a,b) => parseFloat(b.swe_in||0)-parseFloat(a.swe_in||0));
+  const sorted    = [...stations].sort((a,b)=>parseFloat(b.swe_in||0)-parseFloat(a.swe_in||0));
 
   document.getElementById('station-count').textContent = stations.length + ' active';
   document.getElementById('station-list').innerHTML = sorted.map(s => {
@@ -622,7 +633,7 @@ async function init() {
   buildModisPanel(modis);
 }
 
-// ── SWE chart ────────────────────────────────────────────────────────────────
+// ── SWE chart ─────────────────────────────────────────────────────────────────
 function buildSWEChart(basin, stations) {
   const ctx = document.getElementById('sweChart').getContext('2d');
   let labels = [], sweVals = [];
@@ -687,7 +698,7 @@ function buildSWEChart(basin, stations) {
   });
 }
 
-// ── 48-hour temperature chart ─────────────────────────────────────────────────
+// ── 48-hour temp chart ────────────────────────────────────────────────────────
 function buildTempChart(hourly) {
   if (!hourly) {
     document.getElementById('hourly-subtitle').textContent = 'no data available';
@@ -695,8 +706,8 @@ function buildTempChart(hourly) {
   }
 
   const COLORS = ['#e8f4f8','#b3e5fc','#81d4fa','#4fc3f7','#29b6f6','#0288d1','#4dd0e1'];
-  const stationNames = Object.keys(hourly).sort((a,b) => hourly[b].elevation - hourly[a].elevation);
-  const labels = hourly[stationNames[0]].labels;
+  const stationNames = Object.keys(hourly).sort((a,b) => (hourly[b].elevation||0) - (hourly[a].elevation||0));
+  const labels = hourly[stationNames[0]]?.labels || [];
 
   let allMins=[], allMaxes=[], allLatest=[], totalFreezing=0;
   stationNames.forEach(n => {
@@ -707,9 +718,9 @@ function buildTempChart(hourly) {
     totalFreezing += (s.freezing||[]).filter(Boolean).length;
   });
 
-  const basinMin     = allMins.length   ? Math.min(...allMins).toFixed(1)  : '—';
-  const basinMax     = allMaxes.length  ? Math.max(...allMaxes).toFixed(1) : '—';
-  const basinLatest  = allLatest.length ? (allLatest.reduce((a,b)=>a+b,0)/allLatest.length).toFixed(1) : '—';
+  const basinMin    = allMins.length   ? Math.min(...allMins).toFixed(1)  : '—';
+  const basinMax    = allMaxes.length  ? Math.max(...allMaxes).toFixed(1) : '—';
+  const basinLatest = allLatest.length ? (allLatest.reduce((a,b)=>a+b,0)/allLatest.length).toFixed(1) : '—';
   const avgFreezeHrs = stationNames.length ? Math.round(totalFreezing/stationNames.length) : 0;
 
   document.getElementById('hourly-stats').innerHTML = `
@@ -746,63 +757,48 @@ function buildTempChart(hourly) {
   }));
 
   datasets.push({
-    label:       '32°F Freezing',
-    data:        labels.map(() => 32),
-    borderColor: 'rgba(79,195,247,0.35)',
-    borderWidth: 1,
-    borderDash:  [5,5],
-    pointRadius: 0,
-    fill:        false,
-    tension:     0,
+    label:'32°F Freezing', data:labels.map(()=>32),
+    borderColor:'rgba(79,195,247,0.35)', borderWidth:1,
+    borderDash:[5,5], pointRadius:0, fill:false, tension:0,
   });
 
   const ctx = document.getElementById('tempChart').getContext('2d');
   new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
-      plugins: {
-        legend: {
-          labels: {
-            color: 'rgba(180,196,214,0.7)',
-            font:  { family:'JetBrains Mono', size:9 },
-            boxWidth: 14, padding: 10,
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{
+          labels:{
+            color:'rgba(180,196,214,0.7)',
+            font:{ family:'JetBrains Mono', size:9 },
+            boxWidth:14, padding:10,
             filter: item => item.text !== '32°F Freezing',
           }
         },
-        tooltip: {
-          backgroundColor: 'rgba(6,15,30,0.95)',
-          borderColor: 'rgba(79,195,247,0.2)', borderWidth:1,
-          titleColor: '#81d4fa', bodyColor: '#cdd6f4',
-          titleFont: { family:'JetBrains Mono', size:10 },
-          bodyFont:  { family:'JetBrains Mono', size:9 },
-          callbacks: {
-            label: i => i.dataset.label === '32°F Freezing'
+        tooltip:{
+          backgroundColor:'rgba(6,15,30,0.95)',
+          borderColor:'rgba(79,195,247,0.2)', borderWidth:1,
+          titleColor:'#81d4fa', bodyColor:'#cdd6f4',
+          titleFont:{ family:'JetBrains Mono', size:10 },
+          bodyFont:{ family:'JetBrains Mono', size:9 },
+          callbacks:{
+            label: i => i.dataset.label==='32°F Freezing'
               ? null
-              : ` ${i.dataset.label}: ${i.raw != null ? i.raw+'°F' : '—'}`
+              : ` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`
           }
         }
       },
-      scales: {
-        x: {
-          ticks: {
-            color: 'rgba(90,106,138,0.7)',
-            font:  { family:'JetBrains Mono', size:8 },
-            maxTicksLimit: 16, maxRotation: 30,
-          },
-          grid:   { color:'rgba(79,195,247,0.05)' },
-          border: { color:'rgba(79,195,247,0.08)' }
+      scales:{
+        x:{
+          ticks:{ color:'rgba(90,106,138,0.7)', font:{ family:'JetBrains Mono', size:8 }, maxTicksLimit:16, maxRotation:30 },
+          grid:{ color:'rgba(79,195,247,0.05)' }, border:{ color:'rgba(79,195,247,0.08)' }
         },
-        y: {
-          ticks: {
-            color: 'rgba(90,106,138,0.7)',
-            font:  { family:'JetBrains Mono', size:9 },
-            callback: v => v+'°F'
-          },
-          grid:   { color:'rgba(79,195,247,0.05)' },
-          border: { color:'rgba(79,195,247,0.08)' }
+        y:{
+          ticks:{ color:'rgba(90,106,138,0.7)', font:{ family:'JetBrains Mono', size:9 }, callback:v=>v+'°F' },
+          grid:{ color:'rgba(79,195,247,0.05)' }, border:{ color:'rgba(79,195,247,0.08)' }
         }
       }
     }
