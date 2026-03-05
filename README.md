@@ -1,224 +1,229 @@
 # 🏔️ Mt. Rainier Snowpack Monitor
 
-<div align="center">
+> Real-time snowpack intelligence for the Mt. Rainier watershed — ground sensors + satellite imagery, fully automated.
 
-![Mt. Rainier](https://img.shields.io/badge/Mt._Rainier-14%2C411_ft-4fc3f7?style=for-the-badge&logoColor=white)
-![Status](https://img.shields.io/badge/Status-LIVE-69f0ae?style=for-the-badge)
-![Updated](https://img.shields.io/badge/Updated-Hourly-81d4fa?style=for-the-badge)
-![Stations](https://img.shields.io/badge/SNOTEL_Stations-7_Active-4fc3f7?style=for-the-badge)
+**[🌐 Live Dashboard →](https://bdgroves.github.io/rainier-snowpack/)**
 
-### **[🌨️ VIEW LIVE DASHBOARD →](https://bdgroves.github.io/rainier-snowpack/)**
-
-*Real-time snowpack conditions for Mt. Rainier and surrounding watersheds.*  
-*Updated automatically every hour. No human required.*
-
-</div>
+![MODIS Snow Cover](dashboard/modis_snow_cover.png)
 
 ---
 
-## ❄️ What Is This?
+## What This Is
 
-Every hour, this pipeline wakes up and does something beautiful — it reaches out across the internet to 7 SNOTEL weather stations scattered across the flanks of Mt. Rainier, pulls down the latest snow water equivalent, snow depth, temperature, and precipitation readings, runs them through an R statistical analysis, rebuilds the dashboard, and publishes it all to the web. Automatically.
+A fully automated snowpack monitoring system that fuses two data sources every hour:
 
-On top of daily snowpack data, the pipeline also fetches **48 hours of hourly temperature readings** from every station — capturing the full diurnal freeze/thaw cycle that drives snowmelt. When Bumping Ridge hits 53°F in the afternoon and drops to 27°F overnight, you see it in real time.
+- **7 SNOTEL ground stations** — SWE, snow depth, and temperature from the NRCS AWDB network surrounding Mt. Rainier
+- **NASA MODIS Terra satellite** — MOD10A1 V061 daily snow cover at 500m resolution over the Pacific Northwest (tile h09v04)
 
-This is the kind of operational snowpack monitoring system used by water resource managers, avalanche forecasters, and hydrologists — built from scratch with open data and open source tools.
-
-> *"The mountain doesn't care about your schedule. This pipeline does."*
-
----
-
-## 🌐 Live Dashboard
-
-**👉 [bdgroves.github.io/rainier-snowpack](https://bdgroves.github.io/rainier-snowpack/)**
-
-The dashboard shows:
-- **Basin average SWE** — snow water equivalent across all 7 stations
-- **Full water year time series** — accumulation curve from Oct 1 through today
-- **Per-station conditions** — SWE, snow depth, and temperature at each site
-- **Elevation gradient** — how snowpack varies with altitude
-- **Freeze/thaw status** — which stations are above and below 32°F right now
-- **48-hour diurnal temperature chart** — hourly temp curves for all 7 stations with dashed 32°F freezing line
-- **Stat chips** — 48hr low, 48hr high, current basin avg, average hours below freezing
+The pipeline fetches, processes, analyzes, and deploys a live dashboard to GitHub Pages without any human intervention.
 
 ---
 
-## 📡 Data Sources
+## Dashboard Features
 
-| Source | What We Get | Update Frequency |
-|--------|------------|-----------------|
-| [NRCS SNOTEL AWDB](https://wcc.sc.egov.usda.gov/awdbRestApi/) | SWE, snow depth, temperature, precipitation | Hourly |
-| [NRCS SNOTEL AWDB](https://wcc.sc.egov.usda.gov/awdbRestApi/) | 48-hour hourly temperature readings | Hourly |
-| [NASA MODIS MOD10A1](https://nsidc.org/data/mod10a1) | 500m snow cover extent raster | Daily *(coming soon)* |
-
-### SNOTEL Stations
-
-| Station | Triplet | Elevation | Status |
-|---------|---------|-----------|--------|
-| Corral Pass | 418:WA:SNTL | 5,810 ft | 🟢 Active |
-| Morse Lake | 642:WA:SNTL | 5,400 ft | 🟢 Active |
-| Cayuse Pass | 1085:WA:SNTL | 5,260 ft | 🟢 Active |
-| Paradise | 679:WA:SNTL | 5,150 ft | 🟢 Active |
-| Bumping Ridge | 375:WA:SNTL | 4,600 ft | 🟢 Active |
-| Olallie Meadows | 672:WA:SNTL | 4,010 ft | 🟢 Active |
-| Cougar Mountain | 420:WA:SNTL | 3,210 ft | 🟢 Active |
+| Panel | Description |
+|---|---|
+| **KPI Strip** | Basin avg SWE · avg depth · peak SWE · avg temperature · stations freezing |
+| **SWE Time Series** | Basin average snow water equivalent across Water Year 2026 |
+| **Station Cards** | Per-station SWE, depth, and temperature with relative bar charts |
+| **Elevation Ladder** | SWE ranked by station elevation |
+| **Temperature Panel** | Current temps sorted coldest → warmest with freeze/thaw indicator |
+| **48-Hour Diurnal Chart** | Hourly temperature traces for all 7 stations over the past 48 hours |
+| **MODIS Satellite Map** | NASA snow cover map with SNOTEL station overlays and summit marker |
 
 ---
 
-## 🛠️ Tech Stack
+## Data Sources
+
+### NRCS SNOTEL — AWDB REST API
+```
+https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data
+```
+
+| Station | Triplet | Elevation |
+|---|---|---|
+| Paradise | 679:WA:SNTL | 5,150 ft |
+| Morse Lake | 642:WA:SNTL | 5,400 ft |
+| Cayuse Pass | 1085:WA:SNTL | 5,260 ft |
+| Corral Pass | 418:WA:SNTL | 5,810 ft |
+| Bumping Ridge | 375:WA:SNTL | 4,600 ft |
+| Olallie Meadows | 672:WA:SNTL | 4,010 ft |
+| Cougar Mountain | 420:WA:SNTL | 3,210 ft |
+
+Variables fetched: `WTEQ` (SWE) · `SNWD` (snow depth) · `TOBS` (temperature) · `PRCP` (precipitation)
+
+### NASA MODIS — Earthdata Cloud
+```
+Collection:  MOD10A1 V061
+Concept ID:  C2565093311-NSIDC_CPRD
+Tile:        h09v04 (Pacific Northwest)
+Resolution:  500m · Daily
+```
+
+CMR granule search is public. File download requires NASA Earthdata authentication via bearer token. Sinusoidal projection reprojected to WGS84 (EPSG:4326) via `rasterio`.
+
+---
+
+## Repository Structure
 
 ```
 rainier-snowpack/
-├── 🐍 Python 3.12        — NRCS API fetching, hourly temp pipeline, JSON/CSV output
-├── 📊 R 4.5              — statistical analysis, ggplot2 visualization
-├── 📦 pixi               — unified Python + R package manager
-├── ⚙️  GitHub Actions     — hourly cron scheduler
-└── 🌐 GitHub Pages       — free live hosting
+├── src/
+│   ├── python/
+│   │   ├── fetch_snotel.py       # Daily SWE/depth/temp from AWDB
+│   │   ├── fetch_hourly.py       # 48-hour hourly temperature fetch
+│   │   ├── fetch_modis.py        # NASA MODIS download + reproject + stats
+│   │   ├── process_raster.py     # Raster processing utilities
+│   │   └── build_dashboard.py    # Dashboard assembly
+│   └── r/
+│       └── snowpack_stats.R      # Basin statistics + ggplot2 charts
+├── data/
+│   ├── raw/modis/                # HDF4 granule files (gitignored)
+│   └── processed/
+│       ├── snotel_wy2026.csv     # Full water year time series
+│       ├── snotel_latest.json    # Latest station snapshot
+│       ├── basin_daily.csv       # Daily basin averages
+│       ├── hourly_temps.csv      # 48-hour hourly temperature data
+│       ├── hourly_temps.json     # Hourly data for dashboard
+│       └── modis/
+│           ├── modis_latest.json # Latest snow cover stats
+│           └── snow_cover_*.tif  # Reprojected GeoTIFFs (gitignored)
+├── dashboard/                    # Files served by GitHub Pages
+│   ├── snotel_latest.json
+│   ├── basin_daily.csv
+│   ├── hourly_temps.json
+│   ├── modis_latest.json
+│   └── modis_snow_cover.png
+├── outputs/                      # Generated charts
+│   ├── basin_swe_timeseries.png
+│   ├── all_stations_swe.png
+│   ├── station_swe_bars.png
+│   └── modis_snow_cover.png
+├── .github/workflows/
+│   └── daily_update.yml          # Hourly CI/CD pipeline
+├── index.html                    # Live dashboard (GitHub Pages root)
+└── pixi.toml                     # Environment + task runner
 ```
-
-### Why pixi?
-[pixi](https://pixi.sh) manages both Python and R dependencies in a single `pixi.toml` file — no conda environments, no separate `renv`, no version conflicts. One command (`pixi install`) gets you a fully reproducible environment on any machine.
 
 ---
 
-## 🚀 Run It Yourself
+## Pipeline
+
+GitHub Actions runs every hour at `:00` UTC:
+
+```
+fetch → fetch-hourly → fetch-modis → analyze → copy outputs → commit → deploy
+```
+
+```yaml
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:        # also triggerable manually
+```
+
+Each run commits updated JSON and PNG files to `dashboard/`, which GitHub Pages serves automatically at `bdgroves.github.io/rainier-snowpack`.
+
+---
+
+## Local Setup
 
 ### Prerequisites
-- [pixi](https://pixi.sh)
-- Git
+- [pixi](https://prefix.dev/docs/pixi/overview) — conda-based environment manager
+- [NASA Earthdata account](https://urs.earthdata.nasa.gov/users/new) — free registration
 
-### Setup
-
-```bash
-git clone https://github.com/bdgroves/rainier-snowpack.git
+### Install
+```powershell
+git clone git@github.com:bdgroves/rainier-snowpack.git
 cd rainier-snowpack
 pixi install
 ```
 
+### NASA Earthdata credentials
+Create `C:\Users\<you>\_netrc` (Windows) or `~/.netrc` (Linux/Mac):
+```
+machine urs.earthdata.nasa.gov
+login YOUR_USERNAME
+password YOUR_PASSWORD
+```
+
+Also generate a bearer token at **urs.earthdata.nasa.gov → My Profile → Generate Token** and set it as `EARTHDATA_TOKEN` in your environment for local runs.
+
 ### Run the full pipeline
-
-```bash
-pixi run fetch          # pull daily SNOTEL data
-pixi run fetch-hourly   # pull 48hr hourly temperatures
-pixi run analyze        # R analysis + generate plots
+```powershell
+pixi run update
 ```
 
-### View the dashboard locally
-
-Open `index.html` in your browser — it reads from `data/processed/` automatically.
-
----
-
-## ⚙️ How the Automation Works
-
-```
-Every hour on the dot
-         │
-         ▼
-  GitHub Actions wakes up
-         │
-         ▼
-  pixi run fetch
-  ┌─────────────────────────────────────┐
-  │  Calls NRCS AWDB REST API           │
-  │  7 stations × 4 elements            │
-  │  SWE, depth, temp, precip           │
-  │  Full water year (Oct 1 → yesterday)│
-  └─────────────────────────────────────┘
-         │
-         ▼
-  pixi run fetch-hourly
-  ┌─────────────────────────────────────┐
-  │  48 hours of hourly TOBS readings   │
-  │  All 7 stations                     │
-  │  Captures full diurnal cycle        │
-  │  Freeze/thaw hour counts            │
-  └─────────────────────────────────────┘
-         │
-         ▼
-  pixi run analyze
-  ┌─────────────────────────────────────┐
-  │  R reads snotel_wy2026.csv          │
-  │  Computes basin averages            │
-  │  Detects melt signals               │
-  │  Generates 3 publication plots      │
-  └─────────────────────────────────────┘
-         │
-         ▼
-  Copy outputs → dashboard/
-         │
-         ▼
-  git commit + push (only if data changed)
-         │
-         ▼
-  🌐 Live dashboard updated
+### Run individual steps
+```powershell
+pixi run fetch          # Daily SNOTEL SWE/depth/temp
+pixi run fetch-hourly   # 48-hour temperature data
+pixi run fetch-modis    # NASA MODIS satellite snow cover
+pixi run analyze        # R statistics + charts
+pixi run dashboard      # Build dashboard HTML
 ```
 
 ---
 
-## 📈 What the Data Is Telling Us Right Now
+## GitHub Actions Secrets
+
+| Secret | Description |
+|---|---|
+| `EARTHDATA_USERNAME` | NASA Earthdata username |
+| `EARTHDATA_PASSWORD` | NASA Earthdata password |
+| `EARTHDATA_TOKEN` | NASA Earthdata bearer token |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Data fetch | Python · `requests` · `httpx` |
+| Satellite auth | NASA Earthdata bearer token |
+| Raster processing | `rasterio` · `libgdal-hdf4` · sinusoidal → WGS84 |
+| Statistics + charts | R · `tidyverse` · `zoo` · `ggplot2` |
+| Satellite visualization | `matplotlib` · custom dark theme |
+| Dashboard | Vanilla JS · Chart.js · CSS Grid |
+| Environment | `pixi` (conda-forge) · Python 3.12 · R 4.5 |
+| Automation | GitHub Actions |
+| Hosting | GitHub Pages |
+
+---
+
+## MODIS Snow Cover Values
+
+NDSI Snow Cover pixel encoding in MOD10A1:
+
+| Value | Meaning |
+|---|---|
+| 0–100 | Snow cover % (0 = bare ground, 100 = full snow) |
+| 200 | Missing data |
+| 250 | Cloud obscured |
+| 237 | Inland water |
+| 255 | Fill / no data |
+
+Rainier watershed clip: `(-122.5°W, 46.0°N, -121.0°W, 47.5°N)`
+
+---
+
+## Current Conditions — WY2026
 
 As of early March 2026:
 
-- **53.2°F** — 48-hour high at Bumping Ridge. Serious afternoon melt signal.
-- **27.0°F** — 48-hour basin low. Overnight refreeze still holding the pack together.
-- **26°F diurnal swing** — classic early melt season pattern. The mountain is waking up.
-- **Morse Lake leads at 25.6" SWE** — despite not being the highest station, a microclimate sweet spot.
-- **Cougar Mountain at 0.8"** — snow line is sitting well above 3,200 ft.
+- **Basin avg SWE ~16–17"** with Morse Lake leading at 25.7"
+- **6 of 7 stations freezing overnight** — refreeze after a warm February
+- **72% satellite snow cover** — continuous snowpack from summit to mid-elevation
+- **Avg NDSI 27.1** — moderate density, early-season melt cycling underway
+- **Cougar Mountain (3,210 ft) nearly bare** — 0.4" SWE, low-elevation season over
 
 ---
 
-## 🗺️ Next Steps & Roadmap
+## License
 
-### 🔜 Coming Soon
-- [ ] **MODIS snow cover map** — NASA satellite raster showing actual snow extent clipped to the Rainier watershed
-- [ ] **30-year historical median** — overlay the 1991–2020 normal line so you can see if this year is above or below average
-- [ ] **Melt season alerts** — auto-flag when basin SWE drops >0.5"/day for 3 consecutive days
-- [ ] **Hourly SWE tracking** — extend hourly fetcher beyond temperature to catch real-time accumulation events
-
-### 🗺️ GIS Enhancements
-- [ ] **QGIS project** — auto-generated `.qgz` with station points, watershed boundary, and snow raster pre-loaded
-- [ ] **Folium interactive map** — clickable station map with popups showing latest readings
-- [ ] **DEM-based snow line estimate** — derive current snow line elevation from MODIS + DEM
-- [ ] **HUC-12 watershed delineation** — White River / Nisqually proper boundaries
-
-### 📊 Analysis Upgrades
-- [ ] **Mann-Kendall trend test** — is Rainier's snowpack declining over decades?
-- [ ] **Peak SWE forecasting** — simple regression to predict this year's peak
-- [ ] **Runoff correlation** — compare SWE with USGS streamflow on the White River
-- [ ] **ENSO signal** — overlay El Niño / La Niña years to show climate teleconnections
-
-### 🌦️ More Data
-- [ ] **PRISM climate normals** — gridded precip and temp for the watershed
-- [ ] **Crystal Mountain / White Pass** — expand station network
-- [ ] **NPS Paradise webcam** — embed live summit camera feed
-- [ ] **Northwest Avalanche Center** — link to daily avalanche forecast
+MIT — data from NRCS (public domain) and NASA Earthdata (open access).
 
 ---
 
-## 🏔️ Why Rainier's Snowpack Matters
-
-Mt. Rainier (14,411 ft / 4,392 m) is the highest peak in the Cascade Range and one of the most glaciated mountains in the contiguous United States. Its snowpack feeds:
-
-- **Water supply** — the Puyallup, Nisqually, White, and Carbon rivers supply water to the greater Puget Sound region
-- **Flood risk** — rapid snowmelt or rain-on-snow events can cause catastrophic downstream flooding
-- **Ecology** — snowmelt timing controls stream temperatures, salmon habitat, and subalpine meadow phenology
-- **Recreation** — Paradise averages 650+ inches of snowfall per year, one of the snowiest inhabited places on Earth
-
----
-
-## 📄 License
-
-MIT License — use it, fork it, build on it.
-
----
-
-<div align="center">
-
-Built with ❄️ by [bdgroves](https://github.com/bdgroves)
-
-**[🌨️ Live Dashboard](https://bdgroves.github.io/rainier-snowpack/)** · **[NRCS SNOTEL](https://www.nrcs.usda.gov/wps/portal/wcc/home/)** · **[NASA Earthdata](https://earthdata.nasa.gov/)**
-
-*The mountain is talking. Now you've got a system that listens.*
-
-</div>
+*Built with Python · R · NASA Earthdata · NRCS SNOTEL · GitHub Actions*  
+*46.8523°N 121.7269°W — 14,411 ft — Mt. Rainier, Washington*
