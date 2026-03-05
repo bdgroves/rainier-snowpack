@@ -6,6 +6,9 @@ generates a snow cover map PNG, and saves summary stats to JSON.
 
 Auth: Reads EARTHDATA_TOKEN env var (set by GitHub Actions).
       Falls back to netrc credentials + token API for local runs.
+
+Cloud logic: skips granules with >80% cloud cover and falls back to
+             the most recent clean pass within the last 14 days.
 """
 
 import json
@@ -26,9 +29,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 LOG = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────────────
-CONCEPT_ID   = "C2565093311-NSIDC_CPRD"
-TILE         = "h09v04"
-RAINIER_BBOX = (-122.5, 46.0, -121.0, 47.5)
+CONCEPT_ID    = "C2565093311-NSIDC_CPRD"
+TILE          = "h09v04"
+RAINIER_BBOX  = (-122.5, 46.0, -121.0, 47.5)
+CLOUD_THRESH  = 80.0   # % cloud cover above which a granule is considered unusable
+MAX_DAYS_BACK = 14     # how far back to search for a clean pass
 
 RAW_DIR  = Path("data/raw/modis")
 PROC_DIR = Path("data/processed/modis")
@@ -46,47 +51,36 @@ STATIONS = [
 
 
 def get_token():
-    """
-    Get NASA Earthdata bearer token.
-    1. Check EARTHDATA_TOKEN environment variable (set by GitHub Actions)
-    2. Fall back to netrc credentials + token API for local runs
-    """
-    # Check env var first (GitHub Actions)
+    """Get NASA Earthdata bearer token from env var or netrc."""
     token = os.environ.get("EARTHDATA_TOKEN")
     if token:
         LOG.info("Using EARTHDATA_TOKEN from environment")
         return token
 
-    # Fall back to netrc + token API
-    LOG.info("No env token found, trying netrc credentials...")
+    LOG.info("No env token, trying netrc...")
     for netrc_path in [Path.home() / "_netrc", Path.home() / ".netrc"]:
         if netrc_path.exists():
             try:
                 creds = netrc.netrc(str(netrc_path))
-                auth = creds.authenticators("urs.earthdata.nasa.gov")
+                auth  = creds.authenticators("urs.earthdata.nasa.gov")
                 if auth:
-                    username, _, password = auth[0], auth[1], auth[2]
-                    LOG.info("Credentials loaded from %s", netrc_path)
                     r = requests.post(
                         "https://urs.earthdata.nasa.gov/api/users/find_or_create_token",
-                        auth=(username, password),
-                        timeout=30
+                        auth=(auth[0], auth[2]), timeout=30
                     )
-                    LOG.info("Token API status: %s", r.status_code)
                     if r.status_code == 200:
                         token = r.json().get("access_token")
-                        LOG.info("Got token from API: %s...", token[:8] if token else "None")
+                        LOG.info("Got token from API")
                         return token
-                    else:
-                        LOG.error("Token API failed: %s", r.text[:200])
+                    LOG.error("Token API failed: %s", r.text[:200])
             except Exception as e:
                 LOG.warning("netrc error: %s", e)
 
-    raise RuntimeError("Could not obtain Earthdata token from env or netrc")
+    raise RuntimeError("Could not obtain Earthdata token")
 
 
-def find_latest_granule(days_back=7):
-    """Search CMR (public, no auth) for most recent MOD10A1 granule over Rainier."""
+def search_granules(days_back=14):
+    """Search CMR for MOD10A1 granules over Rainier, newest first."""
     end   = date.today()
     start = end - timedelta(days=days_back)
 
@@ -97,7 +91,7 @@ def find_latest_granule(days_back=7):
             "concept_id":   CONCEPT_ID,
             "temporal":     f"{start},{end}",
             "bounding_box": f"{RAINIER_BBOX[0]},{RAINIER_BBOX[1]},{RAINIER_BBOX[2]},{RAINIER_BBOX[3]}",
-            "page_size":    10,
+            "page_size":    20,
         },
         headers={"Accept": "application/json"},
     )
@@ -105,22 +99,25 @@ def find_latest_granule(days_back=7):
     entries = r.json().get("feed", {}).get("entry", [])
 
     tile_entries = [e for e in entries if TILE in e.get("title", "")]
-    if not tile_entries:
-        LOG.warning("No granules found for tile %s in last %d days", TILE, days_back)
-        return None, None
-
     tile_entries.sort(key=lambda e: e["title"], reverse=True)
-    latest = tile_entries[0]
-    LOG.info("Latest granule: %s", latest["title"])
+    LOG.info("Found %d granules for tile %s", len(tile_entries), TILE)
+    return tile_entries
 
-    download_url = None
-    for link in latest.get("links", []):
+
+def get_download_url(entry):
+    """Extract protected download URL from a CMR entry."""
+    for link in entry.get("links", []):
         href = link.get("href", "")
         if "prod-protected" in href and href.endswith(".hdf"):
-            download_url = href
-            break
+            return href
+    return None
 
-    return latest["title"], download_url
+
+def parse_obs_date(title):
+    """Parse observation date from granule title e.g. MOD10A1.A2026060..."""
+    year = int(title[9:13])
+    doy  = int(title[13:16])
+    return date(year, 1, 1) + timedelta(days=doy - 1)
 
 
 def download_granule(token, url, out_path):
@@ -138,7 +135,7 @@ def download_granule(token, url, out_path):
     LOG.info("Download status: %s", r.status_code)
 
     if r.status_code != 200:
-        LOG.error("Download failed: HTTP %s — %s", r.status_code, r.text[:200])
+        LOG.error("Download failed: HTTP %s", r.status_code)
         return False
 
     with open(out_path, "wb") as f:
@@ -150,7 +147,7 @@ def download_granule(token, url, out_path):
 
 
 def reproject_to_wgs84(hdf_path, tif_path):
-    """Reproject MODIS sinusoidal projection to WGS84 GeoTIFF."""
+    """Reproject MODIS sinusoidal to WGS84 GeoTIFF."""
     if tif_path.exists():
         LOG.info("Already reprojected: %s", tif_path.name)
         return
@@ -180,7 +177,7 @@ def reproject_to_wgs84(hdf_path, tif_path):
     LOG.info("Reprojected: %s", tif_path.name)
 
 
-def compute_stats(tif_path, obs_date):
+def compute_stats(tif_path, obs_date, days_ago=0):
     """Compute snow cover stats clipped to Rainier bbox."""
     with rasterio.open(tif_path) as ds:
         window = from_bounds(*RAINIER_BBOX, ds.transform)
@@ -203,9 +200,12 @@ def compute_stats(tif_path, obs_date):
         "snow_pixels":  int(len(snow_pixels)),
         "cloud_pixels": int(len(cloud_pixels)),
         "total_pixels": int(total_valid),
+        "days_ago":     days_ago,
+        "is_latest":    days_ago == 0,
     }
 
-    LOG.info("Snow: %.1f%% | Cloud: %.1f%% | Avg NDSI: %.1f", pct_snow, pct_cloud, avg_ndsi)
+    LOG.info("Snow: %.1f%% | Cloud: %.1f%% | Avg NDSI: %.1f | %d days ago",
+             pct_snow, pct_cloud, avg_ndsi, days_ago)
     return stats
 
 
@@ -248,6 +248,13 @@ def make_map(tif_path, stats, obs_date):
                 textcoords="offset points", xytext=(8, -14),
                 color="#69f0ae", fontsize=8, fontfamily="monospace", fontweight="bold")
 
+    # Staleness note if not today's pass
+    if stats.get("days_ago", 0) > 0:
+        ax.text(0.98, 0.98,
+                f"Last clean pass: {obs_date} ({stats['days_ago']}d ago)",
+                transform=ax.transAxes, color="#ff8a65", fontsize=7,
+                fontfamily="monospace", ha="right", va="top")
+
     ax.text(0.02, 0.02,
             f"Snow: {stats['pct_snow']}%  |  Cloud: {stats['pct_cloud']}%  |  Avg NDSI: {stats['avg_ndsi']}",
             transform=ax.transAxes, color="#5a6a8a", fontsize=7,
@@ -274,45 +281,96 @@ def make_map(tif_path, stats, obs_date):
 def main():
     LOG.info("=== MODIS Snow Cover Fetch ===")
 
-    # Get token — from env var (CI) or netrc (local)
     token = get_token()
 
-    # Search CMR — no auth needed
-    title, download_url = find_latest_granule()
-    if not download_url:
-        LOG.error("No download URL found!")
+    # Get all recent granules newest first
+    granules = search_granules(days_back=MAX_DAYS_BACK)
+    if not granules:
+        LOG.error("No granules found in last %d days!", MAX_DAYS_BACK)
         raise SystemExit(1)
 
-    # Parse observation date from title e.g. MOD10A1.A2026060 = day 60 of 2026
-    year     = int(title[9:13])
-    doy      = int(title[13:16])
-    obs_date = date(year, 1, 1) + timedelta(days=doy - 1)
-    LOG.info("Observation date: %s", obs_date)
+    today = date.today()
 
-    # Download with bearer token
-    hdf_path = RAW_DIR / f"MOD10A1.A{year}{doy:03d}.{TILE}.hdf"
-    if not download_granule(token, download_url, hdf_path):
-        raise SystemExit(1)
+    # Walk through granules newest → oldest, stop at first clean pass
+    selected_stats    = None
+    selected_tif      = None
+    selected_obs_date = None
 
-    # Reproject
-    tif_path = PROC_DIR / f"snow_cover_{obs_date}.tif"
-    reproject_to_wgs84(hdf_path, tif_path)
+    for entry in granules:
+        title = entry["title"]
+        url   = get_download_url(entry)
+        if not url:
+            LOG.warning("No download URL for %s, skipping", title)
+            continue
 
-    # Stats + JSON
-    stats = compute_stats(tif_path, obs_date)
+        obs_date = parse_obs_date(title)
+        days_ago = (today - obs_date).days
+        year     = obs_date.year
+        doy      = obs_date.timetuple().tm_yday
+
+        LOG.info("--- Trying %s (%d days ago) ---", obs_date, days_ago)
+
+        hdf_path = RAW_DIR / f"MOD10A1.A{year}{doy:03d}.{TILE}.hdf"
+        tif_path = PROC_DIR / f"snow_cover_{obs_date}.tif"
+
+        if not download_granule(token, url, hdf_path):
+            LOG.warning("Download failed for %s, trying next", obs_date)
+            continue
+
+        reproject_to_wgs84(hdf_path, tif_path)
+        stats = compute_stats(tif_path, obs_date, days_ago=days_ago)
+
+        if stats["pct_cloud"] > CLOUD_THRESH:
+            LOG.warning("%.1f%% cloud cover on %s — too cloudy, trying earlier pass",
+                        stats["pct_cloud"], obs_date)
+            continue
+
+        # Clean enough — use this one
+        LOG.info("✓ Clean pass found: %s (%.1f%% cloud)", obs_date, stats["pct_cloud"])
+        selected_stats    = stats
+        selected_tif      = tif_path
+        selected_obs_date = obs_date
+        break
+
+    if not selected_stats:
+        LOG.error("No clean pass found in last %d days! All granules >%.0f%% cloud.",
+                  MAX_DAYS_BACK, CLOUD_THRESH)
+        # Fall back to most recent regardless
+        LOG.info("Falling back to most recent granule despite cloud cover...")
+        entry    = granules[0]
+        title    = entry["title"]
+        url      = get_download_url(entry)
+        obs_date = parse_obs_date(title)
+        days_ago = (today - obs_date).days
+        year     = obs_date.year
+        doy      = obs_date.timetuple().tm_yday
+        hdf_path = RAW_DIR / f"MOD10A1.A{year}{doy:03d}.{TILE}.hdf"
+        tif_path = PROC_DIR / f"snow_cover_{obs_date}.tif"
+        download_granule(token, url, hdf_path)
+        reproject_to_wgs84(hdf_path, tif_path)
+        selected_stats    = compute_stats(tif_path, obs_date, days_ago=days_ago)
+        selected_tif      = tif_path
+        selected_obs_date = obs_date
+        selected_stats["all_cloudy"] = True
+
+    # Save JSON
     PROC_DIR.mkdir(parents=True, exist_ok=True)
-    (PROC_DIR / "modis_latest.json").write_text(json.dumps(stats, indent=2))
+    (PROC_DIR / "modis_latest.json").write_text(json.dumps(selected_stats, indent=2))
+    LOG.info("Stats saved to modis_latest.json")
 
     # Map
-    make_map(tif_path, stats, obs_date)
+    make_map(selected_tif, selected_stats, selected_obs_date)
 
+    # Summary
+    days_ago = selected_stats["days_ago"]
+    staleness = f"(most recent clean pass — {days_ago}d ago)" if days_ago > 0 else "(today's pass)"
     print("\n" + "="*55)
-    print(f"  MODIS Snow Cover — {obs_date}")
+    print(f"  MODIS Snow Cover — {selected_obs_date} {staleness}")
     print("="*55)
-    print(f"  Snow cover:   {stats['pct_snow']}% of Rainier bbox")
-    print(f"  Cloud cover:  {stats['pct_cloud']}%")
-    print(f"  Avg NDSI:     {stats['avg_ndsi']}")
-    print(f"  Snow pixels:  {stats['snow_pixels']:,}")
+    print(f"  Snow cover:   {selected_stats['pct_snow']}% of Rainier bbox")
+    print(f"  Cloud cover:  {selected_stats['pct_cloud']}%")
+    print(f"  Avg NDSI:     {selected_stats['avg_ndsi']}")
+    print(f"  Snow pixels:  {selected_stats['snow_pixels']:,}")
     print("="*55)
 
     LOG.info("=== Done! ===")
