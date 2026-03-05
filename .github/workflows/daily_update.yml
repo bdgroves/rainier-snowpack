@@ -1,16 +1,19 @@
 name: Daily Snowpack Update
+
 on:
   schedule:
     - cron: "0 * * * *"   # Every hour
   workflow_dispatch:
-    # Allows manual trigger from GitHub Actions tab
+
 jobs:
   update:
     name: Fetch · Analyze · Deploy
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -20,11 +23,21 @@ jobs:
           pixi-version: latest
           cache: true
 
+      - name: Write Earthdata netrc
+        run: |
+          echo "machine urs.earthdata.nasa.gov" > ~/.netrc
+          echo "login ${{ secrets.EARTHDATA_USERNAME }}" >> ~/.netrc
+          echo "password ${{ secrets.EARTHDATA_PASSWORD }}" >> ~/.netrc
+          chmod 600 ~/.netrc
+
       - name: Fetch SNOTEL
         run: pixi run fetch
 
       - name: Fetch hourly temps
         run: pixi run fetch-hourly
+
+      - name: Fetch MODIS snow cover
+        run: pixi run fetch-modis
 
       - name: R analysis
         run: pixi run analyze
@@ -34,21 +47,16 @@ jobs:
           cp outputs/basin_swe_timeseries.png dashboard/
           cp outputs/all_stations_swe.png dashboard/
           cp outputs/station_swe_bars.png dashboard/
+          cp outputs/modis_snow_cover.png dashboard/
           cp data/processed/snotel_latest.json dashboard/
           cp data/processed/basin_daily.csv dashboard/
           cp data/processed/hourly_temps.json dashboard/
+          cp data/processed/modis/modis_latest.json dashboard/
 
       - name: Commit and push
         run: |
           git config user.name  "snowpack-bot[bot]"
           git config user.email "snowpack-bot@users.noreply.github.com"
           git add data/processed/ outputs/ dashboard/
-          git diff --staged --quiet && echo "No changes to commit" && exit 0
-          git commit -m "data: hourly update $(date -u +%Y-%m-%dT%H:%MZ)"
-          for i in 1 2 3; do
-            git push && break
-            echo "Push attempt $i failed, retrying in 15s..."
-            sleep 15
-            git fetch origin
-            git rebase origin/main
-          done
+          git diff --staged --quiet || git commit -m "data: hourly update $(date -u +%Y-%m-%dT%H:%M)Z"
+          git push
