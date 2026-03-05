@@ -214,6 +214,65 @@
   .temp-stat-val.cold { color:var(--cold); }
   .temp-stat-val.hot  { color:var(--melt); }
 
+  /* MODIS panel */
+  .modis-grid {
+    display:grid;
+    grid-template-columns:1fr 340px;
+    gap:16px; margin-bottom:16px;
+  }
+
+  .modis-img-wrap {
+    position:relative; border-radius:6px; overflow:hidden;
+    border:1px solid rgba(79,195,247,0.12);
+    background:#0a1628;
+  }
+  .modis-img-wrap img {
+    width:100%; display:block;
+    transition:transform 0.3s ease;
+  }
+  .modis-img-wrap:hover img { transform:scale(1.02); }
+  .modis-img-caption {
+    position:absolute; bottom:0; left:0; right:0;
+    background:linear-gradient(transparent, rgba(6,15,30,0.9));
+    padding:12px 14px 10px;
+    font-size:0.58rem; color:var(--dim); letter-spacing:0.08em;
+  }
+
+  .modis-stats { display:flex; flex-direction:column; gap:12px; }
+
+  .modis-kpi {
+    background:rgba(6,15,30,0.7);
+    border:1px solid rgba(79,195,247,0.1);
+    border-radius:7px; padding:14px 16px;
+    position:relative; overflow:hidden;
+    transition:border-color 0.2s, transform 0.2s;
+  }
+  .modis-kpi:hover { border-color:rgba(79,195,247,0.3); transform:translateX(3px); }
+  .modis-kpi::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
+    background:var(--accent); opacity:0.6;
+  }
+  .modis-kpi.satellite::before { background:#b39ddb; }
+  .modis-kpi.cloud::before     { background:#78909c; }
+  .modis-kpi.ndsi::before      { background:var(--cold); }
+  .modis-kpi.date::before      { background:var(--green); }
+
+  .modis-kpi-label { font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
+  .modis-kpi-val   { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:700; color:#fff; line-height:1; }
+  .modis-kpi-sub   { font-size:0.58rem; color:var(--dim); margin-top:4px; }
+
+  .modis-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    background:rgba(179,157,219,0.1); border:1px solid rgba(179,157,219,0.2);
+    border-radius:4px; padding:3px 8px;
+    font-size:0.55rem; color:#b39ddb; letter-spacing:0.1em;
+    text-transform:uppercase; margin-bottom:10px;
+  }
+  .modis-badge::before {
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:#b39ddb; box-shadow:0 0 6px #b39ddb;
+  }
+
   footer {
     margin-top:24px; padding-top:14px;
     border-top:1px solid rgba(79,195,247,0.07);
@@ -225,6 +284,7 @@
     .kpi-row     { grid-template-columns:repeat(3,1fr); }
     .main-grid   { grid-template-columns:1fr; }
     .bottom-grid { grid-template-columns:1fr; }
+    .modis-grid  { grid-template-columns:1fr; }
     .temp-stat-row { grid-template-columns:repeat(2,1fr); }
   }
 </style>
@@ -277,7 +337,7 @@
     </div>
 
     <!-- 48-Hour Temperature Chart -->
-    <div class="panel">
+    <div class="panel" style="margin-bottom:16px">
       <div class="panel-title">
         48-Hour Diurnal Temperature — All Stations
         <span id="hourly-subtitle">freeze/thaw cycle</span>
@@ -286,55 +346,40 @@
       <div class="chart-wrap tall"><canvas id="tempChart"></canvas></div>
     </div>
 
+    <!-- MODIS Satellite Snow Cover -->
+    <div class="panel">
+      <div class="panel-title">
+        MODIS Satellite Snow Cover
+        <span>MOD10A1 V061 · 500m · NASA Earthdata</span>
+      </div>
+      <div class="modis-grid">
+        <div class="modis-img-wrap">
+          <img id="modis-img" src="modis_snow_cover.png" alt="MODIS Snow Cover Map"
+               onerror="this.parentElement.innerHTML='<div style=\'padding:40px;text-align:center;color:#5a6a8a;font-size:0.7rem\'>Satellite image not yet available</div>'">
+          <div class="modis-img-caption">
+            NDSI Snow Cover · h09v04 tile · Pacific Northwest · 500m resolution
+          </div>
+        </div>
+        <div class="modis-stats" id="modis-stats">
+          <div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Loading satellite data...</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /dashboard -->
 
   <footer>
-    <span>Data: NRCS SNOTEL AWDB · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
+    <span>Data: NRCS SNOTEL AWDB · NASA Earthdata MODIS · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
     <span id="footer-date"></span>
   </footer>
 
 </div><!-- /wrap -->
 
 <script>
-// ── Timestamp formatter ────────────────────────────────────────────────────
-// Accepts either an ISO-8601 UTC string ("2026-03-04T18:00:00Z")
-// or a plain date string ("2026-03-03") as a fallback.
-// Returns a human-readable string like "Mar 4, 2026, 6:00 PM UTC".
-function formatUpdated(raw) {
-  if (!raw || raw === '—') return '—';
-
-  // Full ISO timestamp (has 'T' separator) → parse and format with time
-  if (raw.includes('T')) {
-    const d = new Date(raw);
-    if (isNaN(d)) return raw;
-    return d.toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-      timeZone: 'America/Los_Angeles', timeZoneName: 'short',
-    });
-  }
-
-  // Plain date string ("2026-03-03") → format without time component
-  // Parse as UTC noon to avoid any timezone-shift date flip
-  const d = new Date(raw + 'T12:00:00Z');
-  if (isNaN(d)) return raw;
-  return d.toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
-  });
-}
-
-// ── Cache-buster ───────────────────────────────────────────────────────────
-// Appends ?v=<epoch-minutes> so browsers re-fetch every ~60 seconds
-// rather than serving a stale cached copy.
-function cacheBust(url) {
-  const v = Math.floor(Date.now() / 60000);
-  return `${url}?v=${v}`;
-}
-
-// ── Data loaders ───────────────────────────────────────────────────────────
+// ── Data loaders ────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const r = await fetch(cacheBust('data/processed/snotel_latest.json'));
+    const r = await fetch('data/processed/snotel_latest.json');
     if (!r.ok) throw new Error();
     return await r.json();
   } catch(e) { return DEMO_DATA; }
@@ -342,7 +387,7 @@ async function loadData() {
 
 async function loadBasin() {
   try {
-    const r = await fetch(cacheBust('data/processed/basin_daily.csv'));
+    const r = await fetch('data/processed/basin_daily.csv');
     if (!r.ok) throw new Error();
     return parseCSV(await r.text());
   } catch(e) { return null; }
@@ -350,10 +395,25 @@ async function loadBasin() {
 
 async function loadHourly() {
   try {
-    const r = await fetch(cacheBust('data/processed/hourly_temps.json'));
+    const r = await fetch('data/processed/hourly_temps.json');
     if (!r.ok) throw new Error();
     return await r.json();
   } catch(e) { return null; }
+}
+
+async function loadModis() {
+  try {
+    const r = await fetch('data/processed/modis/modis_latest.json');
+    if (!r.ok) throw new Error();
+    return await r.json();
+  } catch(e) {
+    // also try dashboard-local copy
+    try {
+      const r2 = await fetch('modis_latest.json');
+      if (!r2.ok) throw new Error();
+      return await r2.json();
+    } catch(e2) { return null; }
+  }
 }
 
 function parseCSV(text) {
@@ -367,24 +427,22 @@ function parseCSV(text) {
   });
 }
 
-// ── Demo fallback ──────────────────────────────────────────────────────────
+// ── Demo fallback ────────────────────────────────────────────────────────────
 const DEMO_DATA = {
-  updated: "2026-03-03T18:00:00Z",
-  data_date: "2026-03-03",
+  updated: "2026-03-04",
   water_year: 2026,
   stations: [
-    { id:"679:WA:SNTL",  name:"Paradise",        elevation:5150, swe_in:23.8, depth_in:64, temp_f:34.3 },
-    { id:"642:WA:SNTL",  name:"Morse Lake",       elevation:5400, swe_in:25.6, depth_in:74, temp_f:36.3 },
-    { id:"672:WA:SNTL",  name:"Olallie Meadows",  elevation:4010, swe_in:15.4, depth_in:40, temp_f:37.4 },
-    { id:"1085:WA:SNTL", name:"Cayuse Pass",       elevation:5260, swe_in:21.9, depth_in:61, temp_f:36.3 },
-    { id:"418:WA:SNTL",  name:"Corral Pass",       elevation:5810, swe_in:17.7, depth_in:46, temp_f:34.3 },
-    { id:"375:WA:SNTL",  name:"Bumping Ridge",     elevation:4600, swe_in:11.9, depth_in:43, temp_f:37.2 },
-    { id:"420:WA:SNTL",  name:"Cougar Mountain",   elevation:3210, swe_in:0.8,  depth_in:4,  temp_f:39.7 },
+    { id:"679:WA:SNTL",  name:"Paradise",        elevation:5150, swe_in:24.1, depth_in:63, temp_f:32.9 },
+    { id:"642:WA:SNTL",  name:"Morse Lake",       elevation:5400, swe_in:25.7, depth_in:72, temp_f:34.3 },
+    { id:"672:WA:SNTL",  name:"Olallie Meadows",  elevation:4010, swe_in:15.5, depth_in:38, temp_f:36.7 },
+    { id:"1085:WA:SNTL", name:"Cayuse Pass",       elevation:5260, swe_in:21.6, depth_in:58, temp_f:34.5 },
+    { id:"418:WA:SNTL",  name:"Corral Pass",       elevation:5810, swe_in:17.9, depth_in:46, temp_f:33.8 },
+    { id:"375:WA:SNTL",  name:"Bumping Ridge",     elevation:4600, swe_in:11.8, depth_in:41, temp_f:34.7 },
+    { id:"420:WA:SNTL",  name:"Cougar Mountain",   elevation:3210, swe_in:0.4,  depth_in:2,  temp_f:39.6 },
   ]
 };
 
-// ── Helper: get best current temp for a station ────────────────────────────
-// Prefers hourly latest, falls back to daily snapshot
+// ── Helper: get best current temp ────────────────────────────────────────────
 function getCurrentTemp(stationName, dailyTempF, hourly) {
   if (hourly && hourly[stationName] && hourly[stationName].latest != null) {
     return { temp: hourly[stationName].latest, source: 'hourly' };
@@ -392,28 +450,75 @@ function getCurrentTemp(stationName, dailyTempF, hourly) {
   return { temp: parseFloat(dailyTempF), source: 'daily' };
 }
 
-// ── Main render ────────────────────────────────────────────────────────────
+// ── MODIS panel ──────────────────────────────────────────────────────────────
+function buildModisPanel(modis) {
+  const el = document.getElementById('modis-stats');
+  if (!modis) {
+    el.innerHTML = '<div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Satellite data not yet available — will appear after next pipeline run.</div>';
+    return;
+  }
+
+  const snowPct  = modis.pct_snow  ?? '—';
+  const cloudPct = modis.pct_cloud ?? '—';
+  const ndsi     = modis.avg_ndsi  ?? '—';
+  const obsDate  = modis.date      ?? '—';
+  const tile     = modis.tile      ?? 'h09v04';
+
+  el.innerHTML = `
+    <div class="modis-badge">🛰 NASA MODIS · Terra</div>
+
+    <div class="modis-kpi satellite">
+      <div class="modis-kpi-label">Snow Cover</div>
+      <div class="modis-kpi-val">${snowPct}<span style="font-size:1rem;color:var(--dim)">%</span></div>
+      <div class="modis-kpi-sub">of Rainier watershed bbox</div>
+    </div>
+
+    <div class="modis-kpi cloud">
+      <div class="modis-kpi-label">Cloud Cover</div>
+      <div class="modis-kpi-val">${cloudPct}<span style="font-size:1rem;color:var(--dim)">%</span></div>
+      <div class="modis-kpi-sub">${cloudPct < 10 ? 'Clean pass ✓' : 'Partial cloud interference'}</div>
+    </div>
+
+    <div class="modis-kpi ndsi">
+      <div class="modis-kpi-label">Avg NDSI</div>
+      <div class="modis-kpi-val">${ndsi}</div>
+      <div class="modis-kpi-sub">normalized difference snow index</div>
+    </div>
+
+    <div class="modis-kpi date">
+      <div class="modis-kpi-label">Observation Date</div>
+      <div class="modis-kpi-val" style="font-size:1rem">${obsDate}</div>
+      <div class="modis-kpi-sub">tile ${tile} · 500m resolution</div>
+    </div>
+
+    <div style="font-size:0.55rem;color:var(--dim);line-height:1.7;margin-top:4px;padding:10px 12px;background:rgba(6,15,30,0.5);border-radius:6px;border:1px solid rgba(79,195,247,0.06)">
+      <div style="color:var(--accent);margin-bottom:4px;letter-spacing:0.1em">PIXEL LEGEND</div>
+      <div>⬜ 100% — Dense snow cover</div>
+      <div>🟦 50% — Partial snow cover</div>
+      <div>🟫 0% — Snow-free ground</div>
+      <div style="color:#78909c">⬛ Grey — Cloud masked</div>
+    </div>
+  `;
+}
+
+// ── Main render ──────────────────────────────────────────────────────────────
 async function init() {
-  const [data, basin, hourly] = await Promise.all([loadData(), loadBasin(), loadHourly()]);
+  const [data, basin, hourly, modis] = await Promise.all([
+    loadData(), loadBasin(), loadHourly(), loadModis()
+  ]);
 
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  const stations = data.stations  || [];
-  const updated  = data.updated   || '—';   // ISO-8601 UTC pipeline run time
-  const dataDate = data.data_date || updated; // SNOTEL observation date (fallback)
+  const stations = data.stations || [];
+  const updated  = data.updated  || '—';
   const wy       = data.water_year || 2026;
 
-  const updatedFormatted = formatUpdated(updated);
-  const dataDateFormatted = formatUpdated(dataDate);
-
-  // Header: show pipeline run time prominently; data date as sub-label
-  document.getElementById('live-status').textContent   = 'Live · data through ' + dataDateFormatted;
-  document.getElementById('updated-label').textContent = 'Updated: ' + updatedFormatted;
+  document.getElementById('live-status').textContent   = 'Live · ' + updated;
+  document.getElementById('updated-label').textContent = 'Updated: ' + updated;
   document.getElementById('wy-label').textContent      = wy;
-  document.getElementById('footer-date').textContent   = 'Pipeline run: ' + updatedFormatted;
+  document.getElementById('footer-date').textContent   = 'Last run: ' + updated;
 
-  // Use hourly latest temps where available for KPIs
   const validSWE   = stations.filter(s => s.swe_in   != null && s.swe_in   !== 'NA');
   const validDepth = stations.filter(s => s.depth_in != null && s.depth_in !== 'NA');
 
@@ -421,11 +526,10 @@ async function init() {
   const avgDepth = validDepth.length ? (validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0)/ validDepth.length).toFixed(0): '—';
   const maxSWE   = validSWE.length   ? Math.max(...validSWE.map(s=>parseFloat(s.swe_in))).toFixed(1) : '—';
 
-  // Avg temp — prefer hourly
   let avgTemp, freezingCount;
   if (hourly && Object.keys(hourly).length > 0) {
     const hourlyTemps = Object.values(hourly).map(s => s.latest).filter(t => t != null);
-    avgTemp      = hourlyTemps.length ? (hourlyTemps.reduce((a,b)=>a+b,0)/hourlyTemps.length).toFixed(1) : '—';
+    avgTemp       = hourlyTemps.length ? (hourlyTemps.reduce((a,b)=>a+b,0)/hourlyTemps.length).toFixed(1) : '—';
     freezingCount = hourlyTemps.filter(t => t <= 32).length;
     document.getElementById('temp-panel-subtitle').textContent = 'hourly latest';
   } else {
@@ -438,7 +542,7 @@ async function init() {
   const kpis = [
     { label:'Basin Avg SWE',     val:avgSWE,       unit:'in', sub:`${validSWE.length} stations`,      cls:'good' },
     { label:'Avg Snow Depth',    val:avgDepth,     unit:'in', sub:'basin average',                    cls:'' },
-    { label:'Peak SWE',          val:maxSWE,       unit:'in', sub:validSWE.length ? validSWE.reduce((a,s)=>parseFloat(s.swe_in)>parseFloat(a.swe_in)?s:a).name : '—', cls:'' },
+    { label:'Peak SWE',          val:maxSWE,       unit:'in', sub:'Morse Lake',                       cls:'' },
     { label:'Avg Temperature',   val:avgTemp,      unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
     { label:'Stations Freezing', val:freezingCount,unit:'',   sub:`of ${stations.length} reporting`,  cls:freezingCount>=4?'good':'' },
   ];
@@ -450,7 +554,6 @@ async function init() {
       <div class="kpi-sub ${k.cls==='warn'?'down':k.cls==='good'?'up':''}">${k.sub}</div>
     </div>`).join('');
 
-  // Station cards — SWE from daily, temp from hourly
   const maxSweVal = Math.max(...stations.map(s=>parseFloat(s.swe_in||0)));
   const maxDepVal = Math.max(...stations.map(s=>parseFloat(s.depth_in||0)));
   const sorted    = [...stations].sort((a,b) => parseFloat(b.swe_in||0)-parseFloat(a.swe_in||0));
@@ -484,7 +587,6 @@ async function init() {
       </div>`;
   }).join('');
 
-  // SWE elevation bars
   const elevSorted = [...stations].sort((a,b)=>parseFloat(b.elevation||0)-parseFloat(a.elevation||0));
   document.getElementById('elev-list').innerHTML = elevSorted.map(s => {
     const swe   = parseFloat(s.swe_in || 0);
@@ -499,7 +601,6 @@ async function init() {
       </div>`;
   }).join('');
 
-  // Current temp panel — hourly latest preferred
   const tempData = stations.map(s => {
     const { temp, source } = getCurrentTemp(s.name, s.temp_f, hourly);
     return { name: s.name, temp, source };
@@ -518,9 +619,10 @@ async function init() {
 
   buildSWEChart(basin, stations);
   buildTempChart(hourly);
+  buildModisPanel(modis);
 }
 
-// ── SWE chart ──────────────────────────────────────────────────────────────
+// ── SWE chart ────────────────────────────────────────────────────────────────
 function buildSWEChart(basin, stations) {
   const ctx = document.getElementById('sweChart').getContext('2d');
   let labels = [], sweVals = [];
@@ -532,10 +634,10 @@ function buildSWEChart(basin, stations) {
       `${basin.length} days · through ${labels[labels.length-1]}`;
   } else {
     const avg = stations.reduce((a,s)=>a+parseFloat(s.swe_in||0),0)/stations.length;
-    for (let d=1; d<=153; d++) {
+    for (let d=1; d<=154; d++) {
       const dt = new Date(2025,9,1); dt.setDate(dt.getDate()+d-1);
       labels.push(dt.toISOString().slice(0,10));
-      sweVals.push(+(avg*(d/153)+Math.sin(d*0.12)*1.5).toFixed(1));
+      sweVals.push(+(avg*(d/154)+Math.sin(d*0.12)*1.5).toFixed(1));
     }
     document.getElementById('chart-subtitle').textContent = 'WY2026 · simulated';
   }
@@ -585,7 +687,7 @@ function buildSWEChart(basin, stations) {
   });
 }
 
-// ── 48-hour temperature chart ──────────────────────────────────────────────
+// ── 48-hour temperature chart ─────────────────────────────────────────────────
 function buildTempChart(hourly) {
   if (!hourly) {
     document.getElementById('hourly-subtitle').textContent = 'no data available';
@@ -596,7 +698,6 @@ function buildTempChart(hourly) {
   const stationNames = Object.keys(hourly).sort((a,b) => hourly[b].elevation - hourly[a].elevation);
   const labels = hourly[stationNames[0]].labels;
 
-  // Stat chips
   let allMins=[], allMaxes=[], allLatest=[], totalFreezing=0;
   stationNames.forEach(n => {
     const s = hourly[n];
@@ -644,7 +745,6 @@ function buildTempChart(hourly) {
     fill: false,
   }));
 
-  // Dashed 32°F freezing line
   datasets.push({
     label:       '32°F Freezing',
     data:        labels.map(() => 32),
