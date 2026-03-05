@@ -4,9 +4,10 @@ Downloads the latest MODIS MOD10A1 V061 daily snow cover tile (h09v04)
 for the Mt. Rainier area, reprojects to WGS84, clips to Rainier bbox,
 generates a snow cover map PNG, and saves summary stats to JSON.
 
-Auth: NASA Earthdata credentials via C:/Users/<user>/_netrc or ~/.netrc
+Auth: NASA Earthdata credentials via ~/.netrc or C:/Users/<user>/_netrc
 CMR search is unauthenticated (public API).
 Authenticated session used only for protected file downloads.
+Download handles NASA OAuth redirect chain manually.
 """
 
 import json
@@ -98,8 +99,8 @@ def find_latest_granule(days_back=7):
     return latest["title"], download_url
 
 
-def download_granule(session, url, out_path):
-    """Download HDF file using authenticated requests session."""
+def download_granule(username, password, url, out_path):
+    """Download HDF file handling NASA Earthdata OAuth redirect chain."""
     if out_path.exists():
         LOG.info("Already downloaded: %s", out_path.name)
         return True
@@ -107,14 +108,24 @@ def download_granule(session, url, out_path):
     LOG.info("Downloading %s ...", url.split("/")[-1])
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    r = session.get(url, stream=True, timeout=120)
-    if r.status_code != 200:
-        LOG.error("Download failed: HTTP %s", r.status_code)
-        return False
+    # NASA Earthdata Cloud uses OAuth redirects — follow chain manually with auth
+    with requests.Session() as s:
+        s.auth = (username, password)
 
-    with open(out_path, "wb") as f:
-        for chunk in r.iter_content(chunk_size=8192):
-            f.write(chunk)
+        r = s.get(url, allow_redirects=False, timeout=30)
+        hops = 0
+        while r.status_code in (301, 302, 303, 307, 308) and hops < 10:
+            redirect_url = r.headers.get("location", "")
+            LOG.info("Redirect %d → %s", hops + 1, redirect_url[:80])
+            r = s.get(redirect_url, allow_redirects=False, timeout=30)
+            hops += 1
+
+        if r.status_code != 200:
+            LOG.error("Download failed: HTTP %s after %d redirects", r.status_code, hops)
+            return False
+
+        with open(out_path, "wb") as f:
+            f.write(r.content)
 
     LOG.info("Saved: %s (%.1f MB)", out_path.name, out_path.stat().st_size / 1e6)
     return True
@@ -245,13 +256,10 @@ def make_map(tif_path, stats, obs_date):
 def main():
     LOG.info("=== MODIS Snow Cover Fetch ===")
 
-    # Credentials for download only
     username, password = get_credentials()
     LOG.info("Authenticated as: %s", username)
-    session = requests.Session()
-    session.auth = (username, password)
 
-    # Search CMR (no auth needed)
+    # Search CMR — no auth needed
     title, download_url = find_latest_granule()
     if not download_url:
         LOG.error("No download URL found!")
@@ -263,9 +271,9 @@ def main():
     obs_date = date(year, 1, 1) + timedelta(days=doy - 1)
     LOG.info("Observation date: %s", obs_date)
 
-    # Download
+    # Download with OAuth redirect handling
     hdf_path = RAW_DIR / f"MOD10A1.A{year}{doy:03d}.{TILE}.hdf"
-    if not download_granule(session, download_url, hdf_path):
+    if not download_granule(username, password, download_url, hdf_path):
         raise SystemExit(1)
 
     # Reproject
