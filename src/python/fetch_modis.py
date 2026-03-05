@@ -6,8 +6,7 @@ generates a snow cover map PNG, and saves summary stats to JSON.
 
 Auth: NASA Earthdata credentials via ~/.netrc or C:/Users/<user>/_netrc
 CMR search is unauthenticated (public API).
-Authenticated session used only for protected file downloads.
-Download handles NASA OAuth redirect chain manually.
+Download uses NASA Earthdata session login to handle OAuth flow.
 """
 
 import json
@@ -100,7 +99,7 @@ def find_latest_granule(days_back=7):
 
 
 def download_granule(username, password, url, out_path):
-    """Download HDF file handling NASA Earthdata OAuth redirect chain."""
+    """Download HDF file using NASA Earthdata session login to handle OAuth."""
     if out_path.exists():
         LOG.info("Already downloaded: %s", out_path.name)
         return True
@@ -108,24 +107,34 @@ def download_granule(username, password, url, out_path):
     LOG.info("Downloading %s ...", url.split("/")[-1])
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # NASA Earthdata Cloud uses OAuth redirects — follow chain manually with auth
     with requests.Session() as s:
-        s.auth = (username, password)
+        # Step 1 — hit the file URL, get redirected to Earthdata OAuth
+        r1 = s.get(url, allow_redirects=False, timeout=30)
+        LOG.info("Step 1 status: %s", r1.status_code)
 
-        r = s.get(url, allow_redirects=False, timeout=30)
-        hops = 0
-        while r.status_code in (301, 302, 303, 307, 308) and hops < 10:
-            redirect_url = r.headers.get("location", "")
-            LOG.info("Redirect %d → %s", hops + 1, redirect_url[:80])
-            r = s.get(redirect_url, allow_redirects=False, timeout=30)
-            hops += 1
+        if r1.status_code not in (301, 302, 303, 307, 308):
+            LOG.error("Expected redirect, got HTTP %s", r1.status_code)
+            return False
 
-        if r.status_code != 200:
-            LOG.error("Download failed: HTTP %s after %d redirects", r.status_code, hops)
+        # Step 2 — POST credentials to Earthdata login
+        login_url = "https://urs.earthdata.nasa.gov/login"
+        r2 = s.post(login_url, data={
+            "username": username,
+            "password": password,
+        }, allow_redirects=True, timeout=30)
+        LOG.info("Login status: %s", r2.status_code)
+
+        # Step 3 — retry the original URL with the authenticated session
+        r3 = s.get(url, allow_redirects=True, timeout=120, stream=True)
+        LOG.info("Download status: %s", r3.status_code)
+
+        if r3.status_code != 200:
+            LOG.error("Download failed: HTTP %s", r3.status_code)
             return False
 
         with open(out_path, "wb") as f:
-            f.write(r.content)
+            for chunk in r3.iter_content(chunk_size=8192):
+                f.write(chunk)
 
     LOG.info("Saved: %s (%.1f MB)", out_path.name, out_path.stat().st_size / 1e6)
     return True
@@ -271,7 +280,7 @@ def main():
     obs_date = date(year, 1, 1) + timedelta(days=doy - 1)
     LOG.info("Observation date: %s", obs_date)
 
-    # Download with OAuth redirect handling
+    # Download with session login
     hdf_path = RAW_DIR / f"MOD10A1.A{year}{doy:03d}.{TILE}.hdf"
     if not download_granule(username, password, download_url, hdf_path):
         raise SystemExit(1)
