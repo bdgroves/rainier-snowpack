@@ -8,287 +8,220 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --ice: #a8d8ea;
-    --snow: #e8f4f8;
-    --deep: #060f1e;
-    --mid: #0d1f3c;
-    --slate: #1e3a5f;
-    --accent: #4fc3f7;
-    --cold: #81d4fa;
-    --melt: #ff8a65;
-    --green: #69f0ae;
-    --text: #cdd6f4;
-    --dim: #5a6a8a;
+    --deep: #060f1e; --mid: #0d1f3c; --slate: #1e3a5f;
+    --accent: #4fc3f7; --cold: #81d4fa; --melt: #ff8a65;
+    --green: #69f0ae; --text: #cdd6f4; --dim: #5a6a8a;
     --grid: rgba(79,195,247,0.06);
   }
-
   * { margin:0; padding:0; box-sizing:border-box; }
-
-  body {
-    background: var(--deep);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
+  body { background:var(--deep); color:var(--text); font-family:'JetBrains Mono',monospace; min-height:100vh; overflow-x:hidden; }
   body::before {
-    content:'';
-    position:fixed; inset:0;
-    background:
-      radial-gradient(ellipse 100% 60% at 50% -5%, rgba(79,195,247,0.10) 0%, transparent 65%),
-      radial-gradient(ellipse 50% 40% at 90% 90%, rgba(6,15,30,0.8) 0%, transparent 60%);
+    content:''; position:fixed; inset:0;
+    background: radial-gradient(ellipse 100% 60% at 50% -5%, rgba(79,195,247,0.10) 0%, transparent 65%);
     pointer-events:none; z-index:0;
   }
-
   .grid-bg {
     position:fixed; inset:0;
-    background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 44px 44px;
-    z-index:0; pointer-events:none;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:44px 44px; z-index:0; pointer-events:none;
   }
-
   .wrap { position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:0 28px 48px; }
 
   header {
-    padding: 28px 0 22px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(79,195,247,0.12);
-    margin-bottom: 24px;
-    animation: fadeDown 0.6s ease both;
+    padding:28px 0 22px; display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom:1px solid rgba(79,195,247,0.12); margin-bottom:24px;
+    animation:fadeDown 0.6s ease both;
   }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)}  to{opacity:1;transform:none} }
 
-  @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:none; } }
-  @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:none; } }
-
-  .brand h1 {
-    font-family:'Syne',sans-serif;
-    font-size:1.85rem; font-weight:800;
-    letter-spacing:-0.02em; color:#fff; line-height:1;
-  }
+  .brand h1 { font-family:'Syne',sans-serif; font-size:1.85rem; font-weight:800; letter-spacing:-0.02em; color:#fff; line-height:1; }
   .brand h1 em { color:var(--accent); font-style:normal; }
   .brand p { font-size:0.62rem; color:var(--dim); letter-spacing:0.14em; text-transform:uppercase; margin-top:5px; }
-
   .header-right { text-align:right; font-size:0.65rem; color:var(--dim); line-height:2; }
   .live { color:var(--green); }
   .live::before {
-    content:''; display:inline-block; width:6px; height:6px;
-    border-radius:50%; background:var(--green);
-    box-shadow:0 0 8px var(--green);
-    margin-right:6px; animation:pulse 2s infinite;
+    content:''; display:inline-block; width:6px; height:6px; border-radius:50%;
+    background:var(--green); box-shadow:0 0 8px var(--green); margin-right:6px; animation:pulse 2s infinite;
   }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  #loading {
-    display:flex; align-items:center; justify-content:center;
-    height:60vh; flex-direction:column; gap:16px;
-    font-size:0.75rem; color:var(--dim);
-  }
-  .spinner {
-    width:32px; height:32px; border-radius:50%;
-    border:2px solid rgba(79,195,247,0.15);
-    border-top-color:var(--accent);
-    animation:spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform:rotate(360deg); } }
-
+  #loading { display:flex; align-items:center; justify-content:center; height:60vh; flex-direction:column; gap:16px; font-size:0.75rem; color:var(--dim); }
+  .spinner { width:32px; height:32px; border-radius:50%; border:2px solid rgba(79,195,247,0.15); border-top-color:var(--accent); animation:spin 0.8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
   #dashboard { display:none; }
 
-  .kpi-row {
-    display:grid; grid-template-columns:repeat(5,1fr);
-    gap:14px; margin-bottom:20px;
-  }
-
+  .kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
   .kpi {
-    background:rgba(13,31,60,0.7);
-    border:1px solid rgba(79,195,247,0.1);
-    border-radius:8px; padding:16px 18px;
-    position:relative; overflow:hidden;
-    animation:fadeUp 0.5s ease both;
-    transition:border-color 0.2s, transform 0.2s;
+    background:rgba(13,31,60,0.7); border:1px solid rgba(79,195,247,0.1);
+    border-radius:8px; padding:16px 18px; position:relative; overflow:hidden;
+    animation:fadeUp 0.5s ease both; transition:border-color 0.2s,transform 0.2s;
   }
   .kpi:hover { border-color:rgba(79,195,247,0.3); transform:translateY(-2px); }
-  .kpi::before {
-    content:''; position:absolute; top:0; left:0; right:0; height:2px;
-    background:var(--accent); opacity:0.5;
-  }
+  .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent); opacity:0.5; }
   .kpi.warn::before { background:var(--melt); }
   .kpi.good::before { background:var(--green); }
-
   .kpi-label { font-size:0.58rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--dim); margin-bottom:7px; }
-  .kpi-val { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:700; color:#fff; line-height:1; }
-  .kpi-unit { font-size:0.7rem; color:var(--dim); font-family:'JetBrains Mono',monospace; margin-left:3px; }
-  .kpi-sub  { font-size:0.62rem; margin-top:5px; color:var(--dim); }
+  .kpi-val   { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:700; color:#fff; line-height:1; }
+  .kpi-unit  { font-size:0.7rem; color:var(--dim); font-family:'JetBrains Mono',monospace; margin-left:3px; }
+  .kpi-sub   { font-size:0.62rem; margin-top:5px; color:var(--dim); }
   .kpi-sub.up   { color:var(--green); }
   .kpi-sub.down { color:var(--melt); }
 
-  .main-grid {
-    display:grid;
-    grid-template-columns:1fr 1fr 360px;
-    gap:16px; margin-bottom:16px;
-  }
+  .main-grid { display:grid; grid-template-columns:1fr 1fr 360px; gap:16px; margin-bottom:16px; }
 
   .panel {
-    background:rgba(13,31,60,0.65);
-    border:1px solid rgba(79,195,247,0.1);
-    border-radius:8px; padding:18px 20px;
-    backdrop-filter:blur(6px);
-    animation:fadeUp 0.6s ease both;
+    background:rgba(13,31,60,0.65); border:1px solid rgba(79,195,247,0.1);
+    border-radius:8px; padding:18px 20px; backdrop-filter:blur(6px); animation:fadeUp 0.6s ease both;
   }
   .panel-title {
-    font-size:0.6rem; letter-spacing:0.14em;
-    text-transform:uppercase; color:var(--dim);
-    margin-bottom:14px;
-    display:flex; align-items:center; justify-content:space-between;
+    font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--dim);
+    margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;
   }
   .panel-title span { color:var(--accent); font-size:0.58rem; }
-
   .chart-wrap { position:relative; height:220px; }
   .chart-wrap.tall { height:300px; }
 
   .station-list { display:flex; flex-direction:column; gap:9px; }
-
-  .station-card {
-    border:1px solid rgba(79,195,247,0.09);
-    border-radius:6px; padding:11px 13px;
-    transition:border-color 0.2s, background 0.2s; cursor:default;
-  }
-  .station-card:hover {
-    border-color:rgba(79,195,247,0.28);
-    background:rgba(79,195,247,0.03);
-  }
-
-  .sc-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+  .station-card { border:1px solid rgba(79,195,247,0.09); border-radius:6px; padding:11px 13px; transition:border-color 0.2s,background 0.2s; }
+  .station-card:hover { border-color:rgba(79,195,247,0.28); background:rgba(79,195,247,0.03); }
+  .sc-top  { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
   .sc-name { font-family:'Syne',sans-serif; font-size:0.78rem; font-weight:600; color:#fff; }
   .sc-elev { font-size:0.58rem; color:var(--dim); }
   .sc-swe  { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--cold); }
   .sc-swe span { font-size:0.6rem; color:var(--dim); font-family:'JetBrains Mono',monospace; }
-
   .sc-bars { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; }
   .bar-group label { font-size:0.52rem; color:var(--dim); letter-spacing:0.08em; text-transform:uppercase; display:block; margin-bottom:2px; }
   .bar-track { height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; margin-bottom:2px; }
-  .bar-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+  .bar-fill  { height:100%; border-radius:2px; transition:width 1s ease; }
   .bar-fill.swe   { background:linear-gradient(90deg,var(--accent),var(--cold)); }
   .bar-fill.depth { background:linear-gradient(90deg,#29b6f6,#b3e5fc); }
   .bar-val { font-size:0.6rem; color:var(--text); }
 
   .bottom-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
-
   .elev-list { display:flex; flex-direction:column; gap:8px; }
   .elev-row  { display:grid; grid-template-columns:130px 1fr 56px; align-items:center; gap:10px; font-size:0.63rem; }
   .elev-name { color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .elev-track { height:6px; background:rgba(255,255,255,0.05); border-radius:3px; position:relative; }
+  .elev-track { height:6px; background:rgba(255,255,255,0.05); border-radius:3px; }
   .elev-fill  { height:100%; border-radius:3px; }
   .elev-val   { text-align:right; color:var(--text); font-size:0.65rem; }
 
   .temp-list { display:flex; flex-direction:column; gap:8px; }
-  .temp-row  {
-    display:flex; align-items:center; gap:10px;
-    padding:8px 12px; border-radius:5px;
-    border:1px solid transparent; font-size:0.65rem;
-  }
+  .temp-row  { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:5px; border:1px solid transparent; font-size:0.65rem; }
   .temp-row.freezing { background:rgba(79,195,247,0.05); border-color:rgba(79,195,247,0.15); }
   .temp-row.warm     { background:rgba(255,138,101,0.05); border-color:rgba(255,138,101,0.15); }
   .temp-name { flex:1; color:var(--text); }
   .temp-val  { font-family:'Syne',sans-serif; font-weight:700; font-size:0.9rem; }
   .temp-val.cold { color:var(--cold); }
   .temp-val.warm { color:var(--melt); }
-  .temp-icon { font-size:0.9rem; }
-  .temp-source { font-size:0.52rem; color:var(--dim); margin-left:4px; }
+  .temp-source { font-size:0.52rem; color:var(--dim); }
 
-  .temp-stat-row {
-    display:grid; grid-template-columns:repeat(4,1fr);
-    gap:10px; margin-bottom:14px;
-  }
-  .temp-stat {
-    background:rgba(6,15,30,0.6);
-    border:1px solid rgba(79,195,247,0.08);
-    border-radius:6px; padding:10px 12px; text-align:center;
-  }
+  .temp-stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .temp-stat { background:rgba(6,15,30,0.6); border:1px solid rgba(79,195,247,0.08); border-radius:6px; padding:10px 12px; text-align:center; }
   .temp-stat-label { font-size:0.52rem; color:var(--dim); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px; }
   .temp-stat-val   { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:#fff; }
   .temp-stat-val.cold { color:var(--cold); }
   .temp-stat-val.hot  { color:var(--melt); }
 
-  /* MODIS panel */
-  .modis-grid {
-    display:grid;
-    grid-template-columns:1fr 340px;
-    gap:16px;
+  /* ── Webcam panel ── */
+  .webcam-modis-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+
+  .webcam-wrap {
+    position:relative; border-radius:6px; overflow:hidden;
+    border:1px solid rgba(79,195,247,0.12); background:#0a1628;
+    display:flex; flex-direction:column;
   }
+  .webcam-img-container { position:relative; flex:1; overflow:hidden; min-height:240px; }
+  .webcam-img-container img {
+    width:100%; height:100%; object-fit:cover; display:block;
+    transition:opacity 0.3s ease;
+  }
+  .webcam-overlay {
+    position:absolute; top:0; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:10px 12px; pointer-events:none;
+  }
+  .webcam-badge {
+    background:rgba(6,15,30,0.75); border:1px solid rgba(79,195,247,0.2);
+    border-radius:4px; padding:3px 8px; font-size:0.55rem; color:var(--accent);
+    letter-spacing:0.1em; text-transform:uppercase; backdrop-filter:blur(4px);
+  }
+  .webcam-live {
+    background:rgba(6,15,30,0.75); border:1px solid rgba(105,240,174,0.3);
+    border-radius:4px; padding:3px 8px; font-size:0.55rem; color:var(--green);
+    letter-spacing:0.1em; backdrop-filter:blur(4px); display:flex; align-items:center; gap:4px;
+  }
+  .webcam-live::before {
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 2s infinite;
+  }
+  .webcam-footer { padding:10px 14px; background:rgba(6,15,30,0.5); border-top:1px solid rgba(79,195,247,0.08); }
+  .webcam-footer-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .webcam-name  { font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:600; color:#fff; }
+  .webcam-desc  { font-size:0.58rem; color:var(--dim); }
+  .webcam-refresh { font-size:0.55rem; color:var(--dim); }
+
+  .cam-selector { display:flex; gap:6px; flex-wrap:wrap; }
+  .cam-btn {
+    background:rgba(13,31,60,0.8); border:1px solid rgba(79,195,247,0.12);
+    border-radius:4px; padding:4px 9px; font-size:0.55rem; color:var(--dim);
+    font-family:'JetBrains Mono',monospace; cursor:pointer; letter-spacing:0.08em;
+    transition:all 0.15s ease; text-transform:uppercase;
+  }
+  .cam-btn:hover  { border-color:rgba(79,195,247,0.3); color:var(--text); }
+  .cam-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(79,195,247,0.08); }
+
+  /* ── MODIS panel ── */
+  .modis-panel-inner { display:grid; grid-template-columns:1fr 300px; gap:16px; }
 
   .modis-img-wrap {
     position:relative; border-radius:6px; overflow:hidden;
-    border:1px solid rgba(79,195,247,0.12);
-    background:#0a1628; min-height:200px;
-    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(79,195,247,0.12); background:#0a1628;
+    min-height:200px; display:flex; align-items:center; justify-content:center;
   }
-  .modis-img-wrap img {
-    width:100%; display:block;
-    transition:transform 0.3s ease;
-  }
+  .modis-img-wrap img { width:100%; display:block; transition:transform 0.3s ease; }
   .modis-img-wrap:hover img { transform:scale(1.02); }
   .modis-img-caption {
     position:absolute; bottom:0; left:0; right:0;
     background:linear-gradient(transparent, rgba(6,15,30,0.9));
-    padding:12px 14px 10px;
-    font-size:0.58rem; color:var(--dim); letter-spacing:0.08em;
+    padding:12px 14px 10px; font-size:0.58rem; color:var(--dim); letter-spacing:0.08em;
   }
-  .modis-img-error {
-    font-size:0.7rem; color:var(--dim); text-align:center; padding:40px 20px;
-  }
+  .modis-img-error { font-size:0.7rem; color:var(--dim); text-align:center; padding:40px 20px; }
 
-  .modis-stats { display:flex; flex-direction:column; gap:12px; }
-
+  .modis-stats { display:flex; flex-direction:column; gap:10px; }
   .modis-kpi {
-    background:rgba(6,15,30,0.7);
-    border:1px solid rgba(79,195,247,0.1);
-    border-radius:7px; padding:14px 16px;
-    position:relative; overflow:hidden;
-    transition:border-color 0.2s, transform 0.2s;
+    background:rgba(6,15,30,0.7); border:1px solid rgba(79,195,247,0.1);
+    border-radius:7px; padding:12px 14px; position:relative; overflow:hidden;
+    transition:border-color 0.2s,transform 0.2s;
   }
   .modis-kpi:hover { border-color:rgba(79,195,247,0.3); transform:translateX(3px); }
-  .modis-kpi::before {
-    content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
-    background:var(--accent); opacity:0.6;
-  }
+  .modis-kpi::before { content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--accent); opacity:0.6; }
   .modis-kpi.satellite::before { background:#b39ddb; }
   .modis-kpi.cloud::before     { background:#78909c; }
   .modis-kpi.ndsi::before      { background:var(--cold); }
   .modis-kpi.date::before      { background:var(--green); }
-
-  .modis-kpi-label { font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
-  .modis-kpi-val   { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:700; color:#fff; line-height:1; }
-  .modis-kpi-sub   { font-size:0.58rem; color:var(--dim); margin-top:4px; }
-
+  .modis-kpi-label { font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); margin-bottom:4px; }
+  .modis-kpi-val   { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:700; color:#fff; line-height:1; }
+  .modis-kpi-sub   { font-size:0.57rem; color:var(--dim); margin-top:3px; }
   .modis-badge {
     display:inline-flex; align-items:center; gap:5px;
     background:rgba(179,157,219,0.1); border:1px solid rgba(179,157,219,0.2);
-    border-radius:4px; padding:3px 8px;
-    font-size:0.55rem; color:#b39ddb; letter-spacing:0.1em;
-    text-transform:uppercase; margin-bottom:10px;
+    border-radius:4px; padding:3px 8px; font-size:0.55rem; color:#b39ddb;
+    letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px;
   }
-  .modis-badge::before {
-    content:''; width:5px; height:5px; border-radius:50%;
-    background:#b39ddb; box-shadow:0 0 6px #b39ddb;
-  }
+  .modis-badge::before { content:''; width:5px; height:5px; border-radius:50%; background:#b39ddb; box-shadow:0 0 6px #b39ddb; }
 
   footer {
-    margin-top:24px; padding-top:14px;
-    border-top:1px solid rgba(79,195,247,0.07);
-    display:flex; justify-content:space-between;
-    font-size:0.56rem; color:var(--dim); letter-spacing:0.07em;
+    margin-top:24px; padding-top:14px; border-top:1px solid rgba(79,195,247,0.07);
+    display:flex; justify-content:space-between; font-size:0.56rem; color:var(--dim); letter-spacing:0.07em;
   }
 
   @media(max-width:1100px) {
-    .kpi-row     { grid-template-columns:repeat(3,1fr); }
-    .main-grid   { grid-template-columns:1fr; }
+    .kpi-row { grid-template-columns:repeat(3,1fr); }
+    .main-grid { grid-template-columns:1fr; }
     .bottom-grid { grid-template-columns:1fr; }
-    .modis-grid  { grid-template-columns:1fr; }
+    .webcam-modis-grid { grid-template-columns:1fr; }
+    .modis-panel-inner { grid-template-columns:1fr; }
     .temp-stat-row { grid-template-columns:repeat(2,1fr); }
   }
 </style>
@@ -309,10 +242,7 @@
     </div>
   </header>
 
-  <div id="loading">
-    <div class="spinner"></div>
-    <div>Fetching snowpack data...</div>
-  </div>
+  <div id="loading"><div class="spinner"></div><div>Fetching snowpack data...</div></div>
 
   <div id="dashboard">
 
@@ -340,190 +270,241 @@
       </div>
     </div>
 
-    <!-- 48-Hour Temperature Chart -->
+    <!-- 48-Hour Temp Chart -->
     <div class="panel" style="margin-bottom:16px">
-      <div class="panel-title">
-        48-Hour Diurnal Temperature — All Stations
-        <span id="hourly-subtitle">freeze/thaw cycle</span>
-      </div>
+      <div class="panel-title">48-Hour Diurnal Temperature — All Stations <span id="hourly-subtitle">freeze/thaw cycle</span></div>
       <div class="temp-stat-row" id="hourly-stats"></div>
       <div class="chart-wrap tall"><canvas id="tempChart"></canvas></div>
     </div>
 
-    <!-- MODIS Satellite Snow Cover -->
-    <div class="panel">
-      <div class="panel-title">
-        MODIS Satellite Snow Cover
-        <span>MOD10A1 V061 · 500m · NASA Earthdata</span>
-      </div>
-      <div class="modis-grid">
-        <div class="modis-img-wrap" id="modis-img-wrap">
-          <div class="modis-img-error">Loading satellite image...</div>
+    <!-- Webcam + MODIS side by side -->
+    <div class="webcam-modis-grid">
+
+      <!-- Webcam Panel -->
+      <div class="panel" style="padding:0; overflow:hidden;">
+        <div style="padding:14px 18px 10px; border-bottom:1px solid rgba(79,195,247,0.08);">
+          <div class="panel-title" style="margin-bottom:8px;">
+            Paradise Live Webcam
+            <span>NPS · Jackson Visitor Center · 5,400 ft</span>
+          </div>
+          <div class="cam-selector" id="cam-selector"></div>
         </div>
-        <div class="modis-stats" id="modis-stats">
-          <div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Loading satellite data...</div>
+        <div class="webcam-wrap">
+          <div class="webcam-img-container">
+            <img id="webcam-img" src="" alt="Paradise Webcam">
+            <div class="webcam-overlay">
+              <div class="webcam-badge" id="webcam-badge">Paradise</div>
+              <div class="webcam-live">Live</div>
+            </div>
+          </div>
+          <div class="webcam-footer">
+            <div class="webcam-footer-top">
+              <div>
+                <div class="webcam-name" id="webcam-name">Jackson Visitor Center</div>
+                <div class="webcam-desc" id="webcam-desc">A view of the Jackson Visitor Center at Paradise</div>
+              </div>
+              <div class="webcam-refresh" id="webcam-timer">refreshes in 60s</div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- MODIS Panel -->
+      <div class="panel">
+        <div class="panel-title">MODIS Satellite Snow Cover <span>MOD10A1 V061 · 500m · NASA</span></div>
+        <div class="modis-panel-inner">
+          <div class="modis-img-wrap" id="modis-img-wrap">
+            <div class="modis-img-error">Loading satellite image...</div>
+          </div>
+          <div class="modis-stats" id="modis-stats">
+            <div style="font-size:0.65rem;color:var(--dim)">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /webcam-modis-grid -->
 
   </div><!-- /dashboard -->
 
   <footer>
-    <span>Data: NRCS SNOTEL AWDB · NASA Earthdata MODIS · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
+    <span>Data: NRCS SNOTEL AWDB · NASA Earthdata MODIS · NPS Webcams · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
     <span id="footer-date"></span>
   </footer>
 
-</div><!-- /wrap -->
+</div>
 
 <script>
-// ── Paths — all relative to repo root ───────────────────────────────────────
+// ── Paths ────────────────────────────────────────────────────────────────────
 const PATHS = {
-  snotel:  'dashboard/snotel_latest.json',
-  basin:   'dashboard/basin_daily.csv',
-  hourly:  'dashboard/hourly_temps.json',
-  modis:   'dashboard/modis_latest.json',
-  modisPng:'dashboard/modis_snow_cover.png',
+  snotel:   'dashboard/snotel_latest.json',
+  basin:    'dashboard/basin_daily.csv',
+  hourly:   'dashboard/hourly_temps.json',
+  modis:    'dashboard/modis_latest.json',
+  modisPng: 'dashboard/modis_snow_cover.png',
 };
 
-// ── Data loaders ─────────────────────────────────────────────────────────────
+// ── Webcam definitions ───────────────────────────────────────────────────────
+const CAMS = [
+  { key:'gh',       label:'Visitor Ctr', name:'Jackson Visitor Center',   desc:'A view of the Jackson Visitor Center at Paradise', badge:'Paradise' },
+  { key:'mountain', label:'Mountain',    name:'Paradise Mountain',         desc:'Is the mountain out? What is the weather like at Paradise?', badge:'Paradise' },
+  { key:'east',     label:'East',        name:'Paradise East',             desc:'Looking east from the Jackson Visitor Center', badge:'Paradise' },
+  { key:'west',     label:'West',        name:'Paradise West',             desc:'Looking west from the Jackson Visitor Center', badge:'Paradise' },
+  { key:'tatoosh',  label:'Tatoosh',     name:'Tatoosh Range',             desc:'Looking south towards the Tatoosh Mountain Range', badge:'Paradise' },
+  { key:'longmire', label:'Longmire',    name:'Longmire',                  desc:'Looking southwest from the Administration Building', badge:'Longmire' },
+];
+
+let currentCam = CAMS[0];
+let webcamTimer = 60;
+let webcamInterval = null;
+let timerInterval  = null;
+
+function webcamUrl(key) {
+  return `https://www.nps.gov/webcams-mora/${key}.jpg?t=${Date.now()}`;
+}
+
+function loadWebcam(cam) {
+  currentCam = cam;
+  const img = document.getElementById('webcam-img');
+  img.style.opacity = '0.6';
+  const tmp = new Image();
+  tmp.onload = () => { img.src = tmp.src; img.style.opacity = '1'; };
+  tmp.onerror = () => { img.style.opacity = '1'; };
+  tmp.src = webcamUrl(cam.key);
+
+  document.getElementById('webcam-name').textContent  = cam.name;
+  document.getElementById('webcam-desc').textContent  = cam.desc;
+  document.getElementById('webcam-badge').textContent = cam.badge;
+
+  document.querySelectorAll('.cam-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.key === cam.key);
+  });
+
+  resetWebcamTimer();
+}
+
+function resetWebcamTimer() {
+  webcamTimer = 60;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    webcamTimer--;
+    const el = document.getElementById('webcam-timer');
+    if (el) el.textContent = `refreshes in ${webcamTimer}s`;
+    if (webcamTimer <= 0) { loadWebcam(currentCam); }
+  }, 1000);
+}
+
+function buildCamSelector() {
+  const el = document.getElementById('cam-selector');
+  el.innerHTML = CAMS.map(c => `
+    <button class="cam-btn ${c.key === currentCam.key ? 'active' : ''}" data-key="${c.key}">${c.label}</button>
+  `).join('');
+  el.querySelectorAll('.cam-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cam = CAMS.find(c => c.key === btn.dataset.key);
+      if (cam) loadWebcam(cam);
+    });
+  });
+}
+
+// ── Data loaders ──────────────────────────────────────────────────────────────
 async function loadJSON(path) {
-  try {
-    const r = await fetch(path);
-    if (!r.ok) throw new Error(r.status);
-    return await r.json();
-  } catch(e) { return null; }
+  try { const r = await fetch(path); if (!r.ok) throw new Error(); return await r.json(); }
+  catch(e) { return null; }
 }
-
 async function loadCSV(path) {
-  try {
-    const r = await fetch(path);
-    if (!r.ok) throw new Error(r.status);
-    return parseCSV(await r.text());
-  } catch(e) { return null; }
+  try { const r = await fetch(path); if (!r.ok) throw new Error(); return parseCSV(await r.text()); }
+  catch(e) { return null; }
 }
-
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
   return lines.slice(1).map(line => {
-    const vals = line.split(',');
-    const obj = {};
+    const vals = line.split(','), obj = {};
     headers.forEach((h,i) => obj[h] = vals[i]?.trim().replace(/"/g,''));
     return obj;
   });
 }
 
-// ── Demo fallback ─────────────────────────────────────────────────────────────
-const DEMO_DATA = {
-  updated: "2026-03-04",
-  water_year: 2026,
-  stations: [
-    { id:"679:WA:SNTL",  name:"Paradise",        elevation:5150, swe_in:24.1, depth_in:63, temp_f:32.9 },
-    { id:"642:WA:SNTL",  name:"Morse Lake",       elevation:5400, swe_in:25.7, depth_in:72, temp_f:34.3 },
-    { id:"672:WA:SNTL",  name:"Olallie Meadows",  elevation:4010, swe_in:15.5, depth_in:38, temp_f:36.7 },
-    { id:"1085:WA:SNTL", name:"Cayuse Pass",       elevation:5260, swe_in:21.6, depth_in:58, temp_f:34.5 },
-    { id:"418:WA:SNTL",  name:"Corral Pass",       elevation:5810, swe_in:17.9, depth_in:46, temp_f:33.8 },
-    { id:"375:WA:SNTL",  name:"Bumping Ridge",     elevation:4600, swe_in:11.8, depth_in:41, temp_f:34.7 },
-    { id:"420:WA:SNTL",  name:"Cougar Mountain",   elevation:3210, swe_in:0.4,  depth_in:2,  temp_f:39.6 },
+const DEMO = {
+  updated:'2026-03-04', water_year:2026,
+  stations:[
+    {id:'679:WA:SNTL',  name:'Paradise',       elevation:5150, swe_in:24.1, depth_in:63, temp_f:32.9},
+    {id:'642:WA:SNTL',  name:'Morse Lake',      elevation:5400, swe_in:25.7, depth_in:72, temp_f:34.3},
+    {id:'672:WA:SNTL',  name:'Olallie Meadows', elevation:4010, swe_in:15.5, depth_in:38, temp_f:36.7},
+    {id:'1085:WA:SNTL', name:'Cayuse Pass',     elevation:5260, swe_in:21.6, depth_in:58, temp_f:34.5},
+    {id:'418:WA:SNTL',  name:'Corral Pass',     elevation:5810, swe_in:17.9, depth_in:46, temp_f:33.8},
+    {id:'375:WA:SNTL',  name:'Bumping Ridge',   elevation:4600, swe_in:11.8, depth_in:41, temp_f:34.7},
+    {id:'420:WA:SNTL',  name:'Cougar Mountain', elevation:3210, swe_in:0.4,  depth_in:2,  temp_f:39.6},
   ]
 };
 
-// ── Helper ────────────────────────────────────────────────────────────────────
-function getCurrentTemp(stationName, dailyTempF, hourly) {
-  if (hourly && hourly[stationName] && hourly[stationName].latest != null) {
-    return { temp: hourly[stationName].latest, source: 'hourly' };
-  }
-  return { temp: parseFloat(dailyTempF), source: 'daily' };
+function getTemp(name, dailyF, hourly) {
+  if (hourly?.[name]?.latest != null) return { temp: hourly[name].latest, source: 'hourly' };
+  return { temp: parseFloat(dailyF), source: 'daily' };
 }
 
 // ── MODIS panel ───────────────────────────────────────────────────────────────
 function buildModisPanel(modis) {
-  // Image — load dynamically so we can handle errors gracefully
-  const imgWrap = document.getElementById('modis-img-wrap');
+  const wrap = document.getElementById('modis-img-wrap');
   const img = new Image();
   img.onload = () => {
-    imgWrap.innerHTML = '';
-    imgWrap.appendChild(img);
+    wrap.innerHTML = '';
+    wrap.appendChild(img);
     const cap = document.createElement('div');
     cap.className = 'modis-img-caption';
-    cap.textContent = 'NDSI Snow Cover · h09v04 tile · Pacific Northwest · 500m resolution';
-    imgWrap.appendChild(cap);
+    cap.textContent = 'NDSI Snow Cover · h09v04 · Pacific Northwest · 500m';
+    wrap.appendChild(cap);
   };
-  img.onerror = () => {
-    imgWrap.innerHTML = '<div class="modis-img-error">Satellite image will appear after next pipeline run</div>';
-  };
+  img.onerror = () => { wrap.innerHTML = '<div class="modis-img-error">Image updates after next pipeline run</div>'; };
   img.src = PATHS.modisPng;
   img.style.width = '100%';
 
-  // Stats
   const el = document.getElementById('modis-stats');
-  if (!modis) {
-    el.innerHTML = '<div style="font-size:0.65rem;color:var(--dim);padding:20px 0">Satellite stats not yet available.</div>';
-    return;
-  }
+  if (!modis) { el.innerHTML = '<div style="font-size:0.65rem;color:var(--dim)">Stats not yet available</div>'; return; }
 
-  const snowPct  = modis.pct_snow  ?? '—';
-  const cloudPct = modis.pct_cloud ?? '—';
-  const ndsi     = modis.avg_ndsi  ?? '—';
-  const obsDate  = modis.date      ?? '—';
-  const tile     = modis.tile      ?? 'h09v04';
+  const daysAgo = modis.days_ago || 0;
+  const staleness = daysAgo > 0
+    ? `<div style="font-size:0.58rem;color:var(--melt);margin-bottom:8px">⚠ Last clean pass: ${daysAgo}d ago</div>`
+    : '<div style="font-size:0.58rem;color:var(--green);margin-bottom:8px">✓ Current pass</div>';
 
   el.innerHTML = `
     <div class="modis-badge">🛰 NASA MODIS · Terra</div>
-
+    ${staleness}
     <div class="modis-kpi satellite">
       <div class="modis-kpi-label">Snow Cover</div>
-      <div class="modis-kpi-val">${snowPct}<span style="font-size:1rem;color:var(--dim)">%</span></div>
-      <div class="modis-kpi-sub">of Rainier watershed bbox</div>
+      <div class="modis-kpi-val">${modis.pct_snow ?? '—'}<span style="font-size:0.9rem;color:var(--dim)">%</span></div>
+      <div class="modis-kpi-sub">of Rainier watershed</div>
     </div>
-
     <div class="modis-kpi cloud">
       <div class="modis-kpi-label">Cloud Cover</div>
-      <div class="modis-kpi-val">${cloudPct}<span style="font-size:1rem;color:var(--dim)">%</span></div>
-      <div class="modis-kpi-sub">${parseFloat(cloudPct) < 10 ? 'Clean pass ✓' : 'Partial cloud interference'}</div>
+      <div class="modis-kpi-val">${modis.pct_cloud ?? '—'}<span style="font-size:0.9rem;color:var(--dim)">%</span></div>
+      <div class="modis-kpi-sub">${parseFloat(modis.pct_cloud) < 10 ? 'Clean pass ✓' : 'Partial cloud'}</div>
     </div>
-
     <div class="modis-kpi ndsi">
       <div class="modis-kpi-label">Avg NDSI</div>
-      <div class="modis-kpi-val">${ndsi}</div>
-      <div class="modis-kpi-sub">normalized difference snow index</div>
+      <div class="modis-kpi-val">${modis.avg_ndsi ?? '—'}</div>
+      <div class="modis-kpi-sub">snow index</div>
     </div>
-
     <div class="modis-kpi date">
-      <div class="modis-kpi-label">Observation Date</div>
-      <div class="modis-kpi-val" style="font-size:1rem">${obsDate}</div>
-      <div class="modis-kpi-sub">tile ${tile} · 500m resolution</div>
-    </div>
-
-    <div style="font-size:0.55rem;color:var(--dim);line-height:1.8;margin-top:4px;padding:10px 12px;
-                background:rgba(6,15,30,0.5);border-radius:6px;border:1px solid rgba(79,195,247,0.06)">
-      <div style="color:var(--accent);margin-bottom:4px;letter-spacing:0.1em">PIXEL LEGEND</div>
-      <div>⬜ 100% — Dense snow cover</div>
-      <div>🟦 50% — Partial snow cover</div>
-      <div>🟫 0% — Snow-free ground</div>
-      <div style="color:#78909c">⬛ Grey — Cloud masked</div>
+      <div class="modis-kpi-label">Observation</div>
+      <div class="modis-kpi-val" style="font-size:0.95rem">${modis.date ?? '—'}</div>
+      <div class="modis-kpi-sub">tile ${modis.tile ?? 'h09v04'} · 500m</div>
     </div>
   `;
 }
 
-// ── Main render ───────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 async function init() {
   const [raw, basin, hourly, modis] = await Promise.all([
-    loadJSON(PATHS.snotel),
-    loadCSV(PATHS.basin),
-    loadJSON(PATHS.hourly),
-    loadJSON(PATHS.modis),
+    loadJSON(PATHS.snotel), loadCSV(PATHS.basin),
+    loadJSON(PATHS.hourly), loadJSON(PATHS.modis),
   ]);
 
-  const data = raw || DEMO_DATA;
-
+  const data = raw || DEMO;
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  const stations = data.stations || [];
-  const updated  = data.updated  || '—';
-  const wy       = data.water_year || 2026;
-
+  const { stations = [], updated = '—', water_year: wy = 2026 } = data;
   document.getElementById('live-status').textContent   = 'Live · ' + updated;
   document.getElementById('updated-label').textContent = 'Updated: ' + updated;
   document.getElementById('wy-label').textContent      = wy;
@@ -531,34 +512,31 @@ async function init() {
 
   const validSWE   = stations.filter(s => s.swe_in   != null && s.swe_in   !== 'NA');
   const validDepth = stations.filter(s => s.depth_in != null && s.depth_in !== 'NA');
-
   const avgSWE   = validSWE.length   ? (validSWE.reduce((a,s)=>a+parseFloat(s.swe_in),0)/validSWE.length).toFixed(1) : '—';
   const avgDepth = validDepth.length ? (validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0)/validDepth.length).toFixed(0) : '—';
   const maxSWE   = validSWE.length   ? Math.max(...validSWE.map(s=>parseFloat(s.swe_in))).toFixed(1) : '—';
-  const maxStation = validSWE.length ? validSWE.reduce((a,s)=>parseFloat(s.swe_in)>parseFloat(a.swe_in)?s:a).name : '—';
+  const maxName  = validSWE.length   ? validSWE.reduce((a,s)=>parseFloat(s.swe_in)>parseFloat(a.swe_in)?s:a).name : '—';
 
   let avgTemp, freezingCount;
   if (hourly && Object.keys(hourly).length > 0) {
-    const hourlyTemps = Object.values(hourly).map(s => s.latest).filter(t => t != null);
-    avgTemp       = hourlyTemps.length ? (hourlyTemps.reduce((a,b)=>a+b,0)/hourlyTemps.length).toFixed(1) : '—';
-    freezingCount = hourlyTemps.filter(t => t <= 32).length;
+    const temps = Object.values(hourly).map(s=>s.latest).filter(t=>t!=null);
+    avgTemp = temps.length ? (temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(1) : '—';
+    freezingCount = temps.filter(t=>t<=32).length;
     document.getElementById('temp-panel-subtitle').textContent = 'hourly latest';
   } else {
-    const validTemp = stations.filter(s => s.temp_f != null && s.temp_f !== 'NA');
-    avgTemp       = validTemp.length ? (validTemp.reduce((a,s)=>a+parseFloat(s.temp_f),0)/validTemp.length).toFixed(1) : '—';
-    freezingCount = validTemp.filter(s => parseFloat(s.temp_f) <= 32).length;
+    const vt = stations.filter(s=>s.temp_f!=null&&s.temp_f!=='NA');
+    avgTemp = vt.length ? (vt.reduce((a,s)=>a+parseFloat(s.temp_f),0)/vt.length).toFixed(1) : '—';
+    freezingCount = vt.filter(s=>parseFloat(s.temp_f)<=32).length;
     document.getElementById('temp-panel-subtitle').textContent = 'daily snapshot';
   }
 
-  const kpis = [
-    { label:'Basin Avg SWE',     val:avgSWE,        unit:'in', sub:`${validSWE.length} stations`,     cls:'good' },
-    { label:'Avg Snow Depth',    val:avgDepth,      unit:'in', sub:'basin average',                   cls:'' },
-    { label:'Peak SWE',          val:maxSWE,        unit:'in', sub:maxStation,                        cls:'' },
-    { label:'Avg Temperature',   val:avgTemp,       unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn' },
-    { label:'Stations Freezing', val:freezingCount, unit:'',   sub:`of ${stations.length} reporting`, cls:freezingCount>=4?'good':'' },
-  ];
-
-  document.getElementById('kpi-row').innerHTML = kpis.map((k,i) => `
+  document.getElementById('kpi-row').innerHTML = [
+    {label:'Basin Avg SWE',     val:avgSWE,        unit:'in', sub:`${validSWE.length} stations`,     cls:'good'},
+    {label:'Avg Snow Depth',    val:avgDepth,      unit:'in', sub:'basin average',                   cls:''},
+    {label:'Peak SWE',          val:maxSWE,        unit:'in', sub:maxName,                           cls:''},
+    {label:'Avg Temperature',   val:avgTemp,       unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn'},
+    {label:'Stations Freezing', val:freezingCount, unit:'',   sub:`of ${stations.length} reporting`, cls:freezingCount>=4?'good':''},
+  ].map((k,i)=>`
     <div class="kpi ${k.cls}" style="animation-delay:${i*0.07}s">
       <div class="kpi-label">${k.label}</div>
       <div class="kpi-val">${k.val}<span class="kpi-unit">${k.unit}</span></div>
@@ -571,238 +549,74 @@ async function init() {
 
   document.getElementById('station-count').textContent = stations.length + ' active';
   document.getElementById('station-list').innerHTML = sorted.map(s => {
-    const swe    = parseFloat(s.swe_in   || 0);
-    const dep    = parseFloat(s.depth_in || 0);
-    const swePct = maxSweVal > 0 ? (swe/maxSweVal*100).toFixed(0) : 0;
-    const depPct = maxDepVal > 0 ? (dep/maxDepVal*100).toFixed(0) : 0;
-    const { temp } = getCurrentTemp(s.name, s.temp_f, hourly);
-    return `
-      <div class="station-card">
-        <div class="sc-top">
-          <span class="sc-name">${s.name}</span>
-          <span class="sc-elev">${s.elevation?.toLocaleString()} ft · ${temp.toFixed(1)}°F</span>
-        </div>
-        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>
-        <div class="sc-bars">
-          <div class="bar-group">
-            <label>SWE</label>
-            <div class="bar-track"><div class="bar-fill swe" style="width:${swePct}%"></div></div>
-            <span class="bar-val">${swe.toFixed(1)} in</span>
-          </div>
-          <div class="bar-group">
-            <label>Depth</label>
-            <div class="bar-track"><div class="bar-fill depth" style="width:${depPct}%"></div></div>
-            <span class="bar-val">${dep} in</span>
-          </div>
-        </div>
-      </div>`;
+    const swe=parseFloat(s.swe_in||0), dep=parseFloat(s.depth_in||0);
+    const {temp}=getTemp(s.name,s.temp_f,hourly);
+    return `<div class="station-card">
+      <div class="sc-top"><span class="sc-name">${s.name}</span><span class="sc-elev">${s.elevation?.toLocaleString()} ft · ${temp.toFixed(1)}°F</span></div>
+      <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>
+      <div class="sc-bars">
+        <div class="bar-group"><label>SWE</label><div class="bar-track"><div class="bar-fill swe" style="width:${maxSweVal>0?(swe/maxSweVal*100).toFixed(0):0}%"></div></div><span class="bar-val">${swe.toFixed(1)} in</span></div>
+        <div class="bar-group"><label>Depth</label><div class="bar-track"><div class="bar-fill depth" style="width:${maxDepVal>0?(dep/maxDepVal*100).toFixed(0):0}%"></div></div><span class="bar-val">${dep} in</span></div>
+      </div></div>`;
   }).join('');
 
-  const elevSorted = [...stations].sort((a,b)=>parseFloat(b.elevation||0)-parseFloat(a.elevation||0));
-  document.getElementById('elev-list').innerHTML = elevSorted.map(s => {
-    const swe   = parseFloat(s.swe_in || 0);
-    const pct   = maxSweVal > 0 ? (swe/maxSweVal*100) : 0;
-    const hue   = Math.round(190+(parseFloat(s.elevation||3000)-3000)/3000*30);
-    const color = `hsl(${hue},80%,${55+pct*0.2}%)`;
-    return `
-      <div class="elev-row">
+  document.getElementById('elev-list').innerHTML = [...stations]
+    .sort((a,b)=>parseFloat(b.elevation||0)-parseFloat(a.elevation||0))
+    .map(s => {
+      const swe=parseFloat(s.swe_in||0), pct=maxSweVal>0?(swe/maxSweVal*100):0;
+      const hue=Math.round(190+(parseFloat(s.elevation||3000)-3000)/3000*30);
+      return `<div class="elev-row">
         <span class="elev-name">${s.name}</span>
-        <div class="elev-track"><div class="elev-fill" style="width:${pct}%;background:${color}"></div></div>
-        <span class="elev-val">${swe.toFixed(1)}"</span>
-      </div>`;
-  }).join('');
+        <div class="elev-track"><div class="elev-fill" style="width:${pct}%;background:hsl(${hue},80%,${55+pct*0.2}%)"></div></div>
+        <span class="elev-val">${swe.toFixed(1)}"</span></div>`;
+    }).join('');
 
-  const tempData = stations.map(s => {
-    const { temp, source } = getCurrentTemp(s.name, s.temp_f, hourly);
-    return { name: s.name, temp, source };
-  }).sort((a,b) => a.temp - b.temp);
-
-  document.getElementById('temp-list').innerHTML = tempData.map(s => {
-    const cold = s.temp <= 32;
-    return `
-      <div class="temp-row ${cold?'freezing':'warm'}">
-        <span class="temp-icon">${cold?'❄':'🌡'}</span>
-        <span class="temp-name">${s.name}</span>
-        <span class="temp-val ${cold?'cold':'warm'}">${s.temp.toFixed(1)}°F</span>
-        <span class="temp-source">${s.source}</span>
-      </div>`;
-  }).join('');
+  document.getElementById('temp-list').innerHTML = stations
+    .map(s => { const {temp,source}=getTemp(s.name,s.temp_f,hourly); return {name:s.name,temp,source}; })
+    .sort((a,b)=>a.temp-b.temp)
+    .map(s => `<div class="temp-row ${s.temp<=32?'freezing':'warm'}">
+      <span>${s.temp<=32?'❄':'🌡'}</span>
+      <span class="temp-name">${s.name}</span>
+      <span class="temp-val ${s.temp<=32?'cold':'warm'}">${s.temp.toFixed(1)}°F</span>
+      <span class="temp-source">${s.source}</span></div>`).join('');
 
   buildSWEChart(basin, stations);
   buildTempChart(hourly);
   buildModisPanel(modis);
+  buildCamSelector();
+  loadWebcam(currentCam);
 }
 
-// ── SWE chart ─────────────────────────────────────────────────────────────────
+// ── SWE Chart ─────────────────────────────────────────────────────────────────
 function buildSWEChart(basin, stations) {
   const ctx = document.getElementById('sweChart').getContext('2d');
-  let labels = [], sweVals = [];
-
-  if (basin && basin.length > 0) {
-    labels  = basin.map(r => r.date);
-    sweVals = basin.map(r => parseFloat(r.basin_swe) || null);
-    document.getElementById('chart-subtitle').textContent =
-      `${basin.length} days · through ${labels[labels.length-1]}`;
+  let labels=[], sweVals=[];
+  if (basin?.length) {
+    labels=basin.map(r=>r.date);
+    sweVals=basin.map(r=>parseFloat(r.basin_swe)||null);
+    document.getElementById('chart-subtitle').textContent=`${basin.length} days · through ${labels[labels.length-1]}`;
   } else {
-    const avg = stations.reduce((a,s)=>a+parseFloat(s.swe_in||0),0)/stations.length;
-    for (let d=1; d<=154; d++) {
-      const dt = new Date(2025,9,1); dt.setDate(dt.getDate()+d-1);
-      labels.push(dt.toISOString().slice(0,10));
-      sweVals.push(+(avg*(d/154)+Math.sin(d*0.12)*1.5).toFixed(1));
-    }
-    document.getElementById('chart-subtitle').textContent = 'WY2026 · simulated';
+    const avg=stations.reduce((a,s)=>a+parseFloat(s.swe_in||0),0)/stations.length;
+    for(let d=1;d<=154;d++){const dt=new Date(2025,9,1);dt.setDate(dt.getDate()+d-1);labels.push(dt.toISOString().slice(0,10));sweVals.push(+(avg*(d/154)+Math.sin(d*0.12)*1.5).toFixed(1));}
+    document.getElementById('chart-subtitle').textContent='WY2026 · simulated';
   }
-
-  new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets:[{
-      label:'Basin Avg SWE', data:sweVals,
-      borderColor:'#81d4fa', borderWidth:2,
-      backgroundColor:'rgba(79,195,247,0.08)',
-      fill:true, tension:0.4, pointRadius:0,
-      pointHoverRadius:4, pointHoverBackgroundColor:'#fff',
-    }]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      interaction:{ mode:'index', intersect:false },
-      plugins:{
-        legend:{ display:false },
-        tooltip:{
-          backgroundColor:'rgba(6,15,30,0.95)',
-          borderColor:'rgba(79,195,247,0.2)', borderWidth:1,
-          titleColor:'#81d4fa', bodyColor:'#cdd6f4',
-          titleFont:{ family:'JetBrains Mono', size:10 },
-          bodyFont:{ family:'JetBrains Mono', size:10 },
-          callbacks:{ label: i => ` Basin avg SWE: ${i.raw?.toFixed(1)??'—'} in` }
-        }
-      },
-      scales:{
-        x:{
-          ticks:{
-            color:'rgba(90,106,138,0.8)', font:{ family:'JetBrains Mono', size:9 },
-            maxTicksLimit:10,
-            callback:(v,i) => {
-              const d = labels[i]; if (!d) return '';
-              const day = d.slice(8);
-              return (day==='01'||day==='02') ? d.slice(5,7)+'/'+d.slice(0,4) : '';
-            }
-          },
-          grid:{ color:'rgba(79,195,247,0.05)' }, border:{ color:'rgba(79,195,247,0.08)' }
-        },
-        y:{
-          ticks:{ color:'rgba(90,106,138,0.8)', font:{ family:'JetBrains Mono', size:9 }, callback:v=>v+'"' },
-          grid:{ color:'rgba(79,195,247,0.05)' }, border:{ color:'rgba(79,195,247,0.08)' }
-        }
-      }
-    }
-  });
+  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Basin Avg SWE',data:sweVals,borderColor:'#81d4fa',borderWidth:2,backgroundColor:'rgba(79,195,247,0.08)',fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10},callbacks:{label:i=>` Basin avg SWE: ${i.raw?.toFixed(1)??'—'} in`}}},scales:{x:{ticks:{color:'rgba(90,106,138,0.8)',font:{family:'JetBrains Mono',size:9},maxTicksLimit:10,callback:(v,i)=>{const d=labels[i];if(!d)return'';const day=d.slice(8);return(day==='01'||day==='02')?d.slice(5,7)+'/'+d.slice(0,4):'';}},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}},y:{ticks:{color:'rgba(90,106,138,0.8)',font:{family:'JetBrains Mono',size:9},callback:v=>v+'"'},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}}}}}); 
 }
 
-// ── 48-hour temp chart ────────────────────────────────────────────────────────
+// ── Temp Chart ────────────────────────────────────────────────────────────────
 function buildTempChart(hourly) {
-  if (!hourly) {
-    document.getElementById('hourly-subtitle').textContent = 'no data available';
-    return;
-  }
-
-  const COLORS = ['#e8f4f8','#b3e5fc','#81d4fa','#4fc3f7','#29b6f6','#0288d1','#4dd0e1'];
-  const stationNames = Object.keys(hourly).sort((a,b) => (hourly[b].elevation||0) - (hourly[a].elevation||0));
-  const labels = hourly[stationNames[0]]?.labels || [];
-
-  let allMins=[], allMaxes=[], allLatest=[], totalFreezing=0;
-  stationNames.forEach(n => {
-    const s = hourly[n];
-    if (s.min_temp != null) allMins.push(s.min_temp);
-    if (s.max_temp != null) allMaxes.push(s.max_temp);
-    if (s.latest   != null) allLatest.push(s.latest);
-    totalFreezing += (s.freezing||[]).filter(Boolean).length;
-  });
-
-  const basinMin    = allMins.length   ? Math.min(...allMins).toFixed(1)  : '—';
-  const basinMax    = allMaxes.length  ? Math.max(...allMaxes).toFixed(1) : '—';
-  const basinLatest = allLatest.length ? (allLatest.reduce((a,b)=>a+b,0)/allLatest.length).toFixed(1) : '—';
-  const avgFreezeHrs = stationNames.length ? Math.round(totalFreezing/stationNames.length) : 0;
-
-  document.getElementById('hourly-stats').innerHTML = `
-    <div class="temp-stat">
-      <div class="temp-stat-label">48hr Low</div>
-      <div class="temp-stat-val cold">${basinMin}°F</div>
-    </div>
-    <div class="temp-stat">
-      <div class="temp-stat-label">48hr High</div>
-      <div class="temp-stat-val hot">${basinMax}°F</div>
-    </div>
-    <div class="temp-stat">
-      <div class="temp-stat-label">Current Avg</div>
-      <div class="temp-stat-val">${basinLatest}°F</div>
-    </div>
-    <div class="temp-stat">
-      <div class="temp-stat-label">Avg Hrs Freezing</div>
-      <div class="temp-stat-val cold">${avgFreezeHrs}h</div>
-    </div>`;
-
-  document.getElementById('hourly-subtitle').textContent =
-    `${stationNames.length} stations · ${labels[0]} → ${labels[labels.length-1]}`;
-
-  const datasets = stationNames.map((name, i) => ({
-    label:       name,
-    data:        hourly[name].temps,
-    borderColor: COLORS[i % COLORS.length],
-    borderWidth: 1.5,
-    pointRadius: 0,
-    pointHoverRadius: 3,
-    pointHoverBackgroundColor: COLORS[i % COLORS.length],
-    tension: 0.3,
-    fill: false,
-  }));
-
-  datasets.push({
-    label:'32°F Freezing', data:labels.map(()=>32),
-    borderColor:'rgba(79,195,247,0.35)', borderWidth:1,
-    borderDash:[5,5], pointRadius:0, fill:false, tension:0,
-  });
-
-  const ctx = document.getElementById('tempChart').getContext('2d');
-  new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      interaction:{ mode:'index', intersect:false },
-      plugins:{
-        legend:{
-          labels:{
-            color:'rgba(180,196,214,0.7)',
-            font:{ family:'JetBrains Mono', size:9 },
-            boxWidth:14, padding:10,
-            filter: item => item.text !== '32°F Freezing',
-          }
-        },
-        tooltip:{
-          backgroundColor:'rgba(6,15,30,0.95)',
-          borderColor:'rgba(79,195,247,0.2)', borderWidth:1,
-          titleColor:'#81d4fa', bodyColor:'#cdd6f4',
-          titleFont:{ family:'JetBrains Mono', size:10 },
-          bodyFont:{ family:'JetBrains Mono', size:9 },
-          callbacks:{
-            label: i => i.dataset.label==='32°F Freezing'
-              ? null
-              : ` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`
-          }
-        }
-      },
-      scales:{
-        x:{
-          ticks:{ color:'rgba(90,106,138,0.7)', font:{ family:'JetBrains Mono', size:8 }, maxTicksLimit:16, maxRotation:30 },
-          grid:{ color:'rgba(79,195,247,0.05)' }, border:{ color:'rgba(79,195,247,0.08)' }
-        },
-        y:{
-          ticks:{ color:'rgba(90,106,138,0.7)', font:{ family:'JetBrains Mono', size:9 }, callback:v=>v+'°F' },
-          grid:{ color:'rgba(79,195,247,0.05)' }, border:{ color:'rgba(79,195,247,0.08)' }
-        }
-      }
-    }
-  });
+  if (!hourly) { document.getElementById('hourly-subtitle').textContent='no data'; return; }
+  const COLORS=['#e8f4f8','#b3e5fc','#81d4fa','#4fc3f7','#29b6f6','#0288d1','#4dd0e1'];
+  const names=Object.keys(hourly).sort((a,b)=>(hourly[b].elevation||0)-(hourly[a].elevation||0));
+  const labels=hourly[names[0]]?.labels||[];
+  let mins=[],maxes=[],latest=[],totalFreeze=0;
+  names.forEach(n=>{const s=hourly[n];if(s.min_temp!=null)mins.push(s.min_temp);if(s.max_temp!=null)maxes.push(s.max_temp);if(s.latest!=null)latest.push(s.latest);totalFreeze+=(s.freezing||[]).filter(Boolean).length;});
+  const low=mins.length?Math.min(...mins).toFixed(1):'—',high=maxes.length?Math.max(...maxes).toFixed(1):'—',avg=latest.length?(latest.reduce((a,b)=>a+b,0)/latest.length).toFixed(1):'—',fh=names.length?Math.round(totalFreeze/names.length):0;
+  document.getElementById('hourly-stats').innerHTML=`<div class="temp-stat"><div class="temp-stat-label">48hr Low</div><div class="temp-stat-val cold">${low}°F</div></div><div class="temp-stat"><div class="temp-stat-label">48hr High</div><div class="temp-stat-val hot">${high}°F</div></div><div class="temp-stat"><div class="temp-stat-label">Current Avg</div><div class="temp-stat-val">${avg}°F</div></div><div class="temp-stat"><div class="temp-stat-label">Avg Hrs Freezing</div><div class="temp-stat-val cold">${fh}h</div></div>`;
+  document.getElementById('hourly-subtitle').textContent=`${names.length} stations · ${labels[0]} → ${labels[labels.length-1]}`;
+  const datasets=names.map((n,i)=>({label:n,data:hourly[n].temps,borderColor:COLORS[i%COLORS.length],borderWidth:1.5,pointRadius:0,pointHoverRadius:3,tension:0.3,fill:false}));
+  datasets.push({label:'32°F Freezing',data:labels.map(()=>32),borderColor:'rgba(79,195,247,0.35)',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false,tension:0});
+  new Chart(document.getElementById('tempChart').getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'rgba(180,196,214,0.7)',font:{family:'JetBrains Mono',size:9},boxWidth:14,padding:10,filter:i=>i.text!=='32°F Freezing'}},tooltip:{backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:9},callbacks:{label:i=>i.dataset.label==='32°F Freezing'?null:` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`}}},scales:{x:{ticks:{color:'rgba(90,106,138,0.7)',font:{family:'JetBrains Mono',size:8},maxTicksLimit:16,maxRotation:30},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}},y:{ticks:{color:'rgba(90,106,138,0.7)',font:{family:'JetBrains Mono',size:9},callback:v=>v+'°F'},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}}}}}); 
 }
 
 init();
