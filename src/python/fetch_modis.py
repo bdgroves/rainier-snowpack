@@ -5,8 +5,7 @@ for the Mt. Rainier area, reprojects to WGS84, clips to Rainier bbox,
 generates a snow cover map PNG, and saves summary stats to JSON.
 
 Auth: NASA Earthdata credentials via ~/.netrc or C:/Users/<user>/_netrc
-CMR search is unauthenticated (public API).
-Download uses NASA Earthdata session login to handle OAuth flow.
+Uses bearer token from Earthdata token API for authenticated downloads.
 """
 
 import json
@@ -60,6 +59,22 @@ def get_credentials():
     raise FileNotFoundError("No netrc file with urs.earthdata.nasa.gov credentials found")
 
 
+def get_token(username, password):
+    """Get a bearer token from NASA Earthdata token API."""
+    token_url = "https://urs.earthdata.nasa.gov/api/users/find_or_create_token"
+    r = requests.post(token_url, auth=(username, password), timeout=30)
+    LOG.info("Token request status: %s", r.status_code)
+
+    if r.status_code != 200:
+        LOG.error("Token request failed: %s", r.text[:200])
+        return None
+
+    token = r.json().get("access_token")
+    if token:
+        LOG.info("Got bearer token: %s...", token[:8])
+    return token
+
+
 def find_latest_granule(days_back=7):
     """Search CMR (public, no auth) for most recent MOD10A1 granule over Rainier."""
     end   = date.today()
@@ -98,8 +113,8 @@ def find_latest_granule(days_back=7):
     return latest["title"], download_url
 
 
-def download_granule(username, password, url, out_path):
-    """Download HDF file using NASA Earthdata session login to handle OAuth."""
+def download_granule(token, url, out_path):
+    """Download HDF file using NASA Earthdata bearer token."""
     if out_path.exists():
         LOG.info("Already downloaded: %s", out_path.name)
         return True
@@ -107,34 +122,18 @@ def download_granule(username, password, url, out_path):
     LOG.info("Downloading %s ...", url.split("/")[-1])
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with requests.Session() as s:
-        # Step 1 — hit the file URL, get redirected to Earthdata OAuth
-        r1 = s.get(url, allow_redirects=False, timeout=30)
-        LOG.info("Step 1 status: %s", r1.status_code)
+    headers = {"Authorization": f"Bearer {token}"}
+    r = requests.get(url, headers=headers, allow_redirects=True,
+                     timeout=120, stream=True)
+    LOG.info("Download status: %s", r.status_code)
 
-        if r1.status_code not in (301, 302, 303, 307, 308):
-            LOG.error("Expected redirect, got HTTP %s", r1.status_code)
-            return False
+    if r.status_code != 200:
+        LOG.error("Download failed: HTTP %s — %s", r.status_code, r.text[:200])
+        return False
 
-        # Step 2 — POST credentials to Earthdata login
-        login_url = "https://urs.earthdata.nasa.gov/login"
-        r2 = s.post(login_url, data={
-            "username": username,
-            "password": password,
-        }, allow_redirects=True, timeout=30)
-        LOG.info("Login status: %s", r2.status_code)
-
-        # Step 3 — retry the original URL with the authenticated session
-        r3 = s.get(url, allow_redirects=True, timeout=120, stream=True)
-        LOG.info("Download status: %s", r3.status_code)
-
-        if r3.status_code != 200:
-            LOG.error("Download failed: HTTP %s", r3.status_code)
-            return False
-
-        with open(out_path, "wb") as f:
-            for chunk in r3.iter_content(chunk_size=8192):
-                f.write(chunk)
+    with open(out_path, "wb") as f:
+        for chunk in r.iter_content(chunk_size=8192):
+            f.write(chunk)
 
     LOG.info("Saved: %s (%.1f MB)", out_path.name, out_path.stat().st_size / 1e6)
     return True
@@ -265,8 +264,13 @@ def make_map(tif_path, stats, obs_date):
 def main():
     LOG.info("=== MODIS Snow Cover Fetch ===")
 
+    # Get credentials and bearer token
     username, password = get_credentials()
     LOG.info("Authenticated as: %s", username)
+
+    token = get_token(username, password)
+    if not token:
+        raise SystemExit(1)
 
     # Search CMR — no auth needed
     title, download_url = find_latest_granule()
@@ -280,9 +284,9 @@ def main():
     obs_date = date(year, 1, 1) + timedelta(days=doy - 1)
     LOG.info("Observation date: %s", obs_date)
 
-    # Download with session login
+    # Download with bearer token
     hdf_path = RAW_DIR / f"MOD10A1.A{year}{doy:03d}.{TILE}.hdf"
-    if not download_granule(username, password, download_url, hdf_path):
+    if not download_granule(token, download_url, hdf_path):
         raise SystemExit(1)
 
     # Reproject
