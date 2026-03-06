@@ -4,9 +4,9 @@ Fetches daily SNOTEL data from NRCS AWDB REST API for 7 stations
 surrounding Mt. Rainier. Saves full water year CSV and a latest JSON
 snapshot including computed fields:
   - 24hr SWE change (new snow / melt signal)
-  - Snow density % (SWE / depth)
   - Days since last measurable snowfall
   - Melt rate alert flag
+  - Snow density %
 """
 
 import json
@@ -21,23 +21,22 @@ LOG = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 STATIONS = [
-    {"id": "679:WA:SNTL",  "name": "Paradise",        "elevation": 5150},
-    {"id": "642:WA:SNTL",  "name": "Morse Lake",       "elevation": 5400},
-    {"id": "672:WA:SNTL",  "name": "Olallie Meadows",  "elevation": 4010},
-    {"id": "1085:WA:SNTL", "name": "Cayuse Pass",      "elevation": 5260},
-    {"id": "418:WA:SNTL",  "name": "Corral Pass",      "elevation": 5810},
-    {"id": "375:WA:SNTL",  "name": "Bumping Ridge",    "elevation": 4600},
-    {"id": "420:WA:SNTL",  "name": "Cougar Mountain",  "elevation": 3210},
+    {"id": "679:WA:SNTL",  "name": "Paradise",        "elevation_ft": 5150},
+    {"id": "642:WA:SNTL",  "name": "Morse Lake",       "elevation_ft": 5400},
+    {"id": "672:WA:SNTL",  "name": "Olallie Meadows",  "elevation_ft": 4010},
+    {"id": "1085:WA:SNTL", "name": "Cayuse Pass",      "elevation_ft": 5260},
+    {"id": "418:WA:SNTL",  "name": "Corral Pass",      "elevation_ft": 5810},
+    {"id": "375:WA:SNTL",  "name": "Bumping Ridge",    "elevation_ft": 4600},
+    {"id": "420:WA:SNTL",  "name": "Cougar Mountain",  "elevation_ft": 3210},
 ]
 
-ELEMENTS    = ["WTEQ", "SNWD", "TOBS", "PRCP"]
-BASE_URL    = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data"
-PROC_DIR    = Path("data/processed")
-WATER_YEAR  = 2026
+ELEMENTS   = ["WTEQ", "SNWD", "TOBS", "PRCP"]
+BASE_URL   = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data"
+PROC_DIR   = Path("data/processed")
+WATER_YEAR = 2026
 
-# Thresholds
-MELT_ALERT_THRESHOLD   = 0.5   # inches SWE lost in 24hrs triggers alert
-NEW_SNOW_MIN           = 0.1   # inches SWE gain counts as new snowfall
+MELT_ALERT_THRESHOLD = 0.5   # inches SWE lost in 24hrs triggers alert
+NEW_SNOW_MIN         = 0.1   # inches SWE gain counts as new snowfall
 
 
 def water_year_start(wy: int) -> date:
@@ -45,24 +44,23 @@ def water_year_start(wy: int) -> date:
 
 
 def fetch_station(station_id: str, start: date, end: date) -> dict:
-    """Fetch all elements for one station, return dict keyed by element."""
+    """Fetch all elements for one station. Pass triplet as raw string to avoid encoding."""
     results = {}
     for element in ELEMENTS:
         try:
-            r = requests.get(
-                BASE_URL,
-                params={
-                    "stationTriplets": station_id,
-                    "elementCd":       element,
-                    "beginDate":       str(start),
-                    "endDate":         str(end),
-                    "periodRef":       "START",
-                    "duration":        "DAILY",
-                    "getFlags":        "false",
-                    "unitSystem":      "ENGLISH",
-                },
-                timeout=30,
+            # Build URL manually to avoid requests percent-encoding the colons
+            url = (
+                f"{BASE_URL}"
+                f"?stationTriplets={station_id}"
+                f"&elementCd={element}"
+                f"&beginDate={start}"
+                f"&endDate={end}"
+                f"&periodRef=START"
+                f"&duration=DAILY"
+                f"&getFlags=false"
+                f"&unitSystem=ENGLISH"
             )
+            r = requests.get(url, timeout=30)
             r.raise_for_status()
             data = r.json()
             if data and data[0].get("values"):
@@ -75,7 +73,7 @@ def fetch_station(station_id: str, start: date, end: date) -> dict:
     return results
 
 
-def build_series(raw: dict, element: str, start: date, n_days: int) -> list:
+def build_series(raw: dict, element: str, n_days: int) -> list:
     """Align element values to date range, filling gaps with None."""
     values = raw.get(element, [])
     series = [None] * n_days
@@ -88,15 +86,8 @@ def build_series(raw: dict, element: str, start: date, n_days: int) -> list:
     return series
 
 
-def compute_snow_metrics(swe_series: list, prcp_series: list, dates: list) -> dict:
-    """
-    Compute derived snow metrics from SWE and PRCP time series.
-    Returns dict with:
-      - swe_change_24h: SWE difference from yesterday to today
-      - days_since_snow: days since last measurable new snowfall
-      - melt_alert: True if SWE dropped > threshold in last 24hrs
-    """
-    # Get last two valid SWE readings
+def compute_snow_metrics(swe_series: list, prcp_series: list, n_days: int) -> dict:
+    """Compute derived snow metrics from SWE and PRCP time series."""
     valid_swe = [(i, v) for i, v in enumerate(swe_series) if v is not None]
 
     swe_change_24h = None
@@ -109,13 +100,9 @@ def compute_snow_metrics(swe_series: list, prcp_series: list, dates: list) -> di
         if swe_change_24h < -MELT_ALERT_THRESHOLD:
             melt_alert = True
 
-    # Days since last measurable snowfall
-    # Use PRCP (incremental precip) as proxy for new snow
-    # Walk backwards from most recent date
+    # Days since last measurable snowfall — scan PRCP backwards
     days_since_snow = None
-    today_idx = len(dates) - 1
-
-    # Try PRCP series first
+    today_idx = n_days - 1
     valid_prcp = [(i, v) for i, v in enumerate(prcp_series) if v is not None]
     if valid_prcp:
         for i, v in reversed(valid_prcp):
@@ -142,18 +129,18 @@ def compute_snow_metrics(swe_series: list, prcp_series: list, dates: list) -> di
 def main():
     LOG.info("=== SNOTEL fetch — Water Year %d ===", WATER_YEAR)
 
-    today     = date.today() - timedelta(days=1)   # confirmed through yesterday
-    start     = water_year_start(WATER_YEAR)
-    n_days    = (today - start).days + 1
-    dates     = [str(start + timedelta(days=i)) for i in range(n_days)]
+    today  = date.today() - timedelta(days=1)
+    start  = water_year_start(WATER_YEAR)
+    n_days = (today - start).days + 1
+    dates  = [str(start + timedelta(days=i)) for i in range(n_days)]
 
     LOG.info("Pipeline run: %s UTC", date.today())
     LOG.info("Date range: %s → %s (%d days confirmed through yesterday)", start, today, n_days)
 
     PROC_DIR.mkdir(parents=True, exist_ok=True)
 
-    all_rows    = []
-    latest_list = []
+    all_rows         = []
+    latest_list      = []
     basin_swe_series = [0.0] * n_days
     basin_swe_count  = [0]   * n_days
 
@@ -161,38 +148,35 @@ def main():
         LOG.info("Fetching %s (%s)...", stn["name"], stn["id"])
         raw = fetch_station(stn["id"], start, today)
 
-        swe_s   = build_series(raw, "WTEQ", start, n_days)
-        depth_s = build_series(raw, "SNWD", start, n_days)
-        temp_s  = build_series(raw, "TOBS", start, n_days)
-        prcp_s  = build_series(raw, "PRCP", start, n_days)
+        swe_s   = build_series(raw, "WTEQ", n_days)
+        depth_s = build_series(raw, "SNWD", n_days)
+        temp_s  = build_series(raw, "TOBS", n_days)
+        prcp_s  = build_series(raw, "PRCP", n_days)
 
-        # Accumulate basin average
         for i, v in enumerate(swe_s):
             if v is not None:
                 basin_swe_series[i] += v
                 basin_swe_count[i]  += 1
 
-        # Build full CSV rows
+        # CSV rows — keep original column names R expects
         for i, d in enumerate(dates):
             all_rows.append({
-                "date":       d,
-                "station_id": stn["id"],
-                "name":       stn["name"],
-                "elevation":  stn["elevation"],
-                "swe_in":     swe_s[i],
-                "depth_in":   depth_s[i],
-                "temp_f":     temp_s[i],
-                "prcp_in":    prcp_s[i],
+                "date":            d,
+                "station_triplet": stn["id"],
+                "station_name":    stn["name"],
+                "elevation_ft":    stn["elevation_ft"],
+                "swe_in":          swe_s[i],
+                "depth_in":        depth_s[i],
+                "temp_f":          temp_s[i],
+                "precip_in":       prcp_s[i],
             })
 
-        # Latest snapshot + derived metrics
         latest_swe   = next((v for v in reversed(swe_s)   if v is not None), None)
         latest_depth = next((v for v in reversed(depth_s) if v is not None), None)
         latest_temp  = next((v for v in reversed(temp_s)  if v is not None), None)
 
-        metrics = compute_snow_metrics(swe_s, prcp_s, dates)
+        metrics = compute_snow_metrics(swe_s, prcp_s, n_days)
 
-        # Snow density (%)
         density = None
         if latest_swe is not None and latest_depth and latest_depth > 0:
             density = round(latest_swe / (latest_depth / 12) * 100, 1)
@@ -200,7 +184,7 @@ def main():
         latest_list.append({
             "id":              stn["id"],
             "name":            stn["name"],
-            "elevation":       stn["elevation"],
+            "elevation":       stn["elevation_ft"],
             "swe_in":          latest_swe,
             "depth_in":        latest_depth,
             "temp_f":          latest_temp,
@@ -210,16 +194,13 @@ def main():
             "density_pct":     density,
         })
 
-        status = "✓" if latest_swe is not None else "✗"
+        status     = "✓" if latest_swe is not None else "✗"
         change_str = f"{metrics['swe_change_24h']:+.2f}\"" if metrics["swe_change_24h"] is not None else "—"
         LOG.info("  %s SWE=%.1f\" change=%s days_snow=%s melt_alert=%s",
-                 status,
-                 latest_swe or 0,
-                 change_str,
-                 metrics["days_since_snow"],
-                 metrics["melt_alert"])
+                 status, latest_swe or 0, change_str,
+                 metrics["days_since_snow"], metrics["melt_alert"])
 
-    # ── Basin daily CSV ───────────────────────────────────────────────────────
+    # ── CSVs ──────────────────────────────────────────────────────────────────
     df = pd.DataFrame(all_rows)
     df.to_csv(PROC_DIR / "snotel_wy2026.csv", index=False)
     LOG.info("Saved snotel_wy2026.csv (%d rows)", len(df))
@@ -228,38 +209,34 @@ def main():
     for i, d in enumerate(dates):
         c = basin_swe_count[i]
         basin_daily.append({
-            "date":      d,
-            "basin_swe": round(basin_swe_series[i] / c, 2) if c > 0 else None,
+            "date":       d,
+            "basin_swe":  round(basin_swe_series[i] / c, 2) if c > 0 else None,
             "n_stations": c,
         })
-
-    bd = pd.DataFrame(basin_daily)
-    bd.to_csv(PROC_DIR / "basin_daily.csv", index=False)
-    LOG.info("Saved basin_daily.csv (%d rows)", len(bd))
+    pd.DataFrame(basin_daily).to_csv(PROC_DIR / "basin_daily.csv", index=False)
+    LOG.info("Saved basin_daily.csv (%d rows)", len(basin_daily))
 
     # ── Basin-level derived metrics ───────────────────────────────────────────
-    valid_changes = [s["swe_change_24h"] for s in latest_list if s["swe_change_24h"] is not None]
+    valid_changes = [s["swe_change_24h"]  for s in latest_list if s["swe_change_24h"]  is not None]
     valid_days    = [s["days_since_snow"] for s in latest_list if s["days_since_snow"] is not None]
     valid_density = [s["density_pct"]     for s in latest_list if s["density_pct"]     is not None]
 
-    basin_change_24h  = round(sum(valid_changes) / len(valid_changes), 2) if valid_changes else None
-    basin_days_snow   = round(sum(valid_days)    / len(valid_days),    0) if valid_days    else None
-    basin_density     = round(sum(valid_density) / len(valid_density), 1) if valid_density else None
-    any_melt_alert    = any(s["melt_alert"] for s in latest_list)
+    basin_change  = round(sum(valid_changes) / len(valid_changes), 2) if valid_changes else None
+    basin_days    = int(round(sum(valid_days) / len(valid_days)))      if valid_days    else None
+    basin_density = round(sum(valid_density) / len(valid_density), 1)  if valid_density else None
+    any_melt      = any(s["melt_alert"] for s in latest_list)
 
-    # ── snotel_latest.json ────────────────────────────────────────────────────
     snapshot = {
         "updated":    str(date.today()),
         "water_year": WATER_YEAR,
         "basin": {
-            "swe_change_24h":  basin_change_24h,
-            "days_since_snow": int(basin_days_snow) if basin_days_snow is not None else None,
-            "melt_alert":      any_melt_alert,
+            "swe_change_24h":  basin_change,
+            "days_since_snow": basin_days,
+            "melt_alert":      any_melt,
             "density_pct":     basin_density,
         },
         "stations": latest_list,
     }
-
     (PROC_DIR / "snotel_latest.json").write_text(json.dumps(snapshot, indent=2))
     LOG.info("Saved snotel_latest.json")
 
@@ -271,12 +248,13 @@ def main():
     if valid:
         avg_swe = sum(s["swe_in"] for s in valid) / len(valid)
         print(f"  Basin avg SWE:    {avg_swe:.1f}\"")
-        print(f"  24hr SWE change:  {basin_change_24h:+.2f}\"" if basin_change_24h is not None else "  24hr SWE change:  —")
-        print(f"  Days since snow:  {int(basin_days_snow) if basin_days_snow is not None else '—'}")
-        print(f"  Melt alert:       {'🔴 YES' if any_melt_alert else '✓ No'}")
+        print(f"  24hr SWE change:  {basin_change:+.2f}\"" if basin_change is not None else "  24hr SWE change:  —")
+        print(f"  Days since snow:  {basin_days if basin_days is not None else '—'}")
+        print(f"  Melt alert:       {'🔴 YES' if any_melt else '✓ No'}")
         print(f"  Snow density:     {basin_density}%" if basin_density else "  Snow density:     —")
+    else:
+        print("  No valid station data retrieved.")
     print("="*55)
-
     LOG.info("=== Done! ===")
 
 
