@@ -33,7 +33,7 @@ This system tracks it. All of it. Every hour. From space and from the ground.
 
 ## 📡 THE RIG
 
-Two sensor networks. One pipeline. No days off.
+Three sensor networks. One pipeline. No days off.
 
 ### 🔩 Ground Truth — NRCS SNOTEL
 *Seven instruments bolted into the Cascades. Measuring what satellites can't feel.*
@@ -67,6 +67,10 @@ When it's cloudy? The system searches back through the last 14 days and holds th
 ### 📷 Live Webcam — NPS Paradise
 *Jackson Visitor Center, 5,400 ft. Refreshes every 60 seconds. Is the mountain out?*
 
+Six angles, all live: **Visitor Center · Mountain · East · West · Tatoosh Range · Longmire**
+
+Public NPS JPEG feeds. No auth. No delay. Just the mountain, right now.
+
 ---
 
 ## ⚡ THE PIPELINE
@@ -74,11 +78,13 @@ When it's cloudy? The system searches back through the last 14 days and holds th
 ```
 Every hour, on the hour, without fail:
 
-  fetch          →  7 SNOTEL stations via NRCS AWDB REST API
+  fetch          →  7 SNOTEL stations via NRCS AWDB REST API (httpx)
+                    SWE · depth · temp · precip · 24hr change ·
+                    days since snow · melt alert
   fetch-hourly   →  48-hour diurnal temperature sweep
   fetch-modis    →  NASA Earthdata CMR search → HDF4 download →
                     sinusoidal reproject → cloud quality check →
-                    fallback to last clean pass if needed
+                    fallback to last clean pass if >80% cloud cover
   analyze        →  R · tidyverse · ggplot2 · basin statistics
   deploy         →  commit → push → GitHub Pages live
 ```
@@ -87,21 +93,34 @@ Every hour, on the hour, without fail:
 
 No human required. No button to push. Just data, moving.
 
+> If all stations return no data, the pipeline exits with code 1 and preserves
+> the last known good JSON. Zeroes never reach the dashboard.
+
 ---
 
 ## 🖥️ THE DASHBOARD
 
-Seven panels. One story.
+Nine panels. One story.
 
 | Panel | Signal |
 |---|---|
-| **KPI Strip** | Basin SWE · depth · peak · temperature · freeze count |
+| **Core KPI Strip** | Basin SWE · avg depth · peak SWE · avg temperature · stations freezing |
+| **Snow Event KPIs** | 24hr new snow · days since last snowfall · melt rate alert |
 | **SWE Time Series** | Water Year 2026, daily basin average |
-| **Station Cards** | Per-station SWE, depth, temp with bar charts |
+| **Station Cards** | Per-station SWE, depth, temp + 24hr SWE change inline |
 | **Elevation Ladder** | SWE ranked high → low by elevation |
 | **Temperature List** | Current temps, coldest first, hourly data |
 | **48-Hour Diurnal** | Freeze/thaw cycles across all 7 stations |
-| **Webcam + Satellite** | Live NPS cam alongside MODIS snow cover map |
+| **Live Webcam** | NPS Paradise · 6 cam angles · 60s auto-refresh |
+| **MODIS Satellite Map** | NASA snow cover with cloud fallback annotation |
+
+### Snow Event KPIs — how they work
+
+**New Snow · 24hr** — basin avg SWE change since yesterday. Blue when accumulating, orange when losing ground.
+
+**Last Snowfall** — days since any station recorded measurable new snow. Green when ≤1 day, orange at 7+ days dry.
+
+**Melt Rate** — watches for rapid SWE loss. Flips to `🔴 Alert` with pulsing red border if any station drops >0.5" SWE in 24 hours.
 
 ---
 
@@ -111,13 +130,13 @@ Seven panels. One story.
 rainier-snowpack/
 ├── src/
 │   ├── python/
-│   │   ├── fetch_snotel.py       # Ground truth — 7 stations
+│   │   ├── fetch_snotel.py       # Ground truth — 7 stations + snow event metrics
 │   │   ├── fetch_hourly.py       # 48hr diurnal temperature
-│   │   └── fetch_modis.py        # Satellite — cloud fallback logic
+│   │   └── fetch_modis.py        # Satellite — 14-day cloud fallback logic
 │   └── r/
 │       └── snowpack_stats.R      # Basin stats + ggplot2 charts
 ├── data/processed/               # Live data feeds
-│   ├── snotel_latest.json
+│   ├── snotel_latest.json        # Stations + basin metrics incl. snow events
 │   ├── basin_daily.csv
 │   ├── hourly_temps.json
 │   └── modis/modis_latest.json
@@ -159,6 +178,7 @@ Get your bearer token: **urs.earthdata.nasa.gov → My Profile → Generate Toke
 ```bash
 pixi run update          # Full pipeline
 pixi run fetch           # SNOTEL only
+pixi run fetch-hourly    # 48hr temperature only
 pixi run fetch-modis     # Satellite only
 pixi run analyze         # R stats + charts
 ```
@@ -182,7 +202,7 @@ pixi run analyze         # R stats + charts
 | **0 – 100** | Snow cover % — 100 is dense continuous pack |
 | **200** | Missing data |
 | **237** | Inland water |
-| **250** | ☁️ Cloud obscured — triggers fallback logic |
+| **250** | ☁️ Cloud obscured — triggers 14-day fallback |
 | **255** | Fill / no data |
 
 *Watershed clip:* `(-122.5°W, 46.0°N) → (-121.0°W, 47.5°N)`
@@ -191,20 +211,22 @@ pixi run analyze         # R stats + charts
 
 ## 📊 CURRENT CONDITIONS — WY2026
 
-*As of early March 2026 — the refreeze is on.*
+*As of early March 2026 — fresh snow on a hard refreeze.*
 
 ```
-Basin avg SWE  ████████████░░░░  17.0"   7 stations reporting
+Basin avg SWE  ████████████░░░░  17.2"   +0.17" overnight · snowing today
 Morse Lake     ████████████████  26.2"   season high
-Paradise       ███████████████░  25.0"   25.0°F — deep freeze
-Corral Pass    ███████████░░░░░  18.2"   26.2°F
-Cayuse Pass    █████████████░░░  21.6"   28.4°F
-Bumping Ridge  ███████░░░░░░░░░  11.7"   27.9°F
-Olallie Mdws   █████████░░░░░░░  15.6"   30.4°F
-Cougar Mtn     ░░░░░░░░░░░░░░░░   0.7"   33.1°F — nearly done
+Paradise       ███████████████░  25.3"   +0.30" · 27.5°F
+Cayuse Pass    █████████████░░░  21.9"   +0.30" · 28.6°F
+Corral Pass    ███████████░░░░░  18.3"   +0.10" · 30.2°F
+Bumping Ridge  ███████░░░░░░░░░  11.8"   +0.10" · 29.5°F
+Olallie Mdws   █████████░░░░░░░  15.9"   +0.30" · 31.6°F
+Cougar Mtn     ░░░░░░░░░░░░░░░░   0.8"   +0.10" · 33.8°F
 
 Satellite:     72% snow cover · 2.2% cloud · NDSI avg 27.1
-Webcam:        Jackson Visitor Center · Paradise · Live
+               (March 2nd clean pass — clouds blocked 3rd & 4th)
+Webcam:        Jackson Visitor Center · Paradise · Live · 60s refresh
+48hr freeze:   33 hours avg across all stations
 ```
 
 ---
@@ -212,11 +234,11 @@ Webcam:        Jackson Visitor Center · Paradise · Live
 ## ⚙️ STACK
 
 ```
-Ground data   →  Python · requests · NRCS AWDB REST API
+Ground data   →  Python · httpx · NRCS AWDB REST API
 Satellite     →  rasterio · libgdal-hdf4 · NASA Earthdata
 Statistics    →  R · tidyverse · zoo · ggplot2
 Dashboard     →  Vanilla JS · Chart.js · CSS Grid
-Webcam        →  NPS public JPEG feed · 60s auto-refresh
+Webcam        →  NPS public JPEG feed · 6 angles · 60s auto-refresh
 Pipeline      →  GitHub Actions · pixi · hourly cron
 Hosting       →  GitHub Pages
 ```
