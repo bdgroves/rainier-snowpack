@@ -2,95 +2,95 @@
   "updated": "2026-03-06",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": null,
-    "days_since_snow": null,
+    "swe_change_24h": 0.17,
+    "days_since_snow": 0,
     "melt_alert": false,
-    "density_pct": null
+    "density_pct": 407.4
   },
   "stations": [
     {
       "id": "679:WA:SNTL",
       "name": "Paradise",
       "elevation": 5150,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 25.3,
+      "depth_in": 68.0,
+      "temp_f": 27.0,
+      "swe_change_24h": 0.3,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 446.5
     },
     {
       "id": "642:WA:SNTL",
       "name": "Morse Lake",
       "elevation": 5400,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 26.2,
+      "depth_in": 74.0,
+      "temp_f": 29.3,
+      "swe_change_24h": 0.0,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 424.9
     },
     {
       "id": "672:WA:SNTL",
       "name": "Olallie Meadows",
       "elevation": 4010,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 15.9,
+      "depth_in": 39.0,
+      "temp_f": 30.9,
+      "swe_change_24h": 0.3,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 489.2
     },
     {
       "id": "1085:WA:SNTL",
       "name": "Cayuse Pass",
       "elevation": 5260,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 21.9,
+      "depth_in": 61.0,
+      "temp_f": 28.9,
+      "swe_change_24h": 0.3,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 430.8
     },
     {
       "id": "418:WA:SNTL",
       "name": "Corral Pass",
       "elevation": 5810,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 18.3,
+      "depth_in": 48.0,
+      "temp_f": 27.9,
+      "swe_change_24h": 0.1,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 457.5
     },
     {
       "id": "375:WA:SNTL",
       "name": "Bumping Ridge",
       "elevation": 4600,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 11.8,
+      "depth_in": 39.0,
+      "temp_f": 29.3,
+      "swe_change_24h": 0.1,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 363.1
     },
     {
       "id": "420:WA:SNTL",
       "name": "Cougar Mountain",
       "elevation": 3210,
-      "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
-      "swe_change_24h": null,
-      "days_since_snow": null,
+      "swe_in": 0.8,
+      "depth_in": 4.0,
+      "temp_f": 33.8,
+      "swe_change_24h": 0.1,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 240.0
     }
   ]
 }
