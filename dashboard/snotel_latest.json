@@ -1,5 +1,5 @@
 {
-  "updated": "2026-03-06T08:41:18Z",
+  "updated": "2026-03-06T09:42:02Z",
   "data_date": "2026-03-05",
   "water_year": 2026,
   "stations": [
@@ -55,9 +55,9 @@
       "id": "679:WA:SNTL",
       "name": "Paradise",
       "elevation": 5150,
-      "swe_in": 25.0,
+      "swe_in": 25.3,
       "depth_in": 63.0,
-      "temp_f": 28.8
+      "temp_f": 27.0
     }
   ]
 }
