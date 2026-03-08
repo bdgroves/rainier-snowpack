@@ -2,23 +2,23 @@
   "updated": "2026-03-08",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -0.03,
+    "swe_change_24h": -0.26,
     "days_since_snow": 1,
     "melt_alert": true,
-    "density_pct": 391.5
+    "density_pct": 393.6
   },
   "stations": [
     {
       "id": "679:WA:SNTL",
       "name": "Paradise",
       "elevation": 5150,
-      "swe_in": 26.6,
-      "depth_in": 70.0,
-      "temp_f": 33.8,
-      "swe_change_24h": 1.3,
-      "days_since_snow": 1,
+      "swe_in": 26.3,
+      "depth_in": 67.0,
+      "temp_f": 33.4,
+      "swe_change_24h": -0.3,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 456.0
+      "density_pct": 471.0
     },
     {
       "id": "642:WA:SNTL",
