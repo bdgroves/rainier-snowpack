@@ -5,7 +5,7 @@
     "swe_change_24h": 0.44,
     "days_since_snow": 0,
     "melt_alert": false,
-    "density_pct": 417.9
+    "density_pct": 392.4
   },
   "stations": [
     {
@@ -13,24 +13,24 @@
       "name": "Paradise",
       "elevation": 5150,
       "swe_in": 27.1,
-      "depth_in": 62.0,
+      "depth_in": 76.0,
       "temp_f": 17.6,
       "swe_change_24h": 0.6,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 524.5
+      "density_pct": 427.9
     },
     {
       "id": "642:WA:SNTL",
       "name": "Morse Lake",
       "elevation": 5400,
       "swe_in": 27.0,
-      "depth_in": 69.0,
+      "depth_in": 75.0,
       "temp_f": 15.4,
       "swe_change_24h": 0.4,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 469.6
+      "density_pct": 432.0
     },
     {
       "id": "672:WA:SNTL",
@@ -61,12 +61,12 @@
       "name": "Corral Pass",
       "elevation": 5810,
       "swe_in": 18.8,
-      "depth_in": 48.0,
+      "depth_in": 53.0,
       "temp_f": 18.1,
       "swe_change_24h": 0.2,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 470.0
+      "density_pct": 425.7
     },
     {
       "id": "375:WA:SNTL",
