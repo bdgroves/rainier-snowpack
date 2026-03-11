@@ -38,7 +38,7 @@
 
   /* ── KPI rows ── */
   .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:12px;}
-  .kpi-row-2{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .kpi-row-2{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
 
   .kpi{background:rgba(13,31,60,0.7);border:1px solid rgba(79,195,247,0.1);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;animation:fadeUp 0.5s ease both;transition:border-color 0.2s,transform 0.2s;}
   .kpi:hover{border-color:rgba(79,195,247,0.3);transform:translateY(-2px);}
@@ -324,15 +324,15 @@ function parseCSV(text){
 }
 
 const DEMO={updated:'2026-03-05',water_year:2026,
-  basin:{swe_change_24h:0.3,days_since_snow:1,melt_alert:false,density_pct:34.2},
+  basin:{swe_change_24h:0.3,depth_change_24h:1.0,days_since_snow:1,melt_alert:false,density_pct:34.2},
   stations:[
-    {id:'679:WA:SNTL', name:'Paradise',       elevation:5150,swe_in:25.0,depth_in:63,temp_f:25.0,swe_change_24h:0.9,days_since_snow:0,melt_alert:false,density_pct:47.6},
-    {id:'642:WA:SNTL', name:'Morse Lake',     elevation:5400,swe_in:26.2,depth_in:76,temp_f:28.8,swe_change_24h:0.5,days_since_snow:1,melt_alert:false,density_pct:41.4},
-    {id:'672:WA:SNTL', name:'Olallie Meadows',elevation:4010,swe_in:15.6,depth_in:40,temp_f:30.4,swe_change_24h:0.1,days_since_snow:2,melt_alert:false,density_pct:46.8},
-    {id:'1085:WA:SNTL',name:'Cayuse Pass',    elevation:5260,swe_in:21.6,depth_in:58,temp_f:28.2,swe_change_24h:0.0,days_since_snow:3,melt_alert:false,density_pct:44.8},
-    {id:'418:WA:SNTL', name:'Corral Pass',    elevation:5810,swe_in:18.2,depth_in:53,temp_f:26.2,swe_change_24h:0.3,days_since_snow:1,melt_alert:false,density_pct:41.3},
-    {id:'375:WA:SNTL', name:'Bumping Ridge',  elevation:4600,swe_in:11.7,depth_in:37,temp_f:27.9,swe_change_24h:-0.1,days_since_snow:4,melt_alert:false,density_pct:37.9},
-    {id:'420:WA:SNTL', name:'Cougar Mountain',elevation:3210,swe_in:0.7, depth_in:3, temp_f:33.1,swe_change_24h:0.3,days_since_snow:2,melt_alert:false,density_pct:28.0},
+    {id:'679:WA:SNTL', name:'Paradise',       elevation:5150,swe_in:25.0,depth_in:63,temp_f:25.0,swe_change_24h:0.9, depth_change_24h:3.0, days_since_snow:0,melt_alert:false,density_pct:47.6},
+    {id:'642:WA:SNTL', name:'Morse Lake',     elevation:5400,swe_in:26.2,depth_in:76,temp_f:28.8,swe_change_24h:0.5, depth_change_24h:2.0, days_since_snow:1,melt_alert:false,density_pct:41.4},
+    {id:'672:WA:SNTL', name:'Olallie Meadows',elevation:4010,swe_in:15.6,depth_in:40,temp_f:30.4,swe_change_24h:0.1, depth_change_24h:0.0, days_since_snow:2,melt_alert:false,density_pct:46.8},
+    {id:'1085:WA:SNTL',name:'Cayuse Pass',    elevation:5260,swe_in:21.6,depth_in:58,temp_f:28.2,swe_change_24h:0.0, depth_change_24h:0.0, days_since_snow:3,melt_alert:false,density_pct:44.8},
+    {id:'418:WA:SNTL', name:'Corral Pass',    elevation:5810,swe_in:18.2,depth_in:53,temp_f:26.2,swe_change_24h:0.3, depth_change_24h:1.0, days_since_snow:1,melt_alert:false,density_pct:41.3},
+    {id:'375:WA:SNTL', name:'Bumping Ridge',  elevation:4600,swe_in:11.7,depth_in:37,temp_f:27.9,swe_change_24h:-0.1,depth_change_24h:-1.0,days_since_snow:4,melt_alert:false,density_pct:37.9},
+    {id:'420:WA:SNTL', name:'Cougar Mountain',elevation:3210,swe_in:0.7, depth_in:3, temp_f:33.1,swe_change_24h:0.3, depth_change_24h:0.0, days_since_snow:2,melt_alert:false,density_pct:28.0},
   ]
 };
 
@@ -406,14 +406,20 @@ async function init(){
   </div>`).join('');
 
   // ── Row 2: Snow event KPIs ──
-  const change24h  = basinMeta.swe_change_24h  ?? null;
-  const daysSince  = basinMeta.days_since_snow ?? null;
-  const meltAlert  = basinMeta.melt_alert      ?? false;
+  const change24h      = basinMeta.swe_change_24h   ?? null;
+  const depthChange24h = basinMeta.depth_change_24h ?? null;
+  const daysSince      = basinMeta.days_since_snow  ?? null;
+  const meltAlert      = basinMeta.melt_alert       ?? false;
 
   const changeVal  = change24h !== null ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}` : '—';
   const changeCls  = change24h === null ? '' : change24h > 0 ? 'positive' : change24h < 0 ? 'negative' : '';
   const changeSub  = change24h === null ? '24hr SWE change' : change24h >= 0.1 ? '❄ new snow accumulating' : change24h <= -0.5 ? '⚠ significant melt' : change24h < 0 ? 'minor settling' : 'stable snowpack';
   const changeKpiCls = change24h !== null && change24h >= 0.1 ? 'snow' : change24h !== null && change24h <= -0.5 ? 'warn' : '';
+
+  const depthVal    = depthChange24h !== null ? `${depthChange24h >= 0 ? '+' : ''}${depthChange24h.toFixed(1)}` : '—';
+  const depthCls    = depthChange24h === null ? '' : depthChange24h > 0 ? 'positive' : depthChange24h < 0 ? 'negative' : '';
+  const depthSub    = depthChange24h === null ? '24hr depth change' : depthChange24h >= 1 ? `❄ ${depthChange24h.toFixed(1)}" fallen` : depthChange24h <= -1 ? '↓ settling / compacting' : depthChange24h < 0 ? 'minor settling' : 'no depth change';
+  const depthKpiCls = depthChange24h !== null && depthChange24h >= 1 ? 'snow' : depthChange24h !== null && depthChange24h <= -2 ? 'warn' : '';
 
   const daysSub  = daysSince === null ? '—' : daysSince === 0 ? '❄ snowing today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`;
   const daysCls  = daysSince !== null && daysSince <= 1 ? 'good' : daysSince !== null && daysSince >= 7 ? 'warn' : '';
@@ -425,16 +431,21 @@ async function init(){
 
   document.getElementById('kpi-row-2').innerHTML=`
     <div class="kpi ${changeKpiCls}" style="animation-delay:0.35s">
-      <div class="kpi-label">New Snow · 24hr</div>
+      <div class="kpi-label">New Snow · SWE</div>
       <div class="kpi-val ${changeCls}">${changeVal}<span class="kpi-unit">in</span></div>
       <div class="kpi-sub">${changeSub}</div>
     </div>
-    <div class="kpi ${daysCls}" style="animation-delay:0.42s">
+    <div class="kpi ${depthKpiCls}" style="animation-delay:0.42s">
+      <div class="kpi-label">New Snow · Depth</div>
+      <div class="kpi-val ${depthCls}">${depthVal}<span class="kpi-unit">in</span></div>
+      <div class="kpi-sub">${depthSub}</div>
+    </div>
+    <div class="kpi ${daysCls}" style="animation-delay:0.49s">
       <div class="kpi-label">Last Snowfall</div>
       <div class="kpi-val">${daysSince !== null ? daysSince : '—'}<span class="kpi-unit">${daysSince !== null ? 'd' : ''}</span></div>
       <div class="kpi-sub ${daysSince !== null && daysSince <= 1 ? 'up' : ''}">${daysSub}</div>
     </div>
-    <div class="kpi ${meltKpiCls}" style="animation-delay:0.49s">
+    <div class="kpi ${meltKpiCls}" style="animation-delay:0.56s">
       <div class="kpi-label">Melt Rate</div>
       <div class="kpi-val ${meltValCls}" style="font-size:${meltAlert?'1.2rem':'1.8rem'}">${meltVal}</div>
       <div class="kpi-sub ${meltAlert?'alert':''}">${meltSub}</div>
@@ -449,11 +460,13 @@ async function init(){
     const swe=parseFloat(s.swe_in||0),dep=parseFloat(s.depth_in||0);
     const {temp}=getTemp(s.name,s.temp_f,hourly);
     const chg=s.swe_change_24h!=null?s.swe_change_24h:null;
-    const chgHtml=chg!==null?`<span class="sc-change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}"</span>`:'';
+    const dchg=s.depth_change_24h!=null?s.depth_change_24h:null;
+    const chgHtml=chg!==null?`<span class="sc-change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}" SWE</span>`:'';
+    const dchgHtml=dchg!==null?`<span class="sc-change ${dchg>=0?'pos':'neg'}" style="margin-left:6px">${dchg>=0?'+':''}${dchg.toFixed(1)}" depth</span>`:'';
     return `<div class="station-card">
       <div class="sc-top"><span class="sc-name">${s.name}</span><span class="sc-elev">${s.elevation?.toLocaleString()} ft · ${temp.toFixed(1)}°F</span></div>
-      <div style="display:flex;align-items:baseline">
-        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>${chgHtml}
+      <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:2px">
+        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>${chgHtml}${dchgHtml}
         ${s.melt_alert?'<span style="font-size:0.6rem;color:var(--alert);margin-left:8px">⚠ melt</span>':''}
       </div>
       <div class="sc-bars">

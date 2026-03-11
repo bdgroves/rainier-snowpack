@@ -75,16 +75,21 @@ def build_series(value_dict: dict, dates: list) -> list:
     return [value_dict.get(d) for d in dates]
 
 
-def compute_snow_metrics(swe_series: list, prcp_series: list, n_days: int) -> dict:
-    valid_swe = [(i, v) for i, v in enumerate(swe_series) if v is not None]
+def compute_snow_metrics(swe_series: list, depth_series: list, prcp_series: list, n_days: int) -> dict:
+    valid_swe   = [(i, v) for i, v in enumerate(swe_series)   if v is not None]
+    valid_depth = [(i, v) for i, v in enumerate(depth_series) if v is not None]
 
-    swe_change_24h = None
-    melt_alert     = False
+    swe_change_24h   = None
+    depth_change_24h = None
+    melt_alert       = False
 
     if len(valid_swe) >= 2:
         swe_change_24h = round(valid_swe[-1][1] - valid_swe[-2][1], 2)
         if swe_change_24h < -MELT_ALERT_THRESHOLD:
             melt_alert = True
+
+    if len(valid_depth) >= 2:
+        depth_change_24h = round(valid_depth[-1][1] - valid_depth[-2][1], 1)
 
     days_since_snow = None
     today_idx = n_days - 1
@@ -104,9 +109,10 @@ def compute_snow_metrics(swe_series: list, prcp_series: list, n_days: int) -> di
                 break
 
     return {
-        "swe_change_24h": swe_change_24h,
-        "days_since_snow": days_since_snow,
-        "melt_alert": melt_alert,
+        "swe_change_24h":   swe_change_24h,
+        "depth_change_24h": depth_change_24h,
+        "days_since_snow":  days_since_snow,
+        "melt_alert":       melt_alert,
     }
 
 
@@ -160,23 +166,24 @@ def main():
             latest_swe   = next((v for v in reversed(swe_s)   if v is not None), None)
             latest_depth = next((v for v in reversed(depth_s) if v is not None), None)
             latest_temp  = next((v for v in reversed(temp_s)  if v is not None), None)
-            metrics      = compute_snow_metrics(swe_s, prcp_s, n_days)
+            metrics      = compute_snow_metrics(swe_s, depth_s, prcp_s, n_days)
 
             density = None
             if latest_swe is not None and latest_depth and latest_depth > 0:
-                density = round(latest_swe / (latest_depth / 12) * 100, 1)
+                density = round((latest_swe / latest_depth) * 100, 1)
 
             latest_list.append({
-                "id":              stn["id"],
-                "name":            stn["name"],
-                "elevation":       stn["elevation_ft"],
-                "swe_in":          latest_swe,
-                "depth_in":        latest_depth,
-                "temp_f":          latest_temp,
-                "swe_change_24h":  metrics["swe_change_24h"],
-                "days_since_snow": metrics["days_since_snow"],
-                "melt_alert":      metrics["melt_alert"],
-                "density_pct":     density,
+                "id":               stn["id"],
+                "name":             stn["name"],
+                "elevation":        stn["elevation_ft"],
+                "swe_in":           latest_swe,
+                "depth_in":         latest_depth,
+                "temp_f":           latest_temp,
+                "swe_change_24h":   metrics["swe_change_24h"],
+                "depth_change_24h": metrics["depth_change_24h"],
+                "days_since_snow":  metrics["days_since_snow"],
+                "melt_alert":       metrics["melt_alert"],
+                "density_pct":      density,
             })
 
             status     = "✓" if latest_swe is not None else "✗"
@@ -206,23 +213,26 @@ def main():
     LOG.info("Saved basin_daily.csv (%d rows)", len(basin_daily))
 
     # ── Basin metrics ─────────────────────────────────────────────────────────
-    valid_changes = [s["swe_change_24h"]  for s in valid_stations if s["swe_change_24h"]  is not None]
-    valid_days    = [s["days_since_snow"] for s in valid_stations if s["days_since_snow"] is not None]
-    valid_density = [s["density_pct"]     for s in valid_stations if s["density_pct"]     is not None]
+    valid_changes       = [s["swe_change_24h"]   for s in valid_stations if s["swe_change_24h"]   is not None]
+    valid_depth_changes = [s["depth_change_24h"] for s in valid_stations if s["depth_change_24h"] is not None]
+    valid_days          = [s["days_since_snow"]  for s in valid_stations if s["days_since_snow"]  is not None]
+    valid_density       = [s["density_pct"]      for s in valid_stations if s["density_pct"]      is not None]
 
-    basin_change  = round(sum(valid_changes) / len(valid_changes), 2) if valid_changes else None
-    basin_days    = int(round(sum(valid_days) / len(valid_days)))      if valid_days    else None
-    basin_density = round(sum(valid_density) / len(valid_density), 1)  if valid_density else None
-    any_melt      = any(s["melt_alert"] for s in valid_stations)
+    basin_change       = round(sum(valid_changes) / len(valid_changes), 2)             if valid_changes       else None
+    basin_depth_change = round(sum(valid_depth_changes) / len(valid_depth_changes), 1) if valid_depth_changes else None
+    basin_days         = int(round(sum(valid_days) / len(valid_days)))                 if valid_days          else None
+    basin_density      = round(sum(valid_density) / len(valid_density), 1)             if valid_density       else None
+    any_melt           = any(s["melt_alert"] for s in valid_stations)
 
     (PROC_DIR / "snotel_latest.json").write_text(json.dumps({
         "updated":    str(date.today()),
         "water_year": WATER_YEAR,
         "basin": {
-            "swe_change_24h":  basin_change,
-            "days_since_snow": basin_days,
-            "melt_alert":      any_melt,
-            "density_pct":     basin_density,
+            "swe_change_24h":   basin_change,
+            "depth_change_24h": basin_depth_change,
+            "days_since_snow":  basin_days,
+            "melt_alert":       any_melt,
+            "density_pct":      basin_density,
         },
         "stations": latest_list,
     }, indent=2))
@@ -234,6 +244,7 @@ def main():
     print(f"{'='*55}")
     print(f"  Basin avg SWE:    {avg_swe:.1f}\"")
     print(f"  24hr SWE change:  {basin_change:+.2f}\"" if basin_change is not None else "  24hr SWE change:  —")
+    print(f"  24hr depth chg:   {basin_depth_change:+.1f}\"" if basin_depth_change is not None else "  24hr depth chg:   —")
     print(f"  Days since snow:  {basin_days if basin_days is not None else '—'}")
     print(f"  Melt alert:       {'🔴 YES' if any_melt else '✓ No'}")
     print(f"  Snow density:     {basin_density}%" if basin_density else "  Snow density:     —")
