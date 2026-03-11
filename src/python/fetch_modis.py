@@ -15,6 +15,7 @@ import json
 import logging
 import netrc
 import os
+import shutil
 import requests
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,9 +36,10 @@ RAINIER_BBOX  = (-122.5, 46.0, -121.0, 47.5)
 CLOUD_THRESH  = 80.0   # % cloud cover above which a granule is considered unusable
 MAX_DAYS_BACK = 14     # how far back to search for a clean pass
 
-RAW_DIR  = Path("data/raw/modis")
-PROC_DIR = Path("data/processed/modis")
-OUT_DIR  = Path("outputs")
+RAW_DIR     = Path("data/raw/modis")
+PROC_DIR    = Path("data/processed/modis")
+OUT_DIR     = Path("outputs")
+ARCHIVE_DIR = Path("data/modis_archive")
 
 STATIONS = [
     ("Paradise",        -121.735, 46.786),
@@ -359,7 +361,16 @@ def main():
     LOG.info("Stats saved to modis_latest.json")
 
     # Map
-    make_map(selected_tif, selected_stats, selected_obs_date)
+    out_png = make_map(selected_tif, selected_stats, selected_obs_date)
+
+    # Archive — save a dated copy of each clean pass, once only
+    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+    archive_png = ARCHIVE_DIR / f"modis_{selected_obs_date}.png"
+    if not archive_png.exists():
+        shutil.copy(out_png, archive_png)
+        LOG.info("Archived: %s", archive_png.name)
+    else:
+        LOG.info("Archive already exists: %s", archive_png.name)
 
     # Summary
     days_ago = selected_stats["days_ago"]
