@@ -1,11 +1,12 @@
 {
-  "updated": "2026-03-10",
+  "updated": "2026-03-11",
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.44,
-    "days_since_snow": 0,
+    "depth_change_24h": 5.7,
+    "days_since_snow": 1,
     "melt_alert": false,
-    "density_pct": 392.4
+    "density_pct": 32.7
   },
   "stations": [
     {
@@ -16,9 +17,10 @@
       "depth_in": 76.0,
       "temp_f": 17.6,
       "swe_change_24h": 0.6,
-      "days_since_snow": 0,
+      "depth_change_24h": 14.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 427.9
+      "density_pct": 35.7
     },
     {
       "id": "642:WA:SNTL",
@@ -28,9 +30,10 @@
       "depth_in": 75.0,
       "temp_f": 15.4,
       "swe_change_24h": 0.4,
-      "days_since_snow": 0,
+      "depth_change_24h": 6.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 432.0
+      "density_pct": 36.0
     },
     {
       "id": "672:WA:SNTL",
@@ -40,9 +43,10 @@
       "depth_in": 41.0,
       "temp_f": 22.6,
       "swe_change_24h": 1.0,
-      "days_since_snow": 0,
+      "depth_change_24h": 7.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 477.1
+      "density_pct": 39.8
     },
     {
       "id": "1085:WA:SNTL",
@@ -52,9 +56,10 @@
       "depth_in": 63.0,
       "temp_f": 20.1,
       "swe_change_24h": 0.5,
-      "days_since_snow": 0,
+      "depth_change_24h": 5.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 421.0
+      "density_pct": 35.1
     },
     {
       "id": "418:WA:SNTL",
@@ -64,9 +69,10 @@
       "depth_in": 53.0,
       "temp_f": 18.1,
       "swe_change_24h": 0.2,
-      "days_since_snow": 0,
+      "depth_change_24h": 5.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 425.7
+      "density_pct": 35.5
     },
     {
       "id": "375:WA:SNTL",
@@ -76,9 +82,10 @@
       "depth_in": 36.0,
       "temp_f": 19.2,
       "swe_change_24h": 0.1,
-      "days_since_snow": 0,
+      "depth_change_24h": 1.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 383.3
+      "density_pct": 31.9
     },
     {
       "id": "420:WA:SNTL",
@@ -88,9 +95,10 @@
       "depth_in": 2.0,
       "temp_f": 27.0,
       "swe_change_24h": 0.3,
-      "days_since_snow": 0,
+      "depth_change_24h": 2.0,
+      "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 180.0
+      "density_pct": 15.0
     }
   ]
 }
