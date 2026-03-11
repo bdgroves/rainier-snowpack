@@ -62,6 +62,6 @@ jobs:
         run: |
           git config user.name  "snowpack-bot[bot]"
           git config user.email "snowpack-bot@users.noreply.github.com"
-          git add data/processed/ outputs/ dashboard/
+          git add data/processed/ outputs/ dashboard/ data/modis_archive/
           git diff --staged --quiet || git commit -m "data: hourly update $(date -u +%Y-%m-%dT%H:%M)Z"
           git push
