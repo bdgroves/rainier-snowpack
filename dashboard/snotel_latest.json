@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.39,
-    "depth_change_24h": 5.4,
+    "depth_change_24h": 3.9,
     "days_since_snow": 0,
     "melt_alert": false,
-    "density_pct": 31.5
+    "density_pct": 30.8
   },
   "stations": [
     {
@@ -14,26 +14,26 @@
       "name": "Paradise",
       "elevation": 5150,
       "swe_in": 27.6,
-      "depth_in": 76.0,
+      "depth_in": 78.0,
       "temp_f": 22.8,
       "swe_change_24h": 0.5,
-      "depth_change_24h": 14.0,
+      "depth_change_24h": 6.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 36.3
+      "density_pct": 35.4
     },
     {
       "id": "642:WA:SNTL",
       "name": "Morse Lake",
       "elevation": 5400,
       "swe_in": 27.1,
-      "depth_in": 75.0,
+      "depth_in": 76.0,
       "temp_f": 25.0,
       "swe_change_24h": 0.1,
-      "depth_change_24h": 6.0,
+      "depth_change_24h": 1.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 36.1
+      "density_pct": 35.7
     },
     {
       "id": "672:WA:SNTL",
@@ -53,13 +53,13 @@
       "name": "Cayuse Pass",
       "elevation": 5260,
       "swe_in": 22.9,
-      "depth_in": 63.0,
+      "depth_in": 70.0,
       "temp_f": 24.4,
       "swe_change_24h": 0.8,
-      "depth_change_24h": 5.0,
+      "depth_change_24h": 7.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 36.3
+      "density_pct": 32.7
     },
     {
       "id": "418:WA:SNTL",
