@@ -48,6 +48,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,46.4,False,Bumping Ridge,4600,375:WA:SNTL
 2026-03-16 23:00:00,45.9,False,Bumping Ridge,4600,375:WA:SNTL
 2026-03-17 00:00:00,46.6,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-17 01:00:00,47.8,False,Bumping Ridge,4600,375:WA:SNTL
 2026-03-15 00:00:00,19.9,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-15 01:00:00,20.5,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-15 02:00:00,20.3,True,Cayuse Pass,5260,1085:WA:SNTL
@@ -97,6 +98,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,43.7,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-16 23:00:00,43.0,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-17 00:00:00,45.7,False,Cayuse Pass,5260,1085:WA:SNTL
+2026-03-17 01:00:00,44.8,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-15 00:00:00,18.7,True,Corral Pass,5810,418:WA:SNTL
 2026-03-15 01:00:00,19.0,True,Corral Pass,5810,418:WA:SNTL
 2026-03-15 02:00:00,19.0,True,Corral Pass,5810,418:WA:SNTL
@@ -146,6 +148,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,43.7,False,Corral Pass,5810,418:WA:SNTL
 2026-03-16 23:00:00,41.7,False,Corral Pass,5810,418:WA:SNTL
 2026-03-17 00:00:00,44.6,False,Corral Pass,5810,418:WA:SNTL
+2026-03-17 01:00:00,44.6,False,Corral Pass,5810,418:WA:SNTL
 2026-03-15 00:00:00,25.3,True,Cougar Mountain,3210,420:WA:SNTL
 2026-03-15 01:00:00,25.2,True,Cougar Mountain,3210,420:WA:SNTL
 2026-03-15 02:00:00,25.3,True,Cougar Mountain,3210,420:WA:SNTL
@@ -195,6 +198,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,45.5,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-16 23:00:00,45.1,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-17 00:00:00,44.2,False,Cougar Mountain,3210,420:WA:SNTL
+2026-03-17 01:00:00,44.4,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-15 00:00:00,16.3,True,Morse Lake,5400,642:WA:SNTL
 2026-03-15 01:00:00,16.3,True,Morse Lake,5400,642:WA:SNTL
 2026-03-15 02:00:00,16.3,True,Morse Lake,5400,642:WA:SNTL
@@ -244,6 +248,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,40.5,False,Morse Lake,5400,642:WA:SNTL
 2026-03-16 23:00:00,42.6,False,Morse Lake,5400,642:WA:SNTL
 2026-03-17 00:00:00,48.0,False,Morse Lake,5400,642:WA:SNTL
+2026-03-17 01:00:00,47.3,False,Morse Lake,5400,642:WA:SNTL
 2026-03-15 00:00:00,20.1,True,Olallie Meadows,4010,672:WA:SNTL
 2026-03-15 01:00:00,20.3,True,Olallie Meadows,4010,672:WA:SNTL
 2026-03-15 02:00:00,20.5,True,Olallie Meadows,4010,672:WA:SNTL
@@ -293,6 +298,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,46.0,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-16 23:00:00,43.0,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-17 00:00:00,45.3,False,Olallie Meadows,4010,672:WA:SNTL
+2026-03-17 01:00:00,44.1,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-15 00:00:00,18.1,True,Paradise,5150,679:WA:SNTL
 2026-03-15 01:00:00,18.5,True,Paradise,5150,679:WA:SNTL
 2026-03-15 02:00:00,17.6,True,Paradise,5150,679:WA:SNTL
@@ -342,3 +348,4 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-16 22:00:00,43.0,False,Paradise,5150,679:WA:SNTL
 2026-03-16 23:00:00,44.4,False,Paradise,5150,679:WA:SNTL
 2026-03-17 00:00:00,43.7,False,Paradise,5150,679:WA:SNTL
+2026-03-17 01:00:00,44.6,False,Paradise,5150,679:WA:SNTL
