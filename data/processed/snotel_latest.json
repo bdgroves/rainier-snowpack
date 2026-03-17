@@ -1,10 +1,10 @@
 {
-  "updated": "2026-03-16",
+  "updated": "2026-03-17",
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.37,
     "depth_change_24h": -2.9,
-    "days_since_snow": 0,
+    "days_since_snow": 1,
     "melt_alert": false,
     "density_pct": 29.2
   },
@@ -18,7 +18,7 @@
       "temp_f": 33.6,
       "swe_change_24h": 0.8,
       "depth_change_24h": -2.0,
-      "days_since_snow": 0,
+      "days_since_snow": 1,
       "melt_alert": false,
       "density_pct": 33.7
     },
@@ -31,7 +31,7 @@
       "temp_f": 35.4,
       "swe_change_24h": 0.1,
       "depth_change_24h": -2.0,
-      "days_since_snow": 1,
+      "days_since_snow": 2,
       "melt_alert": false,
       "density_pct": 32.1
     },
@@ -44,7 +44,7 @@
       "temp_f": 32.2,
       "swe_change_24h": 0.4,
       "depth_change_24h": -2.0,
-      "days_since_snow": 0,
+      "days_since_snow": 1,
       "melt_alert": false,
       "density_pct": 32.9
     },
@@ -57,7 +57,7 @@
       "temp_f": 33.4,
       "swe_change_24h": 0.0,
       "depth_change_24h": -3.0,
-      "days_since_snow": 2,
+      "days_since_snow": 3,
       "melt_alert": false,
       "density_pct": 29.6
     },
@@ -70,7 +70,7 @@
       "temp_f": 34.5,
       "swe_change_24h": 0.6,
       "depth_change_24h": -4.0,
-      "days_since_snow": 0,
+      "days_since_snow": 1,
       "melt_alert": false,
       "density_pct": 28.6
     },
@@ -83,7 +83,7 @@
       "temp_f": 34.9,
       "swe_change_24h": 0.1,
       "depth_change_24h": -4.0,
-      "days_since_snow": 0,
+      "days_since_snow": 1,
       "melt_alert": false,
       "density_pct": 30.6
     },
@@ -96,7 +96,7 @@
       "temp_f": 33.4,
       "swe_change_24h": 0.6,
       "depth_change_24h": -3.0,
-      "days_since_snow": 0,
+      "days_since_snow": 1,
       "melt_alert": false,
       "density_pct": 17.0
     }
