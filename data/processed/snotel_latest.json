@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.07,
-    "depth_change_24h": -6.3,
+    "depth_change_24h": -8.4,
     "days_since_snow": 1,
     "melt_alert": false,
-    "density_pct": 33.0
+    "density_pct": 35.4
   },
   "stations": [
     {
@@ -53,26 +53,26 @@
       "name": "Cayuse Pass",
       "elevation": 5260,
       "swe_in": 33.3,
-      "depth_in": 105.0,
+      "depth_in": 94.0,
       "temp_f": 40.1,
       "swe_change_24h": 0.1,
-      "depth_change_24h": -7.0,
+      "depth_change_24h": -11.0,
       "days_since_snow": 4,
       "melt_alert": false,
-      "density_pct": 31.7
+      "density_pct": 35.4
     },
     {
       "id": "418:WA:SNTL",
       "name": "Corral Pass",
       "elevation": 5810,
       "swe_in": 30.3,
-      "depth_in": 94.0,
+      "depth_in": 82.0,
       "temp_f": 41.0,
       "swe_change_24h": -0.1,
-      "depth_change_24h": -6.0,
+      "depth_change_24h": -12.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 32.2
+      "density_pct": 37.0
     },
     {
       "id": "375:WA:SNTL",
@@ -92,13 +92,13 @@
       "name": "Cougar Mountain",
       "elevation": 3210,
       "swe_in": 6.8,
-      "depth_in": 37.0,
+      "depth_in": 26.0,
       "temp_f": 44.2,
       "swe_change_24h": -0.5,
-      "depth_change_24h": -6.0,
+      "depth_change_24h": -11.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 18.4
+      "density_pct": 26.2
     }
   ]
 }
