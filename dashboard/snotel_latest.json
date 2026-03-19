@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": -0.76,
-    "depth_change_24h": -8.6,
+    "depth_change_24h": -8.1,
     "days_since_snow": 1,
     "melt_alert": true,
-    "density_pct": 37.6
+    "density_pct": 39.1
   },
   "stations": [
     {
@@ -92,13 +92,13 @@
       "name": "Cougar Mountain",
       "elevation": 3210,
       "swe_in": 6.0,
-      "depth_in": 26.0,
+      "depth_in": 18.0,
       "temp_f": 44.8,
       "swe_change_24h": -0.8,
-      "depth_change_24h": -11.0,
+      "depth_change_24h": -8.0,
       "days_since_snow": 0,
       "melt_alert": true,
-      "density_pct": 23.1
+      "density_pct": 33.3
     }
   ]
 }
