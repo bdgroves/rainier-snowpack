@@ -40,6 +40,9 @@ jobs:
 
       - name: Fetch hourly temps
         run: pixi run fetch-hourly
+        
+        - name: pixi run fetch-gauges
+        run: pixi run fetch-gauges
 
       - name: Fetch MODIS snow cover
         run: pixi run fetch-modis

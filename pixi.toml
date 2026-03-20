@@ -8,6 +8,7 @@ platforms = ["win-64", "linux-64"]
 [tasks]
 fetch        = "python src/python/fetch_snotel.py"
 fetch-hourly = "python src/python/fetch_hourly.py"
+fetch-gauges = "python src/python/fetch_gauges.py"
 fetch-modis  = "python src/python/fetch_modis.py"
 process      = "python src/python/process_raster.py"
 analyze      = "Rscript src/r/snowpack_stats.R"

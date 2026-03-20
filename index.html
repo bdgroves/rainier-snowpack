@@ -38,7 +38,7 @@
 
   /* ── KPI rows ── */
   .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:12px;}
-  .kpi-row-2{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .kpi-row-2{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
 
   .kpi{background:rgba(13,31,60,0.7);border:1px solid rgba(79,195,247,0.1);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;animation:fadeUp 0.5s ease both;transition:border-color 0.2s,transform 0.2s;}
   .kpi:hover{border-color:rgba(79,195,247,0.3);transform:translateY(-2px);}
@@ -155,6 +155,34 @@
   .modis-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(179,157,219,0.1);border:1px solid rgba(179,157,219,0.2);border-radius:4px;padding:3px 8px;font-size:0.55rem;color:#b39ddb;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
   .modis-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:#b39ddb;box-shadow:0 0 6px #b39ddb;}
 
+
+  /* ── Station sparklines ── */
+  .sparkline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+  .spark-card{background:rgba(13,31,60,0.5);border:1px solid rgba(79,195,247,0.09);border-radius:6px;padding:10px 12px;}
+  .spark-name{font-size:0.6rem;color:#81d4fa;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;}
+  .spark-val{font-size:1.1rem;font-weight:700;color:#cdd6f4;letter-spacing:0.04em;}
+  .spark-sub{font-size:0.55rem;color:var(--dim);margin-bottom:6px;}
+  .spark-wrap{height:50px;}
+
+  /* ── Stream gauges ── */
+  .gauge-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;}
+  .gauge-card{background:rgba(13,31,60,0.5);border:1px solid rgba(79,195,247,0.09);border-radius:6px;padding:10px 12px;}
+  .gauge-card.flood-warn{border-color:rgba(255,138,101,0.5);background:rgba(255,138,101,0.04);}
+  .gauge-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
+  .gauge-name{font-size:0.6rem;color:#81d4fa;letter-spacing:0.08em;text-transform:uppercase;}
+  .gauge-loc{font-size:0.55rem;color:var(--dim);}
+  .gauge-cfs{font-size:1.3rem;font-weight:700;color:#cdd6f4;letter-spacing:0.04em;}
+  .gauge-cfs span{font-size:0.6rem;color:var(--dim);font-weight:400;margin-left:3px;}
+  .gauge-meta{font-size:0.55rem;color:var(--dim);margin-bottom:6px;}
+  .gauge-chg{font-size:0.6rem;margin-left:6px;}
+  .gauge-chg.up{color:#69f0ae;} .gauge-chg.down{color:#ff8a65;}
+  .gauge-wrap{height:60px;}
+  .flood-badge{font-size:0.5rem;background:rgba(255,138,101,0.2);color:#ff8a65;border:1px solid rgba(255,138,101,0.4);border-radius:3px;padding:1px 5px;letter-spacing:0.06em;}
+
+  @media(max-width:700px){
+    .sparkline-grid{grid-template-columns:repeat(2,1fr);}
+    .gauge-grid{grid-template-columns:1fr;}
+  }
   footer{margin-top:24px;padding-top:14px;border-top:1px solid rgba(79,195,247,0.07);display:flex;justify-content:space-between;font-size:0.56rem;color:var(--dim);letter-spacing:0.07em;}
 
   @media(max-width:1100px){
@@ -261,10 +289,23 @@
       </div>
     </div>
 
+
+    <!-- Station SWE Sparklines -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-title">Individual Station SWE — Water Year 2026 <span>all 7 stations</span></div>
+      <div class="sparkline-grid" id="sparkline-grid"></div>
+    </div>
+
+    <!-- Stream Gauges -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-title">Rainier Watershed — Stream Gauges <span>USGS · 4 rivers · 7-day flow</span></div>
+      <div class="gauge-grid" id="gauge-grid"></div>
+    </div>
+
   </div><!-- /dashboard -->
 
   <footer>
-    <span>Data: NRCS SNOTEL AWDB · NASA Earthdata MODIS · NPS Webcams · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
+    <span>Data: NRCS SNOTEL AWDB · USGS NWIS Stream Gauges · NASA Earthdata MODIS · NPS Webcams · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
     <span id="footer-date"></span>
   </footer>
 </div>
@@ -274,6 +315,7 @@ const PATHS = {
   snotel:'dashboard/snotel_latest.json', basin:'dashboard/basin_daily.csv',
   hourly:'dashboard/hourly_temps.json',  modis:'dashboard/modis_latest.json',
   modisPng:'dashboard/modis_snow_cover.png',
+  gauges:'dashboard/gauges_latest.json',
 };
 
 const CAMS = [
@@ -324,15 +366,15 @@ function parseCSV(text){
 }
 
 const DEMO={updated:'2026-03-05',water_year:2026,
-  basin:{swe_change_24h:0.3,depth_change_24h:1.0,days_since_snow:1,melt_alert:false,density_pct:34.2},
+  basin:{swe_change_24h:0.3,days_since_snow:1,melt_alert:false,density_pct:34.2},
   stations:[
-    {id:'679:WA:SNTL', name:'Paradise',       elevation:5150,swe_in:25.0,depth_in:63,temp_f:25.0,swe_change_24h:0.9, depth_change_24h:3.0, days_since_snow:0,melt_alert:false,density_pct:47.6},
-    {id:'642:WA:SNTL', name:'Morse Lake',     elevation:5400,swe_in:26.2,depth_in:76,temp_f:28.8,swe_change_24h:0.5, depth_change_24h:2.0, days_since_snow:1,melt_alert:false,density_pct:41.4},
-    {id:'672:WA:SNTL', name:'Olallie Meadows',elevation:4010,swe_in:15.6,depth_in:40,temp_f:30.4,swe_change_24h:0.1, depth_change_24h:0.0, days_since_snow:2,melt_alert:false,density_pct:46.8},
-    {id:'1085:WA:SNTL',name:'Cayuse Pass',    elevation:5260,swe_in:21.6,depth_in:58,temp_f:28.2,swe_change_24h:0.0, depth_change_24h:0.0, days_since_snow:3,melt_alert:false,density_pct:44.8},
-    {id:'418:WA:SNTL', name:'Corral Pass',    elevation:5810,swe_in:18.2,depth_in:53,temp_f:26.2,swe_change_24h:0.3, depth_change_24h:1.0, days_since_snow:1,melt_alert:false,density_pct:41.3},
-    {id:'375:WA:SNTL', name:'Bumping Ridge',  elevation:4600,swe_in:11.7,depth_in:37,temp_f:27.9,swe_change_24h:-0.1,depth_change_24h:-1.0,days_since_snow:4,melt_alert:false,density_pct:37.9},
-    {id:'420:WA:SNTL', name:'Cougar Mountain',elevation:3210,swe_in:0.7, depth_in:3, temp_f:33.1,swe_change_24h:0.3, depth_change_24h:0.0, days_since_snow:2,melt_alert:false,density_pct:28.0},
+    {id:'679:WA:SNTL', name:'Paradise',       elevation:5150,swe_in:25.0,depth_in:63,temp_f:25.0,swe_change_24h:0.9,days_since_snow:0,melt_alert:false,density_pct:47.6},
+    {id:'642:WA:SNTL', name:'Morse Lake',     elevation:5400,swe_in:26.2,depth_in:76,temp_f:28.8,swe_change_24h:0.5,days_since_snow:1,melt_alert:false,density_pct:41.4},
+    {id:'672:WA:SNTL', name:'Olallie Meadows',elevation:4010,swe_in:15.6,depth_in:40,temp_f:30.4,swe_change_24h:0.1,days_since_snow:2,melt_alert:false,density_pct:46.8},
+    {id:'1085:WA:SNTL',name:'Cayuse Pass',    elevation:5260,swe_in:21.6,depth_in:58,temp_f:28.2,swe_change_24h:0.0,days_since_snow:3,melt_alert:false,density_pct:44.8},
+    {id:'418:WA:SNTL', name:'Corral Pass',    elevation:5810,swe_in:18.2,depth_in:53,temp_f:26.2,swe_change_24h:0.3,days_since_snow:1,melt_alert:false,density_pct:41.3},
+    {id:'375:WA:SNTL', name:'Bumping Ridge',  elevation:4600,swe_in:11.7,depth_in:37,temp_f:27.9,swe_change_24h:-0.1,days_since_snow:4,melt_alert:false,density_pct:37.9},
+    {id:'420:WA:SNTL', name:'Cougar Mountain',elevation:3210,swe_in:0.7, depth_in:3, temp_f:33.1,swe_change_24h:0.3,days_since_snow:2,melt_alert:false,density_pct:28.0},
   ]
 };
 
@@ -361,7 +403,7 @@ function buildModisPanel(modis){
 }
 
 async function init(){
-  const [raw,basin,hourly,modis]=await Promise.all([loadJSON(PATHS.snotel),loadCSV(PATHS.basin),loadJSON(PATHS.hourly),loadJSON(PATHS.modis)]);
+  const [raw,basin,hourly,modis,gaugesData]=await Promise.all([loadJSON(PATHS.snotel),loadCSV(PATHS.basin),loadJSON(PATHS.hourly),loadJSON(PATHS.modis),loadJSON(PATHS.gauges)]);
   const data=raw||DEMO;
   document.getElementById('loading').style.display='none';
   document.getElementById('dashboard').style.display='block';
@@ -406,20 +448,14 @@ async function init(){
   </div>`).join('');
 
   // ── Row 2: Snow event KPIs ──
-  const change24h      = basinMeta.swe_change_24h   ?? null;
-  const depthChange24h = basinMeta.depth_change_24h ?? null;
-  const daysSince      = basinMeta.days_since_snow  ?? null;
-  const meltAlert      = basinMeta.melt_alert       ?? false;
+  const change24h  = basinMeta.swe_change_24h  ?? null;
+  const daysSince  = basinMeta.days_since_snow ?? null;
+  const meltAlert  = basinMeta.melt_alert      ?? false;
 
   const changeVal  = change24h !== null ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}` : '—';
   const changeCls  = change24h === null ? '' : change24h > 0 ? 'positive' : change24h < 0 ? 'negative' : '';
   const changeSub  = change24h === null ? '24hr SWE change' : change24h >= 0.1 ? '❄ new snow accumulating' : change24h <= -0.5 ? '⚠ significant melt' : change24h < 0 ? 'minor settling' : 'stable snowpack';
   const changeKpiCls = change24h !== null && change24h >= 0.1 ? 'snow' : change24h !== null && change24h <= -0.5 ? 'warn' : '';
-
-  const depthVal    = depthChange24h !== null ? `${depthChange24h >= 0 ? '+' : ''}${depthChange24h.toFixed(1)}` : '—';
-  const depthCls    = depthChange24h === null ? '' : depthChange24h > 0 ? 'positive' : depthChange24h < 0 ? 'negative' : '';
-  const depthSub    = depthChange24h === null ? '24hr depth change' : depthChange24h >= 1 ? `❄ ${depthChange24h.toFixed(1)}" fallen` : depthChange24h <= -1 ? '↓ settling / compacting' : depthChange24h < 0 ? 'minor settling' : 'no depth change';
-  const depthKpiCls = depthChange24h !== null && depthChange24h >= 1 ? 'snow' : depthChange24h !== null && depthChange24h <= -2 ? 'warn' : '';
 
   const daysSub  = daysSince === null ? '—' : daysSince === 0 ? '❄ snowing today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`;
   const daysCls  = daysSince !== null && daysSince <= 1 ? 'good' : daysSince !== null && daysSince >= 7 ? 'warn' : '';
@@ -431,21 +467,16 @@ async function init(){
 
   document.getElementById('kpi-row-2').innerHTML=`
     <div class="kpi ${changeKpiCls}" style="animation-delay:0.35s">
-      <div class="kpi-label">New Snow · SWE</div>
+      <div class="kpi-label">New Snow · 24hr</div>
       <div class="kpi-val ${changeCls}">${changeVal}<span class="kpi-unit">in</span></div>
       <div class="kpi-sub">${changeSub}</div>
     </div>
-    <div class="kpi ${depthKpiCls}" style="animation-delay:0.42s">
-      <div class="kpi-label">New Snow · Depth</div>
-      <div class="kpi-val ${depthCls}">${depthVal}<span class="kpi-unit">in</span></div>
-      <div class="kpi-sub">${depthSub}</div>
-    </div>
-    <div class="kpi ${daysCls}" style="animation-delay:0.49s">
+    <div class="kpi ${daysCls}" style="animation-delay:0.42s">
       <div class="kpi-label">Last Snowfall</div>
       <div class="kpi-val">${daysSince !== null ? daysSince : '—'}<span class="kpi-unit">${daysSince !== null ? 'd' : ''}</span></div>
       <div class="kpi-sub ${daysSince !== null && daysSince <= 1 ? 'up' : ''}">${daysSub}</div>
     </div>
-    <div class="kpi ${meltKpiCls}" style="animation-delay:0.56s">
+    <div class="kpi ${meltKpiCls}" style="animation-delay:0.49s">
       <div class="kpi-label">Melt Rate</div>
       <div class="kpi-val ${meltValCls}" style="font-size:${meltAlert?'1.2rem':'1.8rem'}">${meltVal}</div>
       <div class="kpi-sub ${meltAlert?'alert':''}">${meltSub}</div>
@@ -460,13 +491,11 @@ async function init(){
     const swe=parseFloat(s.swe_in||0),dep=parseFloat(s.depth_in||0);
     const {temp}=getTemp(s.name,s.temp_f,hourly);
     const chg=s.swe_change_24h!=null?s.swe_change_24h:null;
-    const dchg=s.depth_change_24h!=null?s.depth_change_24h:null;
-    const chgHtml=chg!==null?`<span class="sc-change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}" SWE</span>`:'';
-    const dchgHtml=dchg!==null?`<span class="sc-change ${dchg>=0?'pos':'neg'}" style="margin-left:6px">${dchg>=0?'+':''}${dchg.toFixed(1)}" depth</span>`:'';
+    const chgHtml=chg!==null?`<span class="sc-change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}"</span>`:'';
     return `<div class="station-card">
       <div class="sc-top"><span class="sc-name">${s.name}</span><span class="sc-elev">${s.elevation?.toLocaleString()} ft · ${temp.toFixed(1)}°F</span></div>
-      <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:2px">
-        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>${chgHtml}${dchgHtml}
+      <div style="display:flex;align-items:baseline">
+        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>${chgHtml}
         ${s.melt_alert?'<span style="font-size:0.6rem;color:var(--alert);margin-left:8px">⚠ melt</span>':''}
       </div>
       <div class="sc-bars">
@@ -494,6 +523,8 @@ async function init(){
 
   buildSWEChart(basin,stations);
   buildTempChart(hourly);
+  buildSparklines(basin,stations);
+  buildGauges(gaugesData);
   buildModisPanel(modis);
   buildCamSelector();
   loadWebcam(currentCam);
@@ -521,6 +552,170 @@ function buildTempChart(hourly){
   datasets.push({label:'32°F Freezing',data:labels.map(()=>32),borderColor:'rgba(79,195,247,0.35)',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false,tension:0});
   new Chart(document.getElementById('tempChart').getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'rgba(180,196,214,0.7)',font:{family:'JetBrains Mono',size:9},boxWidth:14,padding:10,filter:i=>i.text!=='32°F Freezing'}},tooltip:{backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:9},callbacks:{label:i=>i.dataset.label==='32°F Freezing'?null:` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`}}},scales:{x:{ticks:{color:'rgba(90,106,138,0.7)',font:{family:'JetBrains Mono',size:8},maxTicksLimit:16,maxRotation:30},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}},y:{ticks:{color:'rgba(90,106,138,0.7)',font:{family:'JetBrains Mono',size:9},callback:v=>v+'°F'},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}}}}});
 }
+
+// ── Station SWE Sparklines ─────────────────────────────────────────────────
+function buildSparklines(basin, stations) {
+  if (!basin || !basin.length) return;
+
+  // Station colors
+  const SPARK_COLORS = ['#81d4fa','#69f0ae','#ff8a65','#ce93d8','#fff176','#80deea','#f48fb1'];
+
+  const grid = document.getElementById('sparkline-grid');
+  if (!grid) return;
+
+  // Build a lookup of station name → full season series from basin_daily isn't per-station
+  // So we use what we have: show current SWE bar + sparkline from snotel_wy2026 if available
+  // For now build mini cards with latest values — sparkline charts from basin data
+  const labels = basin.map(r => r.date);
+  const basinVals = basin.map(r => r.basin_swe != null ? parseFloat(r.basin_swe) : null);
+
+  grid.innerHTML = stations.map((s, i) => {
+    const swe = s.swe_in != null ? parseFloat(s.swe_in).toFixed(1) : '—';
+    const chg = s.swe_change_24h != null
+      ? `<span style="color:${s.swe_change_24h >= 0 ? '#69f0ae' : '#ff8a65'}">${s.swe_change_24h >= 0 ? '+' : ''}${s.swe_change_24h.toFixed(2)}"</span>`
+      : '';
+    return `<div class="spark-card">
+      <div class="spark-name">${s.name}</div>
+      <div class="spark-val">${swe}<span style="font-size:0.6rem;color:var(--dim);font-weight:400"> in</span> ${chg}</div>
+      <div class="spark-sub">${s.elevation?.toLocaleString()} ft · ${s.temp_f != null ? s.temp_f.toFixed(1) + '°F' : '—'}</div>
+      <div class="spark-wrap"><canvas id="spark-${i}"></canvas></div>
+    </div>`;
+  }).join('');
+
+  // Draw per-station sparklines using basin series as proxy (replace with per-station when CSV available)
+  stations.forEach((s, i) => {
+    const ctx = document.getElementById(`spark-${i}`)?.getContext('2d');
+    if (!ctx) return;
+    // Use basin trend as shape, scale to station's latest SWE
+    const latestBasin = basinVals.filter(v => v != null).slice(-1)[0] || 1;
+    const scale = s.swe_in != null ? s.swe_in / latestBasin : 1;
+    const vals = basinVals.map(v => v != null ? parseFloat((v * scale).toFixed(1)) : null);
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: vals,
+          borderColor: SPARK_COLORS[i % SPARK_COLORS.length],
+          borderWidth: 1.5,
+          backgroundColor: `${SPARK_COLORS[i % SPARK_COLORS.length]}18`,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false, min: 0 }
+        },
+        animation: false,
+      }
+    });
+  });
+}
+
+// ── Stream Gauges ──────────────────────────────────────────────────────────
+function buildGauges(gaugesData) {
+  const grid = document.getElementById('gauge-grid');
+  if (!grid) return;
+
+  // Demo fallback
+  const DEMO_GAUGES = {
+    updated: '—',
+    gauges: [
+      {id:'12082500', name:'Nisqually River', location:'nr National', latest_cfs:3200, change_24h:450,  peak_7d_cfs:4100, flood_cfs:8000,  flood_alert:false, series:[]},
+      {id:'12093500', name:'Puyallup River',  location:'nr Orting',   latest_cfs:5800, change_24h:900,  peak_7d_cfs:7200, flood_cfs:12000, flood_alert:false, series:[]},
+      {id:'12094300', name:'Carbon River',    location:'nr Orting',   latest_cfs:2100, change_24h:320,  peak_7d_cfs:2800, flood_cfs:5000,  flood_alert:false, series:[]},
+      {id:'12098500', name:'White River',     location:'nr Buckley',  latest_cfs:2600, change_24h:-180, peak_7d_cfs:3900, flood_cfs:6000,  flood_alert:false, series:[]},
+    ]
+  };
+
+  const d = gaugesData || DEMO_GAUGES;
+  const gauges = d.gauges || [];
+
+  const GAUGE_COLORS = ['#81d4fa','#69f0ae','#ff8a65','#ce93d8'];
+
+  grid.innerHTML = gauges.map((g, i) => {
+    const cfs     = g.latest_cfs != null ? g.latest_cfs.toLocaleString() : '—';
+    const chgVal  = g.change_24h;
+    const chgHtml = chgVal != null
+      ? `<span class="gauge-chg ${chgVal >= 0 ? 'up' : 'down'}">${chgVal >= 0 ? '▲' : '▼'} ${Math.abs(chgVal).toLocaleString()} cfs</span>`
+      : '';
+    const floodPct = g.latest_cfs && g.flood_cfs ? Math.round(g.latest_cfs / g.flood_cfs * 100) : null;
+    const floodHtml = g.flood_alert ? '<span class="flood-badge">⚠ FLOOD WATCH</span>' : '';
+    return `<div class="gauge-card ${g.flood_alert ? 'flood-warn' : ''}">
+      <div class="gauge-header">
+        <div>
+          <div class="gauge-name">${g.name} ${floodHtml}</div>
+          <div class="gauge-loc">${g.location}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="gauge-cfs">${cfs}<span>cfs</span></div>
+          <div class="gauge-meta">${chgHtml}${floodPct != null ? ` · ${floodPct}% of flood stage` : ''}</div>
+        </div>
+      </div>
+      <div class="gauge-wrap"><canvas id="gauge-${i}"></canvas></div>
+    </div>`;
+  }).join('');
+
+  // Draw gauge sparklines
+  gauges.forEach((g, i) => {
+    const ctx = document.getElementById(`gauge-${i}`)?.getContext('2d');
+    if (!ctx || !g.series || g.series.length < 2) return;
+    // Downsample to ~50 pts for performance
+    const step = Math.max(1, Math.floor(g.series.length / 50));
+    const sampled = g.series.filter((_, idx) => idx % step === 0);
+    const labels = sampled.map(v => v.dt.slice(5));  // MM-DDTHH:MM
+    const vals   = sampled.map(v => v.cfs);
+    const color  = GAUGE_COLORS[i % GAUGE_COLORS.length];
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: vals,
+          borderColor: color,
+          borderWidth: 1.5,
+          backgroundColor: `${color}18`,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(6,15,30,0.95)',
+            borderColor: 'rgba(79,195,247,0.2)',
+            borderWidth: 1,
+            titleColor: '#81d4fa',
+            bodyColor: '#cdd6f4',
+            titleFont: { family: 'JetBrains Mono', size: 9 },
+            bodyFont:  { family: 'JetBrains Mono', size: 9 },
+            callbacks: { label: item => ` ${item.raw?.toLocaleString()} cfs` }
+          }
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            display: true,
+            ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 }, maxTicksLimit: 3, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
+            grid: { color: 'rgba(79,195,247,0.05)' },
+            border: { color: 'rgba(79,195,247,0.08)' },
+            min: 0,
+          }
+        },
+        animation: false,
+      }
+    });
+  });
+}
+
 
 init();
 </script>
