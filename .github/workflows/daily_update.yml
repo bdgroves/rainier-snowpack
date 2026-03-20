@@ -1,28 +1,22 @@
 name: Daily Snowpack Update
-
 on:
   schedule:
     - cron: "0 * * * *"   # Every hour
   workflow_dispatch:
-
 jobs:
   update:
     name: Fetch · Analyze · Deploy
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: latest
           cache: true
-
       - name: Write Earthdata netrc
         env:
           EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
@@ -34,22 +28,16 @@ jobs:
           echo "password ${EARTHDATA_PASSWORD}" >> ~/.netrc
           chmod 600 ~/.netrc
           echo "EARTHDATA_TOKEN=${EARTHDATA_TOKEN}" >> $GITHUB_ENV
-
       - name: Fetch SNOTEL
         run: pixi run fetch
-
       - name: Fetch hourly temps
         run: pixi run fetch-hourly
-        
-        - name: pixi run fetch-gauges
+      - name: Fetch stream gauges
         run: pixi run fetch-gauges
-
       - name: Fetch MODIS snow cover
         run: pixi run fetch-modis
-
       - name: R analysis
         run: pixi run analyze
-
       - name: Copy outputs to dashboard
         run: |
           cp outputs/basin_swe_timeseries.png dashboard/
@@ -60,7 +48,7 @@ jobs:
           cp data/processed/basin_daily.csv dashboard/
           cp data/processed/hourly_temps.json dashboard/
           cp data/processed/modis/modis_latest.json dashboard/
-
+          cp data/processed/gauges_latest.json dashboard/
       - name: Commit and push
         run: |
           git config user.name  "snowpack-bot[bot]"
