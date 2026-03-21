@@ -183,6 +183,13 @@
     .sparkline-grid{grid-template-columns:repeat(2,1fr);}
     .gauge-grid{grid-template-columns:1fr;}
   }
+  /* ── SWE station toggles ── */
+  .swe-toggles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .swe-toggle{font-size:0.55rem;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;padding:3px 8px;border-radius:3px;border:1px solid;cursor:pointer;transition:opacity 0.15s,background 0.15s;background:transparent;opacity:0.45;}
+  .swe-toggle.active{opacity:1;}
+  .swe-toggle-all{font-size:0.55rem;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;padding:3px 8px;border-radius:3px;border:1px solid rgba(79,195,247,0.3);cursor:pointer;color:var(--dim);background:transparent;}
+  .swe-toggle-all:hover{border-color:rgba(79,195,247,0.6);color:#cdd6f4;}
+
   footer{margin-top:24px;padding-top:14px;border-top:1px solid rgba(79,195,247,0.07);display:flex;justify-content:space-between;font-size:0.56rem;color:var(--dim);letter-spacing:0.07em;}
 
   @media(max-width:1100px){
@@ -225,10 +232,8 @@
     <div class="main-grid">
       <div class="panel" style="grid-column:span 2">
         <div class="panel-title">Basin Average SWE — Water Year 2026 <span id="chart-subtitle"></span></div>
-        <div class="chart-wrap"><canvas id="sweChart"></canvas></div>
-        <div style="border-top:1px solid rgba(79,195,247,0.08);margin:14px 0 12px;"></div>
-        <div style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Individual Stations <span style="color:var(--accent);font-size:0.58rem;">all 7 stations</span></div>
-        <div class="sparkline-grid" id="sparkline-grid"></div>
+        <div class="swe-toggles" id="swe-toggles"></div>
+        <div class="chart-wrap" style="height:240px"><canvas id="sweChart"></canvas></div>
       </div>
       <div class="panel">
         <div class="panel-title">Station Conditions <span id="station-count"></span></div>
@@ -293,6 +298,12 @@
     </div>
 
 
+    <!-- Station SWE Sparklines -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-title">Individual Station SWE — Water Year 2026 <span>all 7 stations</span></div>
+      <div class="sparkline-grid" id="sparkline-grid"></div>
+    </div>
+
     <!-- Stream Gauges -->
     <div class="panel" style="margin-bottom:16px">
       <div class="panel-title">Rainier Watershed — Stream Gauges <span>USGS · 4 rivers · 7-day flow</span></div>
@@ -313,6 +324,7 @@ const PATHS = {
   hourly:'dashboard/hourly_temps.json',  modis:'dashboard/modis_latest.json',
   modisPng:'dashboard/modis_snow_cover.png',
   gauges:'dashboard/gauges_latest.json',
+  stationCsv:'dashboard/snotel_wy2026.csv',
 };
 
 const CAMS = [
@@ -400,7 +412,7 @@ function buildModisPanel(modis){
 }
 
 async function init(){
-  const [raw,basin,hourly,modis,gaugesData]=await Promise.all([loadJSON(PATHS.snotel),loadCSV(PATHS.basin),loadJSON(PATHS.hourly),loadJSON(PATHS.modis),loadJSON(PATHS.gauges)]);
+  const [raw,basin,hourly,modis,gaugesData,stationCsv]=await Promise.all([loadJSON(PATHS.snotel),loadCSV(PATHS.basin),loadJSON(PATHS.hourly),loadJSON(PATHS.modis),loadJSON(PATHS.gauges),loadCSV(PATHS.stationCsv)]);
   const data=raw||DEMO;
   document.getElementById('loading').style.display='none';
   document.getElementById('dashboard').style.display='block';
@@ -518,7 +530,7 @@ async function init(){
       <span class="temp-val ${s.temp<=32?'cold':'warm'}">${s.temp.toFixed(1)}°F</span>
       <span class="temp-source">${s.source}</span></div>`).join('');
 
-  buildSWEChart(basin,stations);
+  buildSWEChart(basin,stations,stationCsv);
   buildTempChart(hourly);
   buildSparklines(basin,stations);
   buildGauges(gaugesData);
@@ -527,12 +539,173 @@ async function init(){
   loadWebcam(currentCam);
 }
 
-function buildSWEChart(basin,stations){
-  const ctx=document.getElementById('sweChart').getContext('2d');
-  let labels=[],sweVals=[];
-  if(basin?.length){labels=basin.map(r=>r.date);sweVals=basin.map(r=>parseFloat(r.basin_swe)||null);document.getElementById('chart-subtitle').textContent=`${basin.length} days · through ${labels[labels.length-1]}`;}
-  else{const avg=stations.reduce((a,s)=>a+parseFloat(s.swe_in||0),0)/stations.length;for(let d=1;d<=154;d++){const dt=new Date(2025,9,1);dt.setDate(dt.getDate()+d-1);labels.push(dt.toISOString().slice(0,10));sweVals.push(+(avg*(d/154)+Math.sin(d*0.12)*1.5).toFixed(1));}document.getElementById('chart-subtitle').textContent='WY2026 · simulated';}
-  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Basin Avg SWE',data:sweVals,borderColor:'#81d4fa',borderWidth:2,backgroundColor:'rgba(79,195,247,0.08)',fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10},callbacks:{label:i=>` Basin avg SWE: ${i.raw?.toFixed(1)??'—'} in`}}},scales:{x:{ticks:{color:'rgba(90,106,138,0.8)',font:{family:'JetBrains Mono',size:9},maxTicksLimit:10,callback:(v,i)=>{const d=labels[i];if(!d)return'';const day=d.slice(8);return(day==='01'||day==='02')?d.slice(5,7)+'/'+d.slice(0,4):''}},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}},y:{ticks:{color:'rgba(90,106,138,0.8)',font:{family:'JetBrains Mono',size:9},callback:v=>v+'"'},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}}}}}); 
+function buildSWEChart(basin, stations, stationCsv) {
+  const ctx = document.getElementById('sweChart').getContext('2d');
+
+  // Station colors — one per station
+  const STN_COLORS = ['#81d4fa','#69f0ae','#ff8a65','#ce93d8','#fff176','#80deea','#f48fb1'];
+
+  // Build labels + basin series
+  let labels = [], basinVals = [];
+  if (basin?.length) {
+    labels    = basin.map(r => r.date);
+    basinVals = basin.map(r => parseFloat(r.basin_swe) || null);
+    document.getElementById('chart-subtitle').textContent =
+      `${basin.length} days · through ${labels[labels.length - 1]}`;
+  } else {
+    const avg = stations.reduce((a,s) => a + parseFloat(s.swe_in||0), 0) / stations.length;
+    for (let d = 1; d <= 154; d++) {
+      const dt = new Date(2025, 9, 1); dt.setDate(dt.getDate() + d - 1);
+      labels.push(dt.toISOString().slice(0, 10));
+      basinVals.push(+(avg*(d/154) + Math.sin(d*0.12)*1.5).toFixed(1));
+    }
+    document.getElementById('chart-subtitle').textContent = 'WY2026 · simulated';
+  }
+
+  // Build per-station series from snotel_wy2026.csv
+  const stationSeries = {};  // name → array aligned to labels
+  if (stationCsv?.length) {
+    const labelSet = new Map(labels.map((l, i) => [l, i]));
+    for (const row of stationCsv) {
+      const name = row.station_name;
+      const date = row.date;
+      const swe  = parseFloat(row.swe_in);
+      if (!name || !date || isNaN(swe)) continue;
+      if (!stationSeries[name]) stationSeries[name] = new Array(labels.length).fill(null);
+      const idx = labelSet.get(date);
+      if (idx !== undefined) stationSeries[name][idx] = swe > 0 ? swe : null;
+    }
+  }
+
+  // Fallback: scale basin series per station if no CSV
+  const stationNames = stations.map(s => s.name);
+  stationNames.forEach(name => {
+    if (!stationSeries[name] && basinVals.length) {
+      const stn  = stations.find(s => s.name === name);
+      const base = basinVals.filter(v => v != null).slice(-1)[0] || 1;
+      const scale = stn?.swe_in ? stn.swe_in / base : 1;
+      stationSeries[name] = basinVals.map(v => v != null ? +(v * scale).toFixed(1) : null);
+    }
+  });
+
+  // Build datasets — basin always visible, stations hidden by default
+  const datasets = [
+    {
+      label:           'Basin Avg',
+      data:            basinVals,
+      borderColor:     '#81d4fa',
+      borderWidth:     2.5,
+      backgroundColor: 'rgba(79,195,247,0.06)',
+      fill:            true,
+      tension:         0.4,
+      pointRadius:     0,
+      pointHoverRadius:4,
+      hidden:          false,
+    },
+    ...stationNames.map((name, i) => ({
+      label:           name,
+      data:            stationSeries[name] || [],
+      borderColor:     STN_COLORS[i % STN_COLORS.length],
+      borderWidth:     1.5,
+      backgroundColor: 'transparent',
+      fill:            false,
+      tension:         0.4,
+      pointRadius:     0,
+      pointHoverRadius:3,
+      hidden:          true,
+    }))
+  ];
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      interaction:         { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(6,15,30,0.95)',
+          borderColor:     'rgba(79,195,247,0.2)',
+          borderWidth:      1,
+          titleColor:      '#81d4fa',
+          bodyColor:       '#cdd6f4',
+          titleFont:       { family: 'JetBrains Mono', size: 10 },
+          bodyFont:        { family: 'JetBrains Mono', size: 10 },
+          filter:          item => item.raw != null,
+          callbacks:       { label: i => ` ${i.dataset.label}: ${i.raw?.toFixed(1) ?? '—'}"` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: 'rgba(90,106,138,0.8)',
+            font:  { family: 'JetBrains Mono', size: 9 },
+            maxTicksLimit: 10,
+            callback: (v, i) => {
+              const d = labels[i]; if (!d) return '';
+              const day = d.slice(8);
+              return (day === '01' || day === '02') ? d.slice(5,7) + '/' + d.slice(0,4) : '';
+            }
+          },
+          grid:   { color: 'rgba(79,195,247,0.05)' },
+          border: { color: 'rgba(79,195,247,0.08)' }
+        },
+        y: {
+          ticks: {
+            color: 'rgba(90,106,138,0.8)',
+            font:  { family: 'JetBrains Mono', size: 9 },
+            callback: v => v + '"'
+          },
+          grid:   { color: 'rgba(79,195,247,0.05)' },
+          border: { color: 'rgba(79,195,247,0.08)' }
+        }
+      }
+    }
+  });
+
+  // Build toggle buttons
+  const toggleBox = document.getElementById('swe-toggles');
+  if (toggleBox) {
+    // "All" / "None" controls
+    const allBtn = document.createElement('button');
+    allBtn.className = 'swe-toggle-all';
+    allBtn.textContent = 'Show All';
+    allBtn.onclick = () => {
+      chart.data.datasets.forEach((ds, i) => { if (i > 0) ds.hidden = false; });
+      chart.update();
+      toggleBox.querySelectorAll('.swe-toggle').forEach(b => b.classList.add('active'));
+    };
+    const noneBtn = document.createElement('button');
+    noneBtn.className = 'swe-toggle-all';
+    noneBtn.textContent = 'Hide All';
+    noneBtn.onclick = () => {
+      chart.data.datasets.forEach((ds, i) => { if (i > 0) ds.hidden = true; });
+      chart.update();
+      toggleBox.querySelectorAll('.swe-toggle').forEach(b => b.classList.remove('active'));
+    };
+    toggleBox.appendChild(allBtn);
+    toggleBox.appendChild(noneBtn);
+
+    // Per-station toggle buttons
+    stationNames.forEach((name, i) => {
+      const color = STN_COLORS[i % STN_COLORS.length];
+      const btn = document.createElement('button');
+      btn.className = 'swe-toggle';
+      btn.textContent = name;
+      btn.style.borderColor = color;
+      btn.style.color = color;
+      btn.dataset.idx = i + 1;  // dataset index (0 = basin)
+      btn.onclick = () => {
+        const dsIdx = parseInt(btn.dataset.idx);
+        chart.data.datasets[dsIdx].hidden = !chart.data.datasets[dsIdx].hidden;
+        btn.classList.toggle('active');
+        chart.update();
+      };
+      toggleBox.appendChild(btn);
+    });
+  }
 }
 
 function buildTempChart(hourly){

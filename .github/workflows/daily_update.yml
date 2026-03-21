@@ -43,6 +43,7 @@ jobs:
           cp outputs/basin_swe_timeseries.png dashboard/
           cp outputs/all_stations_swe.png dashboard/
           cp outputs/station_swe_bars.png dashboard/
+          cp data/processed/snotel_wy2026.csv dashboard/
           cp outputs/modis_snow_cover.png dashboard/
           cp data/processed/snotel_latest.json dashboard/
           cp data/processed/basin_daily.csv dashboard/
