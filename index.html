@@ -180,7 +180,14 @@
   .gauge-meta{font-size:0.55rem;color:var(--dim);margin-bottom:6px;}
   .gauge-chg{font-size:0.6rem;margin-left:6px;}
   .gauge-chg.up{color:#69f0ae;} .gauge-chg.down{color:#ff8a65;}
-  .gauge-wrap{height:60px;}
+  .gauge-wrap{height:110px;}
+  .gauge-card{cursor:pointer;transition:border-color 0.2s,box-shadow 0.2s;}
+  .gauge-card:hover{border-color:rgba(79,195,247,0.3);box-shadow:0 0 12px rgba(79,195,247,0.08);}
+  .gauge-expand-hint{font-size:0.48rem;color:var(--dim);letter-spacing:0.06em;margin-top:4px;opacity:0.6;}
+  .gauge-combined-wrap{height:200px;margin-top:4px;}
+  .gauge-toggles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .gauge-toggle{font-size:0.55rem;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;padding:3px 8px;border-radius:3px;border:1px solid;cursor:pointer;transition:opacity 0.15s;background:transparent;opacity:0.4;}
+  .gauge-toggle.active{opacity:1;}
   .flood-badge{font-size:0.5rem;background:rgba(255,138,101,0.2);color:#ff8a65;border:1px solid rgba(255,138,101,0.4);border-radius:3px;padding:1px 5px;letter-spacing:0.06em;}
 
   @media(max-width:700px){
@@ -327,6 +334,10 @@
     <div class="panel" style="margin-bottom:16px">
       <div class="panel-title">Rainier Watershed — Stream Gauges <span>USGS · 4 rivers · 7-day flow</span></div>
       <div class="gauge-grid" id="gauge-grid"></div>
+      <div style="border-top:1px solid rgba(79,195,247,0.08);margin:14px 0 12px;"></div>
+      <div style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">All Rivers — 7-Day Flow <span style="color:var(--accent);font-size:0.58rem;">click to toggle</span></div>
+      <div class="gauge-toggles" id="gauge-toggles"></div>
+      <div class="gauge-combined-wrap"><canvas id="gauge-combined"></canvas></div>
     </div>
 
   </div><!-- /dashboard -->
@@ -649,31 +660,30 @@ function buildGauges(gaugesData) {
   const grid = document.getElementById('gauge-grid');
   if (!grid) return;
 
-  // Demo fallback
   const DEMO_GAUGES = {
     updated: '—',
     gauges: [
-      {id:'12082500', name:'Nisqually River', location:'nr National', latest_cfs:3200, change_24h:450,  peak_7d_cfs:4100, flood_cfs:8000,  flood_alert:false, series:[]},
-      {id:'12093500', name:'Puyallup River',  location:'nr Orting',   latest_cfs:5800, change_24h:900,  peak_7d_cfs:7200, flood_cfs:12000, flood_alert:false, series:[]},
-      {id:'12094300', name:'Carbon River',    location:'nr Orting',   latest_cfs:2100, change_24h:320,  peak_7d_cfs:2800, flood_cfs:5000,  flood_alert:false, series:[]},
-      {id:'12098500', name:'White River',     location:'nr Buckley',  latest_cfs:2600, change_24h:-180, peak_7d_cfs:3900, flood_cfs:6000,  flood_alert:false, series:[]},
+      {id:'12082500', name:'Nisqually River', location:'nr National',         latest_cfs:4440,  change_24h:1800, peak_7d_cfs:5470,  flood_cfs:8000,  flood_alert:false, series:[]},
+      {id:'12083000', name:'Mineral Creek',   location:'nr Mineral',           latest_cfs:1180,  change_24h:250,  peak_7d_cfs:4170,  flood_cfs:3000,  flood_alert:false, series:[]},
+      {id:'12101500', name:'Puyallup River',  location:'at Puyallup',          latest_cfs:19900, change_24h:5700, peak_7d_cfs:20400, flood_cfs:25000, flood_alert:false, series:[]},
+      {id:'12099200', name:'White River',     location:'ab Boise Cr, Buckley', latest_cfs:4930,  change_24h:140,  peak_7d_cfs:5000,  flood_cfs:8000,  flood_alert:false, series:[]},
     ]
   };
 
   const d = gaugesData || DEMO_GAUGES;
   const gauges = d.gauges || [];
-
   const GAUGE_COLORS = ['#81d4fa','#69f0ae','#ff8a65','#ce93d8'];
 
+  // ── 2x2 cards ────────────────────────────────────────────────────────────
   grid.innerHTML = gauges.map((g, i) => {
-    const cfs     = g.latest_cfs != null ? g.latest_cfs.toLocaleString() : '—';
-    const chgVal  = g.change_24h;
-    const chgHtml = chgVal != null
+    const cfs      = g.latest_cfs != null ? g.latest_cfs.toLocaleString() : '—';
+    const chgVal   = g.change_24h;
+    const chgHtml  = chgVal != null
       ? `<span class="gauge-chg ${chgVal >= 0 ? 'up' : 'down'}">${chgVal >= 0 ? '▲' : '▼'} ${Math.abs(chgVal).toLocaleString()} cfs</span>`
       : '';
-    const floodPct = g.latest_cfs && g.flood_cfs ? Math.round(g.latest_cfs / g.flood_cfs * 100) : null;
+    const floodPct  = g.latest_cfs && g.flood_cfs ? Math.round(g.latest_cfs / g.flood_cfs * 100) : null;
     const floodHtml = g.flood_alert ? '<span class="flood-badge">⚠ FLOOD WATCH</span>' : '';
-    return `<div class="gauge-card ${g.flood_alert ? 'flood-warn' : ''}">
+    return `<div class="gauge-card ${g.flood_alert ? 'flood-warn' : ''}" style="cursor:pointer" onclick="openGaugeModal(${i})" title="Click to expand">
       <div class="gauge-header">
         <div>
           <div class="gauge-name">${g.name} ${floodHtml}</div>
@@ -681,67 +691,228 @@ function buildGauges(gaugesData) {
         </div>
         <div style="text-align:right">
           <div class="gauge-cfs">${cfs}<span>cfs</span></div>
-          <div class="gauge-meta">${chgHtml}${floodPct != null ? ` · ${floodPct}% of flood stage` : ''}</div>
+          <div class="gauge-meta">${chgHtml}${floodPct != null ? ` · ${floodPct}% of flood` : ''}</div>
         </div>
       </div>
       <div class="gauge-wrap"><canvas id="gauge-${i}"></canvas></div>
+      <div style="font-size:0.48rem;color:var(--dim);letter-spacing:0.06em;margin-top:4px;opacity:0.6;">↗ click to expand</div>
     </div>`;
   }).join('');
 
-  // Draw gauge sparklines
+  // ── Sparklines with flood line + tooltip ─────────────────────────────────
   gauges.forEach((g, i) => {
     const ctx = document.getElementById(`gauge-${i}`)?.getContext('2d');
     if (!ctx || !g.series || g.series.length < 2) return;
-    // Downsample to ~50 pts for performance
-    const step = Math.max(1, Math.floor(g.series.length / 50));
+    const step    = Math.max(1, Math.floor(g.series.length / 80));
     const sampled = g.series.filter((_, idx) => idx % step === 0);
-    const labels = sampled.map(v => v.dt.slice(5));  // MM-DDTHH:MM
-    const vals   = sampled.map(v => v.cfs);
-    const color  = GAUGE_COLORS[i % GAUGE_COLORS.length];
+    const labels  = sampled.map(v => v.dt);
+    const vals    = sampled.map(v => v.cfs);
+    const color   = GAUGE_COLORS[i % GAUGE_COLORS.length];
+    const flood   = g.flood_cfs;
     new Chart(ctx, {
       type: 'line',
       data: {
         labels,
-        datasets: [{
-          data: vals,
-          borderColor: color,
-          borderWidth: 1.5,
-          backgroundColor: `${color}18`,
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-        }]
+        datasets: [
+          { label: g.name, data: vals, borderColor: color, borderWidth: 1.5,
+            backgroundColor: `${color}18`, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4 },
+          ...(flood ? [{ label: 'Flood Stage', data: labels.map(() => flood),
+            borderColor: 'rgba(255,138,101,0.5)', borderWidth: 1, borderDash: [5,4],
+            pointRadius: 0, fill: false, tension: 0 }] : [])
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(6,15,30,0.95)',
-            borderColor: 'rgba(79,195,247,0.2)',
-            borderWidth: 1,
-            titleColor: '#81d4fa',
-            bodyColor: '#cdd6f4',
-            titleFont: { family: 'JetBrains Mono', size: 9 },
-            bodyFont:  { family: 'JetBrains Mono', size: 9 },
-            callbacks: { label: item => ` ${item.raw?.toLocaleString()} cfs` }
+            backgroundColor: 'rgba(6,15,30,0.95)', borderColor: 'rgba(79,195,247,0.2)', borderWidth: 1,
+            titleColor: '#81d4fa', bodyColor: '#cdd6f4',
+            titleFont: { family: 'JetBrains Mono', size: 9 }, bodyFont: { family: 'JetBrains Mono', size: 9 },
+            callbacks: {
+              title: items => (items[0]?.label || '').replace('T',' ').slice(0,16) + ' PST',
+              label: item => item.dataset.label === 'Flood Stage'
+                ? ` ⚠ Flood: ${item.raw?.toLocaleString()} cfs`
+                : ` ${item.dataset.label}: ${item.raw?.toLocaleString()} cfs`
+            }
           }
         },
         scales: {
           x: { display: false },
-          y: {
-            display: true,
-            ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 }, maxTicksLimit: 3, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
-            grid: { color: 'rgba(79,195,247,0.05)' },
-            border: { color: 'rgba(79,195,247,0.08)' },
-            min: 0,
+          y: { display: true, min: 0,
+            ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 },
+              maxTicksLimit: 3, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
+            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }
           }
         },
         animation: false,
       }
     });
   });
+
+  // ── Combined toggle chart ─────────────────────────────────────────────────
+  const combinedCtx = document.getElementById('gauge-combined')?.getContext('2d');
+  const toggleBox   = document.getElementById('gauge-toggles');
+  if (combinedCtx && gauges.some(g => g.series?.length > 1)) {
+    const allLabels = gauges.reduce((best, g) =>
+      (g.series?.length || 0) > best.length ? g.series.map(v => v.dt) : best, []);
+    const step = Math.max(1, Math.floor(allLabels.length / 100));
+    const combinedLabels = allLabels.filter((_, idx) => idx % step === 0);
+
+    const combinedDatasets = gauges.map((g, i) => {
+      const color = GAUGE_COLORS[i % GAUGE_COLORS.length];
+      const labelSet = new Map((g.series||[]).map(v => [v.dt, v.cfs]));
+      const vals = combinedLabels.map(dt => labelSet.get(dt) ?? null);
+      return { label: g.name, data: vals, borderColor: color, borderWidth: 1.5,
+        backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, pointHoverRadius: 3, hidden: false };
+    });
+
+    const combinedChart = new Chart(combinedCtx, {
+      type: 'line',
+      data: { labels: combinedLabels, datasets: combinedDatasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(6,15,30,0.95)', borderColor: 'rgba(79,195,247,0.2)', borderWidth: 1,
+            titleColor: '#81d4fa', bodyColor: '#cdd6f4',
+            titleFont: { family: 'JetBrains Mono', size: 9 }, bodyFont: { family: 'JetBrains Mono', size: 9 },
+            filter: item => item.raw != null,
+            callbacks: {
+              title: items => (items[0]?.label || '').replace('T',' ').slice(0,16) + ' PST',
+              label: item => ` ${item.dataset.label}: ${item.raw?.toLocaleString()} cfs`
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 },
+            maxTicksLimit: 8, callback: (v, i) => { const l = combinedLabels[i]; return l ? l.slice(5,10).replace('-','/') : ''; }},
+            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }},
+          y: { min: 0, ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 },
+            maxTicksLimit: 5, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
+            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }}
+        },
+        animation: false,
+      }
+    });
+
+    if (toggleBox) {
+      gauges.forEach((g, i) => {
+        const color = GAUGE_COLORS[i % GAUGE_COLORS.length];
+        const btn = document.createElement('button');
+        btn.className = 'gauge-toggle active';
+        btn.textContent = g.name;
+        btn.style.borderColor = color;
+        btn.style.color = color;
+        btn.onclick = () => {
+          combinedChart.data.datasets[i].hidden = !combinedChart.data.datasets[i].hidden;
+          btn.classList.toggle('active');
+          combinedChart.update();
+        };
+        toggleBox.appendChild(btn);
+      });
+    }
+  }
+
+  window._gauges      = gauges;
+  window._gaugeColors = GAUGE_COLORS;
 }
+
+// ── Gauge expand modal ────────────────────────────────────────────────────
+let _modalChart = null;
+
+function openGaugeModal(idx) {
+  const g     = window._gauges?.[idx];
+  const color = window._gaugeColors?.[idx] || '#81d4fa';
+  if (!g) return;
+  // Simple expand — just alert for now, can build full modal later
+  // For now use a lightweight approach: swap to full-width inline
+  const modal = document.getElementById('gauge-modal');
+  if (!modal) {
+    // Build a quick modal on the fly
+    const el = document.createElement('div');
+    el.id = 'gauge-modal';
+    el.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(4,10,24,0.92);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+    el.innerHTML = `<div style="background:#060f1e;border:1px solid rgba(79,195,247,0.18);border-radius:10px;padding:24px;width:min(900px,92vw);max-height:90vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px">
+        <div>
+          <div style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#81d4fa" id="modal-title"></div>
+          <div style="font-size:0.6rem;color:var(--dim)" id="modal-meta"></div>
+        </div>
+        <span style="font-size:1.2rem;color:var(--dim);cursor:pointer;padding:0 6px" onclick="closeGaugeModal()">✕</span>
+      </div>
+      <div style="height:320px;margin-bottom:16px"><canvas id="modal-chart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px" id="modal-stats"></div>
+    </div>`;
+    document.body.appendChild(el);
+    el.addEventListener('click', e => { if (e.target === el) closeGaugeModal(); });
+  }
+
+  document.getElementById('modal-title').textContent = g.name;
+  document.getElementById('modal-meta').textContent  = `${g.location} · USGS ${g.id} · 7-day flow`;
+
+  const chgVal = g.change_24h;
+  const floodPct = g.latest_cfs && g.flood_cfs ? Math.round(g.latest_cfs / g.flood_cfs * 100) : null;
+  document.getElementById('modal-stats').innerHTML = [
+    { label: 'Current Flow',  val: g.latest_cfs != null ? g.latest_cfs.toLocaleString() + ' cfs' : '—' },
+    { label: '24hr Change',   val: chgVal != null ? (chgVal >= 0 ? '+' : '') + chgVal.toLocaleString() + ' cfs' : '—' },
+    { label: '7-Day Peak',    val: g.peak_7d_cfs != null ? g.peak_7d_cfs.toLocaleString() + ' cfs' : '—' },
+    { label: 'Flood Stage',   val: g.flood_cfs ? g.flood_cfs.toLocaleString() + ' cfs' + (floodPct ? ` (${floodPct}%)` : '') : '—' },
+  ].map(s => `<div style="background:rgba(13,31,60,0.5);border-radius:4px;padding:8px 10px"><div style="font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:3px">${s.label}</div><div style="font-size:1rem;font-weight:700;color:#cdd6f4">${s.val}</div></div>`).join('');
+
+  if (_modalChart) { _modalChart.destroy(); _modalChart = null; }
+  const mctx = document.getElementById('modal-chart')?.getContext('2d');
+  if (mctx && g.series?.length > 1) {
+    const labels = g.series.map(v => v.dt);
+    const vals   = g.series.map(v => v.cfs);
+    _modalChart  = new Chart(mctx, {
+      type: 'line',
+      data: { labels, datasets: [
+        { label: g.name, data: vals, borderColor: color, borderWidth: 2,
+          backgroundColor: `${color}18`, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 5 },
+        ...(g.flood_cfs ? [{ label: 'Flood Stage', data: labels.map(() => g.flood_cfs),
+          borderColor: 'rgba(255,138,101,0.6)', borderWidth: 1.5, borderDash: [6,4],
+          pointRadius: 0, fill: false, tension: 0 }] : [])
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: {
+          backgroundColor: 'rgba(6,15,30,0.95)', borderColor: `${color}44`, borderWidth: 1,
+          titleColor: color, bodyColor: '#cdd6f4',
+          titleFont: { family: 'JetBrains Mono', size: 10 }, bodyFont: { family: 'JetBrains Mono', size: 10 },
+          callbacks: {
+            title: items => (items[0]?.label || '').replace('T',' ').slice(0,16) + ' PST',
+            label: item => item.dataset.label === 'Flood Stage' ? ` ⚠ Flood: ${item.raw?.toLocaleString()} cfs` : ` Flow: ${item.raw?.toLocaleString()} cfs`
+          }
+        }},
+        scales: {
+          x: { ticks: { color: 'rgba(90,106,138,0.8)', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10,
+            callback: (v, i) => { const l = labels[i]; return l ? l.slice(5,10).replace('-','/') + ' ' + l.slice(11,16) : ''; }},
+            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }},
+          y: { min: 0, ticks: { color: 'rgba(90,106,138,0.8)', font: { family: 'JetBrains Mono', size: 9 },
+            callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k cfs' : v+' cfs' },
+            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }}
+        }
+      }
+    });
+  }
+
+  document.getElementById('gauge-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGaugeModal() {
+  const el = document.getElementById('gauge-modal');
+  if (el) el.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGaugeModal(); });
+
 
 
 // ── Sentinel / HLS Live Map ────────────────────────────────────────────────
@@ -759,7 +930,8 @@ const SNOTEL_STATIONS = [
 ];
 
 function gibsTileUrl(layer, date, res, fmt) {
-  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/${res}/{z}/{y}/{x}.${fmt}`;
+  // GIBS WMTS KVP endpoint -- more reliable than REST for Leaflet
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${layer}&STYLE=default&TILEMATRIXSET=${res}&TILEMATRIX=${res}:{z}&TILEROW={y}&TILECOL={x}&TIME=${date}&FORMAT=image/${fmt === 'jpg' ? 'jpeg' : 'png'}`;
 }
 
 function initSentinelMap() {
