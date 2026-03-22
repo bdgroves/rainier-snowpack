@@ -1,5 +1,5 @@
 {
-  "updated": "2026-03-22T05:54Z",
+  "updated": "2026-03-22T06:48Z",
   "gauges": [
     {
       "id": "12082500",
@@ -31,7 +31,7 @@
       "location": "at Puyallup",
       "latest_cfs": 12300.0,
       "latest_dt": "2026-03-21T22:45",
-      "change_24h": -4800.0,
+      "change_24h": -4400.0,
       "peak_7d_cfs": 22400.0,
       "flood_cfs": 25000,
       "flood_alert": false,
