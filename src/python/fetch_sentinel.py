@@ -1,4 +1,4 @@
-“””
+"""
 fetch_sentinel.py
 Downloads the most recent clear Sentinel-2 true-color image over Mt. Rainier
 via the Microsoft Planetary Computer STAC API (no auth required for search;
@@ -9,7 +9,7 @@ outputs/sentinel_latest.png + dashboard/sentinel_latest.png.
 
 Cloud threshold: skips scenes with >30% cloud cover (Sentinel is 10m —
 we want clear passes only, stricter than MODIS 80%).
-“””
+"""
 
 import json
 import logging
