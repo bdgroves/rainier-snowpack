@@ -1,5 +1,5 @@
 {
-  "updated": "2026-03-22T21:13Z",
+  "updated": "2026-03-22T21:16Z",
   "gauges": [
     {
       "id": "12082500",
@@ -7,7 +7,7 @@
       "location": "nr National",
       "latest_cfs": 1880.0,
       "latest_dt": "2026-03-22T14:00",
-      "change_24h": -630.0,
+      "change_24h": -610.0,
       "peak_7d_cfs": 5040.0,
       "flood_cfs": 8000,
       "flood_alert": false,
@@ -692,8 +692,8 @@
       "location": "nr Mineral",
       "latest_cfs": 963.0,
       "latest_dt": "2026-03-22T14:00",
-      "change_24h": -26.0,
-      "peak_7d_cfs": 1390.0,
+      "change_24h": -17.0,
+      "peak_7d_cfs": 1380.0,
       "flood_cfs": 3000,
       "flood_alert": false,
       "series": [
@@ -2062,7 +2062,7 @@
       "location": "ab Boise Cr, Buckley",
       "latest_cfs": 4490.0,
       "latest_dt": "2026-03-22T13:30",
-      "change_24h": -50.0,
+      "change_24h": -70.0,
       "peak_7d_cfs": 5070.0,
       "flood_cfs": 8000,
       "flood_alert": false,
