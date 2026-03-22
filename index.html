@@ -239,6 +239,9 @@
       <div class="panel" style="grid-column:span 2">
         <div class="panel-title">Basin Average SWE — Water Year 2026 <span id="chart-subtitle"></span></div>
         <div class="chart-wrap"><canvas id="sweChart"></canvas></div>
+        <div style="border-top:1px solid rgba(79,195,247,0.08);margin:14px 0 12px;"></div>
+        <div style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Individual Stations <span style="color:var(--accent);font-size:0.58rem;">all 7 stations</span></div>
+        <div class="sparkline-grid" id="sparkline-grid"></div>
       </div>
       <div class="panel">
         <div class="panel-title">Station Conditions <span id="station-count"></span></div>
@@ -307,8 +310,8 @@
       <div class="panel">
         <div class="panel-title">Satellite Live Map <span>NASA GIBS · HLS/MODIS · interactive</span></div>
         <div class="sentinel-layer-bar">
-          <button class="sentinel-layer-btn active" data-layer="HLS_L30_Nadir_BRDF_Adjusted_Reflectance" data-res="GoogleMapsCompatible_Level12" data-fmt="png">HLS True Color</button>
-          <button class="sentinel-layer-btn" data-layer="MODIS_Terra_CorrectedReflectance_TrueColor" data-res="GoogleMapsCompatible_Level9" data-fmt="jpg">MODIS True Color</button>
+          <button class="sentinel-layer-btn" data-layer="HLS_L30_Nadir_BRDF_Adjusted_Reflectance" data-res="GoogleMapsCompatible_Level12" data-fmt="png">HLS True Color</button>
+          <button class="sentinel-layer-btn active" data-layer="MODIS_Terra_CorrectedReflectance_TrueColor" data-res="GoogleMapsCompatible_Level9" data-fmt="jpg">MODIS True Color</button>
           <button class="sentinel-layer-btn" data-layer="MODIS_Terra_Snow_Cover_Daily" data-res="GoogleMapsCompatible_Level8" data-fmt="png">MODIS Snow Cover</button>
         </div>
         <div class="sentinel-date-row">
@@ -320,16 +323,7 @@
           <div id="sentinel-map"></div>
         </div>
       </div>
-    </div>
-
-
-    <!-- Station SWE Sparklines -->
-    <div class="panel" style="margin-bottom:16px">
-      <div class="panel-title">Individual Station SWE — Water Year 2026 <span>all 7 stations</span></div>
-      <div class="sparkline-grid" id="sparkline-grid"></div>
-    </div>
-
-    <!-- Stream Gauges -->
+    </div><!-- Stream Gauges -->
     <div class="panel" style="margin-bottom:16px">
       <div class="panel-title">Rainier Watershed — Stream Gauges <span>USGS · 4 rivers · 7-day flow</span></div>
       <div class="gauge-grid" id="gauge-grid"></div>
