@@ -132,7 +132,7 @@ def main():
     basin_swe_series = [0.0] * n_days
     basin_swe_count  = [0]   * n_days
 
-    with httpx.Client() as client:
+    with httpx.Client(verify=False) as client:
         for stn in STATIONS:
             LOG.info("Fetching %s (%s)...", stn["name"], stn["id"])
 
