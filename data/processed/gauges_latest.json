@@ -1,5 +1,5 @@
 {
-  "updated": "2026-03-27T18:13Z",
+  "updated": "2026-03-27T18:19Z",
   "gauges": [
     {
       "id": "12082500",
@@ -7,7 +7,7 @@
       "location": "nr National",
       "latest_cfs": 1110.0,
       "latest_dt": "2026-03-27T11:00",
-      "change_24h": -140.0,
+      "change_24h": -100.0,
       "peak_7d_cfs": 5040.0,
       "flood_cfs": 8000,
       "flood_alert": false,
@@ -1377,7 +1377,7 @@
       "location": "at Puyallup",
       "latest_cfs": 8080.0,
       "latest_dt": "2026-03-27T10:45",
-      "change_24h": -240.0,
+      "change_24h": -260.0,
       "peak_7d_cfs": 22400.0,
       "flood_cfs": 25000,
       "flood_alert": false,
@@ -2062,7 +2062,7 @@
       "location": "ab Boise Cr, Buckley",
       "latest_cfs": 4820.0,
       "latest_dt": "2026-03-27T10:30",
-      "change_24h": 10.0,
+      "change_24h": 0.0,
       "peak_7d_cfs": 5070.0,
       "flood_cfs": 8000,
       "flood_alert": false,
