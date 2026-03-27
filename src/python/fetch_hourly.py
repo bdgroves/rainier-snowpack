@@ -84,7 +84,7 @@ def main():
     LOG.info("=== Hourly temp fetch: %s to %s ===", start, today)
 
     frames = []
-    with httpx.Client(follow_redirects=True) as client:
+    with httpx.Client(follow_redirects=True, verify=False) as client:
         for triplet, name, elev in STATIONS:
             df = fetch_station_hourly(client, triplet, name, elev, start, end)
             if df is not None:
