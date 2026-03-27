@@ -17,6 +17,11 @@ jobs:
         with:
           pixi-version: latest
           cache: true
+      - name: Install CA certificates
+        run: |
+          sudo apt-get install -y ca-certificates
+          sudo update-ca-certificates
+          pip install certifi --break-system-packages
       - name: Write Earthdata netrc
         env:
           EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
