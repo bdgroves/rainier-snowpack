@@ -1,8 +1,8 @@
 "date","station_triplet","station_name","elevation_ft","swe_in","depth_in","temp_f","precip_in"
 2026-03-27,"418:WA:SNTL","Corral Pass",5810,27.3,65,35.6,0.2
-2026-03-27,"642:WA:SNTL","Morse Lake",5400,NA,NA,NA,NA
+2026-03-27,"642:WA:SNTL","Morse Lake",5400,32.3,75,32.9,NA
 2026-03-27,"1085:WA:SNTL","Cayuse Pass",5260,28.6,68,35.1,NA
-2026-03-27,"679:WA:SNTL","Paradise",5150,NA,NA,NA,NA
+2026-03-27,"679:WA:SNTL","Paradise",5150,36.4,81,34.5,NA
 2026-03-27,"375:WA:SNTL","Bumping Ridge",4600,16.3,44,37,NA
 2026-03-27,"672:WA:SNTL","Olallie Meadows",4010,23.2,51,36,0.1
 2026-03-27,"420:WA:SNTL","Cougar Mountain",3210,3.9,12,37,NA
