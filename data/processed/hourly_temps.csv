@@ -1,4 +1,54 @@
 datetime,temp_f,freezing,station_name,elevation_ft,triplet
+2026-03-27 00:00:00,23.9,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 01:00:00,23.2,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 02:00:00,22.3,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 03:00:00,21.7,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 04:00:00,21.9,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 05:00:00,21.7,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 06:00:00,21.2,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 07:00:00,22.3,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 08:00:00,29.3,True,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 09:00:00,32.9,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 10:00:00,38.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 11:00:00,43.3,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 12:00:00,47.7,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 13:00:00,51.8,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 14:00:00,53.4,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 15:00:00,52.9,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 16:00:00,51.3,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 17:00:00,46.0,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 18:00:00,41.0,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 19:00:00,37.4,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 20:00:00,36.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 21:00:00,35.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 22:00:00,34.0,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-27 23:00:00,36.5,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 00:00:00,37.0,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 01:00:00,36.5,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 02:00:00,35.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 03:00:00,35.4,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 04:00:00,34.9,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 05:00:00,33.6,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 06:00:00,34.2,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 07:00:00,34.7,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 08:00:00,36.5,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 09:00:00,38.8,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 10:00:00,42.3,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 11:00:00,42.6,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 12:00:00,42.6,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 13:00:00,43.9,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 14:00:00,43.7,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 15:00:00,43.9,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 16:00:00,42.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 17:00:00,40.5,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 18:00:00,37.6,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 19:00:00,36.0,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 20:00:00,35.4,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 21:00:00,34.5,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 22:00:00,33.3,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-28 23:00:00,33.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-29 00:00:00,32.2,False,Bumping Ridge,4600,375:WA:SNTL
+2026-03-29 01:00:00,31.8,True,Bumping Ridge,4600,375:WA:SNTL
 2026-03-27 00:00:00,31.8,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-27 01:00:00,32.0,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-27 02:00:00,32.4,False,Cayuse Pass,5260,1085:WA:SNTL
@@ -48,6 +98,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-28 22:00:00,31.5,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-28 23:00:00,31.5,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-29 00:00:00,31.5,True,Cayuse Pass,5260,1085:WA:SNTL
+2026-03-29 01:00:00,30.6,True,Cayuse Pass,5260,1085:WA:SNTL
 2026-03-27 00:00:00,34.5,False,Corral Pass,5810,418:WA:SNTL
 2026-03-27 01:00:00,32.9,False,Corral Pass,5810,418:WA:SNTL
 2026-03-27 02:00:00,32.9,False,Corral Pass,5810,418:WA:SNTL
@@ -97,6 +148,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-28 22:00:00,30.0,True,Corral Pass,5810,418:WA:SNTL
 2026-03-28 23:00:00,29.5,True,Corral Pass,5810,418:WA:SNTL
 2026-03-29 00:00:00,29.1,True,Corral Pass,5810,418:WA:SNTL
+2026-03-29 01:00:00,28.4,True,Corral Pass,5810,418:WA:SNTL
 2026-03-27 00:00:00,37.4,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-27 01:00:00,36.7,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-27 02:00:00,36.9,False,Cougar Mountain,3210,420:WA:SNTL
@@ -146,6 +198,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-28 22:00:00,36.3,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-28 23:00:00,34.0,False,Cougar Mountain,3210,420:WA:SNTL
 2026-03-29 00:00:00,32.4,False,Cougar Mountain,3210,420:WA:SNTL
+2026-03-29 01:00:00,31.8,True,Cougar Mountain,3210,420:WA:SNTL
 2026-03-27 00:00:00,22.3,True,Morse Lake,5400,642:WA:SNTL
 2026-03-27 01:00:00,22.5,True,Morse Lake,5400,642:WA:SNTL
 2026-03-27 02:00:00,21.4,True,Morse Lake,5400,642:WA:SNTL
@@ -195,6 +248,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-28 22:00:00,32.4,False,Morse Lake,5400,642:WA:SNTL
 2026-03-28 23:00:00,32.0,True,Morse Lake,5400,642:WA:SNTL
 2026-03-29 00:00:00,31.5,True,Morse Lake,5400,642:WA:SNTL
+2026-03-29 01:00:00,31.1,True,Morse Lake,5400,642:WA:SNTL
 2026-03-27 00:00:00,30.4,True,Olallie Meadows,4010,672:WA:SNTL
 2026-03-27 01:00:00,29.8,True,Olallie Meadows,4010,672:WA:SNTL
 2026-03-27 02:00:00,29.1,True,Olallie Meadows,4010,672:WA:SNTL
@@ -244,6 +298,7 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-28 22:00:00,34.2,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-28 23:00:00,32.4,False,Olallie Meadows,4010,672:WA:SNTL
 2026-03-29 00:00:00,30.4,True,Olallie Meadows,4010,672:WA:SNTL
+2026-03-29 01:00:00,29.7,True,Olallie Meadows,4010,672:WA:SNTL
 2026-03-27 00:00:00,27.1,True,Paradise,5150,679:WA:SNTL
 2026-03-27 01:00:00,25.0,True,Paradise,5150,679:WA:SNTL
 2026-03-27 02:00:00,25.2,True,Paradise,5150,679:WA:SNTL
@@ -292,3 +347,4 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-03-28 21:00:00,31.3,True,Paradise,5150,679:WA:SNTL
 2026-03-28 22:00:00,30.6,True,Paradise,5150,679:WA:SNTL
 2026-03-28 23:00:00,29.8,True,Paradise,5150,679:WA:SNTL
+2026-03-29 00:00:00,29.3,True,Paradise,5150,679:WA:SNTL
