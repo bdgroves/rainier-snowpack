@@ -67,7 +67,7 @@
       "elevation": 5810,
       "swe_in": 27.4,
       "depth_in": 66.0,
-      "temp_f": 26.4,
+      "temp_f": null,
       "swe_change_24h": 0.3,
       "depth_change_24h": 0.0,
       "days_since_snow": 3,
