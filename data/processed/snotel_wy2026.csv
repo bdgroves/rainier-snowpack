@@ -179,6 +179,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,679:WA:SNTL,Paradise,5150,36.4,81.0,34.5,0.0
 2026-03-28,679:WA:SNTL,Paradise,5150,36.3,78.0,29.3,0.0
 2026-03-29,679:WA:SNTL,Paradise,5150,36.7,82.0,22.5,0.2
+2026-03-30,679:WA:SNTL,Paradise,5150,,,,
 2025-10-01,642:WA:SNTL,Morse Lake,5400,0.1,0.0,39.6,0.5
 2025-10-02,642:WA:SNTL,Morse Lake,5400,0.1,0.0,38.7,0.1
 2025-10-03,642:WA:SNTL,Morse Lake,5400,0.1,0.0,41.4,0.0
@@ -359,6 +360,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,642:WA:SNTL,Morse Lake,5400,32.3,75.0,32.9,0.0
 2026-03-28,642:WA:SNTL,Morse Lake,5400,31.9,73.0,31.5,0.0
 2026-03-29,642:WA:SNTL,Morse Lake,5400,32.1,74.0,22.3,0.2
+2026-03-30,642:WA:SNTL,Morse Lake,5400,,,,
 2025-10-01,672:WA:SNTL,Olallie Meadows,4010,0.2,1.0,40.8,0.4
 2025-10-02,672:WA:SNTL,Olallie Meadows,4010,0.2,1.0,42.8,0.1
 2025-10-03,672:WA:SNTL,Olallie Meadows,4010,0.2,2.0,43.2,0.0
@@ -539,6 +541,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,672:WA:SNTL,Olallie Meadows,4010,23.2,51.0,36.0,0.1
 2026-03-28,672:WA:SNTL,Olallie Meadows,4010,23.2,50.0,30.4,0.1
 2026-03-29,672:WA:SNTL,Olallie Meadows,4010,23.7,54.0,23.0,0.1
+2026-03-30,672:WA:SNTL,Olallie Meadows,4010,,,,
 2025-10-01,1085:WA:SNTL,Cayuse Pass,5260,0.0,0.0,39.2,
 2025-10-02,1085:WA:SNTL,Cayuse Pass,5260,0.0,0.0,39.7,
 2025-10-03,1085:WA:SNTL,Cayuse Pass,5260,0.0,0.0,40.6,
@@ -719,6 +722,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,1085:WA:SNTL,Cayuse Pass,5260,28.6,68.0,35.1,
 2026-03-28,1085:WA:SNTL,Cayuse Pass,5260,28.0,65.0,31.5,
 2026-03-29,1085:WA:SNTL,Cayuse Pass,5260,28.5,70.0,21.7,
+2026-03-30,1085:WA:SNTL,Cayuse Pass,5260,,,,
 2025-10-01,418:WA:SNTL,Corral Pass,5810,0.0,0.0,38.3,0.0
 2025-10-02,418:WA:SNTL,Corral Pass,5810,0.1,0.0,38.8,0.1
 2025-10-03,418:WA:SNTL,Corral Pass,5810,0.0,0.0,38.8,0.0
@@ -899,6 +903,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,418:WA:SNTL,Corral Pass,5810,27.3,65.0,35.6,0.2
 2026-03-28,418:WA:SNTL,Corral Pass,5810,27.1,64.0,29.1,0.0
 2026-03-29,418:WA:SNTL,Corral Pass,5810,27.1,66.0,20.7,0.0
+2026-03-30,418:WA:SNTL,Corral Pass,5810,,,,
 2025-10-01,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,39.2,0.3
 2025-10-02,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,38.3,0.0
 2025-10-03,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,42.6,0.0
@@ -1079,6 +1084,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,375:WA:SNTL,Bumping Ridge,4600,16.3,44.0,37.0,0.0
 2026-03-28,375:WA:SNTL,Bumping Ridge,4600,16.0,44.0,32.2,0.0
 2026-03-29,375:WA:SNTL,Bumping Ridge,4600,16.1,45.0,24.3,0.1
+2026-03-30,375:WA:SNTL,Bumping Ridge,4600,,,,
 2025-10-01,420:WA:SNTL,Cougar Mountain,3210,0.2,0.0,43.7,0.5
 2025-10-02,420:WA:SNTL,Cougar Mountain,3210,0.2,0.0,43.3,0.0
 2025-10-03,420:WA:SNTL,Cougar Mountain,3210,0.3,0.0,45.5,0.0
@@ -1259,3 +1265,4 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-27,420:WA:SNTL,Cougar Mountain,3210,3.9,12.0,37.0,0.0
 2026-03-28,420:WA:SNTL,Cougar Mountain,3210,3.8,11.0,32.4,0.0
 2026-03-29,420:WA:SNTL,Cougar Mountain,3210,4.0,12.0,28.6,0.4
+2026-03-30,420:WA:SNTL,Cougar Mountain,3210,,,,
