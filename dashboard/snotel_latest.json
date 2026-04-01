@@ -2,11 +2,11 @@
   "updated": "2026-04-01",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -0.33,
-    "depth_change_24h": -0.8,
-    "days_since_snow": 2,
+    "swe_change_24h": -0.27,
+    "depth_change_24h": -0.9,
+    "days_since_snow": 1,
     "melt_alert": true,
-    "density_pct": 41.2
+    "density_pct": 42.0
   },
   "stations": [
     {
@@ -39,14 +39,14 @@
       "id": "672:WA:SNTL",
       "name": "Olallie Meadows",
       "elevation": 4010,
-      "swe_in": null,
+      "swe_in": 24.0,
       "depth_in": 52.0,
       "temp_f": 33.3,
-      "swe_change_24h": null,
+      "swe_change_24h": 0.1,
       "depth_change_24h": -1.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 46.2
     },
     {
       "id": "1085:WA:SNTL",
