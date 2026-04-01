@@ -96,7 +96,7 @@
       "temp_f": 38.5,
       "swe_change_24h": 0.0,
       "depth_change_24h": -1.0,
-      "days_since_snow": 0,
+      "days_since_snow": 2,
       "melt_alert": false,
       "density_pct": 36.4
     }

@@ -1252,7 +1252,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-08,420:WA:SNTL,Cougar Mountain,3210,0.0,0.0,29.5,1.3
 2026-03-09,420:WA:SNTL,Cougar Mountain,3210,0.3,2.0,27.0,0.4
 2026-03-10,420:WA:SNTL,Cougar Mountain,3210,0.6,6.0,30.7,0.3
-2026-03-11,420:WA:SNTL,Cougar Mountain,3210,1.2,6.0,35.8,2.3
+2026-03-11,420:WA:SNTL,Cougar Mountain,3210,1.2,6.0,35.8,3.2
 2026-03-12,420:WA:SNTL,Cougar Mountain,3210,2.5,15.0,30.9,2.0
 2026-03-13,420:WA:SNTL,Cougar Mountain,3210,6.5,49.0,31.3,3.3
 2026-03-14,420:WA:SNTL,Cougar Mountain,3210,6.7,46.0,25.3,0.9
@@ -1272,4 +1272,4 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-28,420:WA:SNTL,Cougar Mountain,3210,3.8,11.0,32.4,0.0
 2026-03-29,420:WA:SNTL,Cougar Mountain,3210,4.0,12.0,28.6,0.4
 2026-03-30,420:WA:SNTL,Cougar Mountain,3210,4.0,12.0,35.1,0.0
-2026-03-31,420:WA:SNTL,Cougar Mountain,3210,4.0,11.0,38.5,10.0
+2026-03-31,420:WA:SNTL,Cougar Mountain,3210,4.0,11.0,38.5,0.0
