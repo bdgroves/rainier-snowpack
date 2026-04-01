@@ -31,7 +31,7 @@
       "temp_f": 32.2,
       "swe_change_24h": -0.3,
       "depth_change_24h": -2.0,
-      "days_since_snow": 1,
+      "days_since_snow": 2,
       "melt_alert": false,
       "density_pct": 44.6
     },
@@ -83,7 +83,7 @@
       "temp_f": 34.0,
       "swe_change_24h": -0.4,
       "depth_change_24h": 0.0,
-      "days_since_snow": 1,
+      "days_since_snow": 2,
       "melt_alert": false,
       "density_pct": 36.4
     },
@@ -96,7 +96,7 @@
       "temp_f": 38.5,
       "swe_change_24h": 0.0,
       "depth_change_24h": -1.0,
-      "days_since_snow": 2,
+      "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": 36.4
     }
