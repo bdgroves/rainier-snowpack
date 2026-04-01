@@ -2,11 +2,11 @@
   "updated": "2026-04-01",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": 0.24,
+    "swe_change_24h": 0.25,
     "depth_change_24h": -1.0,
     "days_since_snow": 2,
     "melt_alert": false,
-    "density_pct": 42.1
+    "density_pct": 40.9
   },
   "stations": [
     {
@@ -39,14 +39,14 @@
       "id": "672:WA:SNTL",
       "name": "Olallie Meadows",
       "elevation": 4010,
-      "swe_in": 23.9,
+      "swe_in": null,
       "depth_in": 53.0,
-      "temp_f": 27.0,
-      "swe_change_24h": 0.2,
+      "temp_f": null,
+      "swe_change_24h": null,
       "depth_change_24h": -1.0,
       "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 45.1
+      "density_pct": null
     },
     {
       "id": "1085:WA:SNTL",
@@ -67,7 +67,7 @@
       "elevation": 5810,
       "swe_in": 27.4,
       "depth_in": 66.0,
-      "temp_f": null,
+      "temp_f": 26.4,
       "swe_change_24h": 0.3,
       "depth_change_24h": 0.0,
       "days_since_snow": 4,
@@ -79,13 +79,13 @@
       "name": "Bumping Ridge",
       "elevation": 4600,
       "swe_in": 16.4,
-      "depth_in": null,
+      "depth_in": 44.0,
       "temp_f": 22.1,
       "swe_change_24h": 0.3,
-      "depth_change_24h": null,
+      "depth_change_24h": -1.0,
       "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 37.3
     },
     {
       "id": "420:WA:SNTL",
