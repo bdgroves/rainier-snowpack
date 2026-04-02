@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.63,
-    "depth_change_24h": 4.2,
+    "depth_change_24h": 4.6,
     "days_since_snow": 0,
     "melt_alert": false,
-    "density_pct": 40.4
+    "density_pct": 40.2
   },
   "stations": [
     {
@@ -53,13 +53,13 @@
       "name": "Cayuse Pass",
       "elevation": 5260,
       "swe_in": 29.2,
-      "depth_in": null,
+      "depth_in": 74.0,
       "temp_f": 27.5,
       "swe_change_24h": 1.1,
-      "depth_change_24h": null,
+      "depth_change_24h": 7.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 39.5
     },
     {
       "id": "418:WA:SNTL",
