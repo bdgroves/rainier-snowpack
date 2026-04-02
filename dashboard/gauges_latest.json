@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-02T13:19Z",
+  "updated": "2026-04-02T14:59Z",
   "gauges": [
     {
       "id": "12082500",
@@ -8,7 +8,7 @@
       "latest_cfs": 687.0,
       "latest_dt": "2026-04-02T06:00",
       "change_24h": 27.0,
-      "peak_7d_cfs": 1360.0,
+      "peak_7d_cfs": 1330.0,
       "flood_cfs": 8000,
       "flood_alert": false,
       "series": [
@@ -692,7 +692,7 @@
       "location": "nr Mineral",
       "latest_cfs": 379.0,
       "latest_dt": "2026-04-02T06:00",
-      "change_24h": 32.0,
+      "change_24h": 28.0,
       "peak_7d_cfs": 745.0,
       "flood_cfs": 3000,
       "flood_alert": false,
@@ -1377,8 +1377,8 @@
       "location": "at Puyallup",
       "latest_cfs": 7430.0,
       "latest_dt": "2026-04-02T05:45",
-      "change_24h": 50.0,
-      "peak_7d_cfs": 8590.0,
+      "change_24h": -80.0,
+      "peak_7d_cfs": 8520.0,
       "flood_cfs": 25000,
       "flood_alert": false,
       "series": [
@@ -2062,7 +2062,7 @@
       "location": "ab Boise Cr, Buckley",
       "latest_cfs": 4890.0,
       "latest_dt": "2026-04-02T05:30",
-      "change_24h": -110.0,
+      "change_24h": -90.0,
       "peak_7d_cfs": 5120.0,
       "flood_cfs": 8000,
       "flood_alert": false,
