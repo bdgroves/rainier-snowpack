@@ -2,11 +2,11 @@
   "updated": "2026-04-03",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": 0.37,
-    "depth_change_24h": 1.3,
+    "swe_change_24h": 0.31,
+    "depth_change_24h": 0.7,
     "days_since_snow": 0,
     "melt_alert": false,
-    "density_pct": 39.5
+    "density_pct": 39.9
   },
   "stations": [
     {
@@ -26,14 +26,14 @@
       "id": "642:WA:SNTL",
       "name": "Morse Lake",
       "elevation": 5400,
-      "swe_in": null,
+      "swe_in": 33.1,
       "depth_in": 79.0,
       "temp_f": 27.0,
-      "swe_change_24h": null,
+      "swe_change_24h": 0.0,
       "depth_change_24h": -3.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 41.9
     },
     {
       "id": "672:WA:SNTL",
