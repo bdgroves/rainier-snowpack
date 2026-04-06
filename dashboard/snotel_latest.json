@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": -0.47,
-    "depth_change_24h": -2.1,
+    "depth_change_24h": -2.3,
     "days_since_snow": 2,
     "melt_alert": true,
-    "density_pct": 43.8
+    "density_pct": 43.7
   },
   "stations": [
     {
@@ -66,13 +66,13 @@
       "name": "Corral Pass",
       "elevation": 5810,
       "swe_in": 28.3,
-      "depth_in": 64.0,
+      "depth_in": null,
       "temp_f": 47.8,
       "swe_change_24h": -0.2,
-      "depth_change_24h": -1.0,
+      "depth_change_24h": null,
       "days_since_snow": 1,
       "melt_alert": false,
-      "density_pct": 44.2
+      "density_pct": null
     },
     {
       "id": "375:WA:SNTL",
