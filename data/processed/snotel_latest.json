@@ -2,8 +2,8 @@
   "updated": "2026-04-06",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -0.36,
-    "depth_change_24h": -2.2,
+    "swe_change_24h": -0.48,
+    "depth_change_24h": -2.6,
     "days_since_snow": 2,
     "melt_alert": true,
     "density_pct": 45.1
@@ -67,7 +67,7 @@
       "elevation": 5810,
       "swe_in": 28.3,
       "depth_in": null,
-      "temp_f": null,
+      "temp_f": 47.8,
       "swe_change_24h": -0.2,
       "depth_change_24h": null,
       "days_since_snow": 1,
@@ -79,11 +79,11 @@
       "name": "Bumping Ridge",
       "elevation": 4600,
       "swe_in": null,
-      "depth_in": null,
-      "temp_f": null,
+      "depth_in": 42.0,
+      "temp_f": 40.5,
       "swe_change_24h": null,
-      "depth_change_24h": null,
-      "days_since_snow": null,
+      "depth_change_24h": -1.0,
+      "days_since_snow": 3,
       "melt_alert": false,
       "density_pct": null
     },
@@ -91,14 +91,14 @@
       "id": "420:WA:SNTL",
       "name": "Cougar Mountain",
       "elevation": 3210,
-      "swe_in": null,
+      "swe_in": 2.7,
       "depth_in": 6.0,
       "temp_f": 50.2,
-      "swe_change_24h": null,
+      "swe_change_24h": -1.1,
       "depth_change_24h": -4.0,
       "days_since_snow": 3,
-      "melt_alert": false,
-      "density_pct": null
+      "melt_alert": true,
+      "density_pct": 45.0
     }
   ]
 }
