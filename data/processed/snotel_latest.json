@@ -31,7 +31,7 @@
       "temp_f": 38.8,
       "swe_change_24h": -0.5,
       "depth_change_24h": -2.0,
-      "days_since_snow": 4,
+      "days_since_snow": 5,
       "melt_alert": false,
       "density_pct": 45.5
     },
@@ -80,7 +80,7 @@
       "elevation": 4600,
       "swe_in": 15.0,
       "depth_in": 40.0,
-      "temp_f": null,
+      "temp_f": 40.8,
       "swe_change_24h": -0.6,
       "depth_change_24h": -2.0,
       "days_since_snow": 5,
