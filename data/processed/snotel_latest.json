@@ -2,38 +2,38 @@
   "updated": "2026-04-08",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -0.74,
+    "swe_change_24h": -0.6,
     "depth_change_24h": -2.0,
-    "days_since_snow": 5,
+    "days_since_snow": 4,
     "melt_alert": true,
-    "density_pct": 41.9
+    "density_pct": 43.1
   },
   "stations": [
     {
       "id": "679:WA:SNTL",
       "name": "Paradise",
       "elevation": 5150,
-      "swe_in": null,
+      "swe_in": 38.2,
       "depth_in": 82.0,
       "temp_f": 38.3,
-      "swe_change_24h": null,
+      "swe_change_24h": 0.0,
       "depth_change_24h": -2.0,
-      "days_since_snow": null,
+      "days_since_snow": 5,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 46.6
     },
     {
       "id": "642:WA:SNTL",
       "name": "Morse Lake",
       "elevation": 5400,
-      "swe_in": null,
-      "depth_in": null,
+      "swe_in": 32.3,
+      "depth_in": 71.0,
       "temp_f": 38.8,
-      "swe_change_24h": null,
-      "depth_change_24h": null,
+      "swe_change_24h": -0.5,
+      "depth_change_24h": -2.0,
       "days_since_snow": 6,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 45.5
     },
     {
       "id": "672:WA:SNTL",
@@ -44,7 +44,7 @@
       "temp_f": 39.9,
       "swe_change_24h": -0.7,
       "depth_change_24h": -2.0,
-      "days_since_snow": 5,
+      "days_since_snow": 1,
       "melt_alert": true,
       "density_pct": 48.4
     },
