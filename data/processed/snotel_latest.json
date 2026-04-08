@@ -93,7 +93,7 @@
       "elevation": 3210,
       "swe_in": 1.4,
       "depth_in": 5.0,
-      "temp_f": 34.2,
+      "temp_f": null,
       "swe_change_24h": -0.4,
       "depth_change_24h": 0.0,
       "days_since_snow": 5,
