@@ -6,7 +6,7 @@
     "depth_change_24h": -1.0,
     "days_since_snow": 3,
     "melt_alert": true,
-    "density_pct": 42.0
+    "density_pct": 42.8
   },
   "stations": [
     {
@@ -79,13 +79,13 @@
       "name": "Bumping Ridge",
       "elevation": 4600,
       "swe_in": 14.5,
-      "depth_in": 39.0,
+      "depth_in": null,
       "temp_f": 29.1,
       "swe_change_24h": -0.5,
-      "depth_change_24h": -1.0,
+      "depth_change_24h": null,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 37.2
+      "density_pct": null
     },
     {
       "id": "420:WA:SNTL",
