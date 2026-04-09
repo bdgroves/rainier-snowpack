@@ -377,8 +377,8 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-04-04,642:WA:SNTL,Morse Lake,5400,33.2,75.0,34.0,0.0
 2026-04-05,642:WA:SNTL,Morse Lake,5400,32.8,73.0,36.7,0.0
 2026-04-06,642:WA:SNTL,Morse Lake,5400,32.3,71.0,38.8,0.0
-2026-04-07,642:WA:SNTL,Morse Lake,5400,31.6,69.0,28.9,0.1
-2026-04-08,642:WA:SNTL,Morse Lake,5400,31.0,69.0,31.5,
+2026-04-07,642:WA:SNTL,Morse Lake,5400,31.6,69.0,28.9,0.0
+2026-04-08,642:WA:SNTL,Morse Lake,5400,31.0,69.0,31.5,0.0
 2025-10-01,672:WA:SNTL,Olallie Meadows,4010,0.2,1.0,40.8,0.4
 2025-10-02,672:WA:SNTL,Olallie Meadows,4010,0.2,1.0,42.8,0.1
 2025-10-03,672:WA:SNTL,Olallie Meadows,4010,0.2,2.0,43.2,0.0
@@ -948,7 +948,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-04-05,418:WA:SNTL,Corral Pass,5810,28.3,64.0,47.8,0.0
 2026-04-06,418:WA:SNTL,Corral Pass,5810,28.0,62.0,38.8,0.0
 2026-04-07,418:WA:SNTL,Corral Pass,5810,27.5,62.0,32.2,0.0
-2026-04-08,418:WA:SNTL,Corral Pass,5810,27.2,61.0,37.6,
+2026-04-08,418:WA:SNTL,Corral Pass,5810,27.2,61.0,37.6,0.0
 2025-10-01,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,39.2,0.3
 2025-10-02,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,38.3,0.0
 2025-10-03,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,42.6,0.0
@@ -1322,10 +1322,10 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-03-30,420:WA:SNTL,Cougar Mountain,3210,4.0,12.0,35.1,0.0
 2026-03-31,420:WA:SNTL,Cougar Mountain,3210,4.0,11.0,38.5,0.0
 2026-04-01,420:WA:SNTL,Cougar Mountain,3210,4.0,11.0,32.7,0.5
-2026-04-02,420:WA:SNTL,Cougar Mountain,3210,4.4,13.0,33.1,0.4
+2026-04-02,420:WA:SNTL,Cougar Mountain,3210,4.4,13.0,33.1,0.3
 2026-04-03,420:WA:SNTL,Cougar Mountain,3210,4.2,12.0,36.3,0.0
 2026-04-04,420:WA:SNTL,Cougar Mountain,3210,3.8,10.0,50.9,0.0
 2026-04-05,420:WA:SNTL,Cougar Mountain,3210,2.7,6.0,50.2,0.0
 2026-04-06,420:WA:SNTL,Cougar Mountain,3210,1.8,5.0,41.7,0.0
 2026-04-07,420:WA:SNTL,Cougar Mountain,3210,1.4,5.0,34.2,0.0
-2026-04-08,420:WA:SNTL,Cougar Mountain,3210,1.2,4.0,38.7,
+2026-04-08,420:WA:SNTL,Cougar Mountain,3210,1.2,4.0,38.7,0.0
