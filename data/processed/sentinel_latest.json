@@ -1,7 +1,7 @@
 {
-  "date": "2026-04-06",
-  "scene_id": "S2C_MSIL2A_20260406T185911_R013_T10TFT_20260407T003455",
-  "cloud_pct": 12.4,
+  "date": "2026-04-08",
+  "scene_id": "S2A_MSIL2A_20260408T190831_R013_T10TFT_20260409T013409",
+  "cloud_pct": 0.2,
   "resolution": "10m",
-  "platform": "Sentinel-2C"
+  "platform": "Sentinel-2A"
 }
