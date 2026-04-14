@@ -972,8 +972,8 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-04-09,418:WA:SNTL,Corral Pass,5810,26.8,59.0,42.6,0.0
 2026-04-10,418:WA:SNTL,Corral Pass,5810,26.4,58.0,43.5,0.0
 2026-04-11,418:WA:SNTL,Corral Pass,5810,26.2,58.0,38.3,0.0
-2026-04-12,418:WA:SNTL,Corral Pass,5810,26.0,56.0,34.5,0.2
-2026-04-13,418:WA:SNTL,Corral Pass,5810,25.7,56.0,27.9,
+2026-04-12,418:WA:SNTL,Corral Pass,5810,26.0,56.0,34.5,0.1
+2026-04-13,418:WA:SNTL,Corral Pass,5810,25.7,56.0,27.9,0.0
 2025-10-01,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,39.2,0.3
 2025-10-02,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,38.3,0.0
 2025-10-03,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,42.6,0.0
