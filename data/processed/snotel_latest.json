@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.83,
-    "depth_change_24h": 2.6,
+    "depth_change_24h": 6.0,
     "days_since_snow": 0,
     "melt_alert": false,
-    "density_pct": 43.5
+    "density_pct": 40.9
   },
   "stations": [
     {
@@ -14,13 +14,13 @@
       "name": "Paradise",
       "elevation": 5150,
       "swe_in": 37.2,
-      "depth_in": 74.0,
+      "depth_in": 81.0,
       "temp_f": 29.7,
       "swe_change_24h": 0.9,
-      "depth_change_24h": -2.0,
+      "depth_change_24h": 7.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 50.3
+      "density_pct": 45.9
     },
     {
       "id": "642:WA:SNTL",
@@ -66,26 +66,26 @@
       "name": "Corral Pass",
       "elevation": 5810,
       "swe_in": 26.2,
-      "depth_in": 56.0,
+      "depth_in": 65.0,
       "temp_f": 30.6,
       "swe_change_24h": 0.5,
-      "depth_change_24h": 0.0,
+      "depth_change_24h": 9.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 46.8
+      "density_pct": 40.3
     },
     {
       "id": "375:WA:SNTL",
       "name": "Bumping Ridge",
       "elevation": 4600,
       "swe_in": 12.7,
-      "depth_in": 33.0,
+      "depth_in": 38.0,
       "temp_f": 31.1,
       "swe_change_24h": 0.6,
-      "depth_change_24h": -1.0,
+      "depth_change_24h": 5.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 38.5
+      "density_pct": 33.4
     },
     {
       "id": "420:WA:SNTL",
