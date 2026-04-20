@@ -1,12 +1,12 @@
 {
-  "date": "2026-04-17",
+  "date": "2026-04-18",
   "tile": "h09v04",
-  "pct_snow": 63.3,
-  "pct_cloud": 36.3,
-  "avg_ndsi": 22.5,
-  "snow_pixels": 11929,
-  "cloud_pixels": 6841,
-  "total_pixels": 18836,
-  "days_ago": 3,
+  "pct_snow": 66.4,
+  "pct_cloud": 32.5,
+  "avg_ndsi": 7.5,
+  "snow_pixels": 12522,
+  "cloud_pixels": 6125,
+  "total_pixels": 18850,
+  "days_ago": 2,
   "is_latest": false
 }
