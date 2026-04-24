@@ -3,7 +3,7 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": -0.23,
-    "depth_change_24h": -0.9,
+    "depth_change_24h": -1.4,
     "days_since_snow": 1,
     "melt_alert": true,
     "density_pct": 45.3
@@ -69,7 +69,7 @@
       "depth_in": 56.0,
       "temp_f": 30.4,
       "swe_change_24h": -0.4,
-      "depth_change_24h": 0.0,
+      "depth_change_24h": -4.0,
       "days_since_snow": 1,
       "melt_alert": false,
       "density_pct": 47.0
