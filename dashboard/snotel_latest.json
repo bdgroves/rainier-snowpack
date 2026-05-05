@@ -2,11 +2,11 @@
   "updated": "2026-05-05",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -1.13,
-    "depth_change_24h": -2.3,
+    "swe_change_24h": -1.17,
+    "depth_change_24h": -2.4,
     "days_since_snow": 8,
     "melt_alert": true,
-    "density_pct": 47.3
+    "density_pct": 47.4
   },
   "stations": [
     {
@@ -78,14 +78,14 @@
       "id": "375:WA:SNTL",
       "name": "Bumping Ridge",
       "elevation": 4600,
-      "swe_in": null,
+      "swe_in": 2.4,
       "depth_in": 5.0,
       "temp_f": 47.1,
-      "swe_change_24h": null,
+      "swe_change_24h": -1.4,
       "depth_change_24h": -3.0,
       "days_since_snow": 12,
-      "melt_alert": false,
-      "density_pct": null
+      "melt_alert": true,
+      "density_pct": 48.0
     },
     {
       "id": "420:WA:SNTL",
