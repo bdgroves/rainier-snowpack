@@ -214,7 +214,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-05-01,679:WA:SNTL,Paradise,5150,36.3,70.0,50.0,0.0
 2026-05-02,679:WA:SNTL,Paradise,5150,35.3,66.0,50.9,0.0
 2026-05-03,679:WA:SNTL,Paradise,5150,34.2,64.0,50.9,0.0
-2026-05-04,679:WA:SNTL,Paradise,5150,,,,
+2026-05-04,679:WA:SNTL,Paradise,5150,33.2,61.0,46.2,
 2025-10-01,642:WA:SNTL,Morse Lake,5400,0.1,0.0,39.6,0.5
 2025-10-02,642:WA:SNTL,Morse Lake,5400,0.1,0.0,38.7,0.1
 2025-10-03,642:WA:SNTL,Morse Lake,5400,0.1,0.0,41.4,0.0
