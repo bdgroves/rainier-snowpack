@@ -1,5 +1,5 @@
 "date","station_triplet","station_name","elevation_ft","swe_in","depth_in","temp_f","precip_in"
-2026-05-13,"418:WA:SNTL","Corral Pass",5810,10.8,NA,34.9,0.6
+2026-05-13,"418:WA:SNTL","Corral Pass",5810,10.8,22,34.9,0.6
 2026-05-13,"642:WA:SNTL","Morse Lake",5400,12,23,35.6,1.2
 2026-05-13,"1085:WA:SNTL","Cayuse Pass",5260,0.8,0,36,NA
 2026-05-13,"679:WA:SNTL","Paradise",5150,25.7,45,34.3,1.9
