@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": -0.31,
-    "depth_change_24h": -0.1,
+    "depth_change_24h": -1.1,
     "days_since_snow": 3,
     "melt_alert": true,
-    "density_pct": 50.6
+    "density_pct": 52.9
   },
   "stations": [
     {
@@ -14,13 +14,13 @@
       "name": "Paradise",
       "elevation": 5150,
       "swe_in": 25.0,
-      "depth_in": 45.0,
+      "depth_in": 40.0,
       "temp_f": 31.8,
       "swe_change_24h": -0.7,
-      "depth_change_24h": 3.0,
+      "depth_change_24h": -5.0,
       "days_since_snow": 0,
       "melt_alert": true,
-      "density_pct": 55.6
+      "density_pct": 62.5
     },
     {
       "id": "642:WA:SNTL",
@@ -66,13 +66,13 @@
       "name": "Corral Pass",
       "elevation": 5810,
       "swe_in": 10.3,
-      "depth_in": 22.0,
+      "depth_in": 21.0,
       "temp_f": 32.5,
       "swe_change_24h": -0.5,
-      "depth_change_24h": -2.0,
+      "depth_change_24h": -1.0,
       "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": 46.8
+      "density_pct": 49.0
     },
     {
       "id": "375:WA:SNTL",

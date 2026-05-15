@@ -224,7 +224,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-05-11,679:WA:SNTL,Paradise,5150,26.6,46.0,50.2,0.0
 2026-05-12,679:WA:SNTL,Paradise,5150,25.6,42.0,44.2,0.0
 2026-05-13,679:WA:SNTL,Paradise,5150,25.7,45.0,34.3,1.9
-2026-05-14,679:WA:SNTL,Paradise,5150,25.0,,31.8,0.3
+2026-05-14,679:WA:SNTL,Paradise,5150,25.0,40.0,31.8,0.3
 2025-10-01,642:WA:SNTL,Morse Lake,5400,0.1,0.0,39.6,0.5
 2025-10-02,642:WA:SNTL,Morse Lake,5400,0.1,0.0,38.7,0.1
 2025-10-03,642:WA:SNTL,Morse Lake,5400,0.1,0.0,41.4,0.0
@@ -902,7 +902,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-05-11,1085:WA:SNTL,Cayuse Pass,5260,3.0,9.0,51.4,
 2026-05-12,1085:WA:SNTL,Cayuse Pass,5260,1.2,0.0,46.6,
 2026-05-13,1085:WA:SNTL,Cayuse Pass,5260,0.8,0.0,36.0,
-2026-05-14,1085:WA:SNTL,Cayuse Pass,5260,0.7,,33.8,
+2026-05-14,1085:WA:SNTL,Cayuse Pass,5260,0.7,0.0,33.8,
 2025-10-01,418:WA:SNTL,Corral Pass,5810,0.0,0.0,38.3,0.0
 2025-10-02,418:WA:SNTL,Corral Pass,5810,0.1,0.0,38.8,0.1
 2025-10-03,418:WA:SNTL,Corral Pass,5810,0.0,0.0,38.8,0.0
@@ -1128,7 +1128,7 @@ date,station_triplet,station_name,elevation_ft,swe_in,depth_in,temp_f,precip_in
 2026-05-11,418:WA:SNTL,Corral Pass,5810,12.7,29.0,49.1,0.1
 2026-05-12,418:WA:SNTL,Corral Pass,5810,11.3,24.0,45.3,0.0
 2026-05-13,418:WA:SNTL,Corral Pass,5810,10.8,22.0,34.9,0.6
-2026-05-14,418:WA:SNTL,Corral Pass,5810,10.3,,32.5,0.1
+2026-05-14,418:WA:SNTL,Corral Pass,5810,10.3,21.0,32.5,0.1
 2025-10-01,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,39.2,0.3
 2025-10-02,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,38.3,0.0
 2025-10-03,375:WA:SNTL,Bumping Ridge,4600,0.0,0.0,42.6,0.0
