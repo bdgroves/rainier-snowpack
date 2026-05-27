@@ -2,11 +2,11 @@
   "updated": "2026-05-27",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -0.3,
-    "depth_change_24h": -1.0,
-    "days_since_snow": 2,
+    "swe_change_24h": -0.31,
+    "depth_change_24h": -0.6,
+    "days_since_snow": 3,
     "melt_alert": true,
-    "density_pct": 52.5
+    "density_pct": 70.0
   },
   "stations": [
     {
@@ -40,24 +40,24 @@
       "name": "Olallie Meadows",
       "elevation": 4010,
       "swe_in": 0.0,
-      "depth_in": 2.0,
+      "depth_in": 0.0,
       "temp_f": 41.9,
       "swe_change_24h": 0.0,
-      "depth_change_24h": 2.0,
+      "depth_change_24h": 0.0,
       "days_since_snow": 8,
       "melt_alert": false,
-      "density_pct": 0.0
+      "density_pct": null
     },
     {
       "id": "1085:WA:SNTL",
       "name": "Cayuse Pass",
       "elevation": 5260,
-      "swe_in": 0.1,
+      "swe_in": 0.0,
       "depth_in": 0.0,
       "temp_f": 38.3,
-      "swe_change_24h": 0.1,
+      "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 0,
+      "days_since_snow": 10,
       "melt_alert": false,
       "density_pct": null
     },
@@ -69,7 +69,7 @@
       "depth_in": 6.0,
       "temp_f": 36.9,
       "swe_change_24h": -0.3,
-      "depth_change_24h": -5.0,
+      "depth_change_24h": 0.0,
       "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": 66.7
