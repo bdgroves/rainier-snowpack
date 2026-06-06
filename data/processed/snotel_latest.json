@@ -2,25 +2,25 @@
   "updated": "2026-06-06",
   "water_year": 2026,
   "basin": {
-    "swe_change_24h": -0.2,
-    "depth_change_24h": 0.3,
-    "days_since_snow": 5,
+    "swe_change_24h": -0.1,
+    "depth_change_24h": 0.0,
+    "days_since_snow": 3,
     "melt_alert": true,
-    "density_pct": 257.5
+    "density_pct": 160.0
   },
   "stations": [
     {
       "id": "679:WA:SNTL",
       "name": "Paradise",
       "elevation": 5150,
-      "swe_in": 10.3,
-      "depth_in": 4.0,
-      "temp_f": 36.9,
-      "swe_change_24h": -1.4,
-      "depth_change_24h": 2.0,
-      "days_since_snow": 2,
+      "swe_in": 9.6,
+      "depth_in": 3.0,
+      "temp_f": 32.0,
+      "swe_change_24h": -0.7,
+      "depth_change_24h": -1.0,
+      "days_since_snow": 0,
       "melt_alert": true,
-      "density_pct": 257.5
+      "density_pct": 320.0
     },
     {
       "id": "642:WA:SNTL",
@@ -28,10 +28,10 @@
       "elevation": 5400,
       "swe_in": 0.0,
       "depth_in": 0.0,
-      "temp_f": 37.0,
+      "temp_f": 34.5,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 1,
+      "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": null
     },
@@ -40,13 +40,13 @@
       "name": "Olallie Meadows",
       "elevation": 4010,
       "swe_in": 0.0,
-      "depth_in": 0.0,
-      "temp_f": 40.8,
+      "depth_in": 1.0,
+      "temp_f": 35.1,
       "swe_change_24h": 0.0,
-      "depth_change_24h": 0.0,
-      "days_since_snow": 7,
+      "depth_change_24h": 1.0,
+      "days_since_snow": 0,
       "melt_alert": false,
-      "density_pct": null
+      "density_pct": 0.0
     },
     {
       "id": "1085:WA:SNTL",
@@ -54,7 +54,7 @@
       "elevation": 5260,
       "swe_in": 0.0,
       "depth_in": 0.0,
-      "temp_f": 38.3,
+      "temp_f": 34.7,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
       "days_since_snow": 20,
@@ -67,10 +67,10 @@
       "elevation": 5810,
       "swe_in": 0.0,
       "depth_in": 0.0,
-      "temp_f": 36.7,
+      "temp_f": 32.5,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 4,
+      "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": null
     },
@@ -80,10 +80,10 @@
       "elevation": 4600,
       "swe_in": 0.0,
       "depth_in": 0.0,
-      "temp_f": 39.7,
+      "temp_f": 35.4,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 2,
+      "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": null
     },
@@ -93,10 +93,10 @@
       "elevation": 3210,
       "swe_in": 0.0,
       "depth_in": 0.0,
-      "temp_f": 42.6,
+      "temp_f": 37.9,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 1,
+      "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": null
     }
