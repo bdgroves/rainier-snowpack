@@ -56,6 +56,9 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,57.0,False,Bumping Ridge,4600,375:WA:SNTL
 2026-06-24 07:00:00,66.2,False,Bumping Ridge,4600,375:WA:SNTL
 2026-06-24 08:00:00,71.1,False,Bumping Ridge,4600,375:WA:SNTL
+2026-06-24 09:00:00,66.6,False,Bumping Ridge,4600,375:WA:SNTL
+2026-06-24 10:00:00,71.4,False,Bumping Ridge,4600,375:WA:SNTL
+2026-06-24 11:00:00,68.7,False,Bumping Ridge,4600,375:WA:SNTL
 2026-06-22 00:00:00,47.3,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-06-22 01:00:00,47.8,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-06-22 02:00:00,48.2,False,Cayuse Pass,5260,1085:WA:SNTL
@@ -113,6 +116,9 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,56.8,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-06-24 07:00:00,59.9,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-06-24 08:00:00,62.8,False,Cayuse Pass,5260,1085:WA:SNTL
+2026-06-24 09:00:00,64.8,False,Cayuse Pass,5260,1085:WA:SNTL
+2026-06-24 10:00:00,69.1,False,Cayuse Pass,5260,1085:WA:SNTL
+2026-06-24 11:00:00,65.3,False,Cayuse Pass,5260,1085:WA:SNTL
 2026-06-22 00:00:00,46.6,False,Corral Pass,5810,418:WA:SNTL
 2026-06-22 01:00:00,47.7,False,Corral Pass,5810,418:WA:SNTL
 2026-06-22 02:00:00,47.5,False,Corral Pass,5810,418:WA:SNTL
@@ -170,6 +176,9 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,55.8,False,Corral Pass,5810,418:WA:SNTL
 2026-06-24 07:00:00,59.7,False,Corral Pass,5810,418:WA:SNTL
 2026-06-24 08:00:00,61.2,False,Corral Pass,5810,418:WA:SNTL
+2026-06-24 09:00:00,63.5,False,Corral Pass,5810,418:WA:SNTL
+2026-06-24 10:00:00,63.7,False,Corral Pass,5810,418:WA:SNTL
+2026-06-24 11:00:00,66.4,False,Corral Pass,5810,418:WA:SNTL
 2026-06-22 00:00:00,50.9,False,Cougar Mountain,3210,420:WA:SNTL
 2026-06-22 01:00:00,50.9,False,Cougar Mountain,3210,420:WA:SNTL
 2026-06-22 02:00:00,50.5,False,Cougar Mountain,3210,420:WA:SNTL
@@ -227,6 +236,9 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,59.4,False,Cougar Mountain,3210,420:WA:SNTL
 2026-06-24 07:00:00,60.8,False,Cougar Mountain,3210,420:WA:SNTL
 2026-06-24 08:00:00,63.0,False,Cougar Mountain,3210,420:WA:SNTL
+2026-06-24 09:00:00,64.9,False,Cougar Mountain,3210,420:WA:SNTL
+2026-06-24 10:00:00,69.1,False,Cougar Mountain,3210,420:WA:SNTL
+2026-06-24 11:00:00,71.6,False,Cougar Mountain,3210,420:WA:SNTL
 2026-06-22 00:00:00,43.3,False,Morse Lake,5400,642:WA:SNTL
 2026-06-22 01:00:00,45.3,False,Morse Lake,5400,642:WA:SNTL
 2026-06-22 02:00:00,45.5,False,Morse Lake,5400,642:WA:SNTL
@@ -284,6 +296,9 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,51.3,False,Morse Lake,5400,642:WA:SNTL
 2026-06-24 07:00:00,58.3,False,Morse Lake,5400,642:WA:SNTL
 2026-06-24 08:00:00,62.4,False,Morse Lake,5400,642:WA:SNTL
+2026-06-24 09:00:00,65.8,False,Morse Lake,5400,642:WA:SNTL
+2026-06-24 10:00:00,66.0,False,Morse Lake,5400,642:WA:SNTL
+2026-06-24 11:00:00,64.0,False,Morse Lake,5400,642:WA:SNTL
 2026-06-22 00:00:00,52.2,False,Olallie Meadows,4010,672:WA:SNTL
 2026-06-22 01:00:00,51.3,False,Olallie Meadows,4010,672:WA:SNTL
 2026-06-22 02:00:00,52.5,False,Olallie Meadows,4010,672:WA:SNTL
@@ -341,6 +356,9 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,60.4,False,Olallie Meadows,4010,672:WA:SNTL
 2026-06-24 07:00:00,61.9,False,Olallie Meadows,4010,672:WA:SNTL
 2026-06-24 08:00:00,63.1,False,Olallie Meadows,4010,672:WA:SNTL
+2026-06-24 09:00:00,66.2,False,Olallie Meadows,4010,672:WA:SNTL
+2026-06-24 10:00:00,69.1,False,Olallie Meadows,4010,672:WA:SNTL
+2026-06-24 11:00:00,71.8,False,Olallie Meadows,4010,672:WA:SNTL
 2026-06-22 00:00:00,48.9,False,Paradise,5150,679:WA:SNTL
 2026-06-22 01:00:00,48.4,False,Paradise,5150,679:WA:SNTL
 2026-06-22 02:00:00,47.8,False,Paradise,5150,679:WA:SNTL
@@ -398,3 +416,6 @@ datetime,temp_f,freezing,station_name,elevation_ft,triplet
 2026-06-24 06:00:00,57.9,False,Paradise,5150,679:WA:SNTL
 2026-06-24 07:00:00,59.4,False,Paradise,5150,679:WA:SNTL
 2026-06-24 08:00:00,62.6,False,Paradise,5150,679:WA:SNTL
+2026-06-24 09:00:00,64.4,False,Paradise,5150,679:WA:SNTL
+2026-06-24 10:00:00,69.8,False,Paradise,5150,679:WA:SNTL
+2026-06-24 11:00:00,70.2,False,Paradise,5150,679:WA:SNTL
