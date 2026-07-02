@@ -15,10 +15,10 @@
       "elevation": 5150,
       "swe_in": 0.1,
       "depth_in": 0.0,
-      "temp_f": 37.4,
+      "temp_f": 39.9,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 1,
+      "days_since_snow": 0,
       "melt_alert": false,
       "density_pct": null
     },
