@@ -3,10 +3,10 @@
   "water_year": 2026,
   "basin": {
     "swe_change_24h": 0.0,
-    "depth_change_24h": 0.1,
-    "days_since_snow": 9,
+    "depth_change_24h": 0.0,
+    "days_since_snow": 13,
     "melt_alert": false,
-    "density_pct": 0.0
+    "density_pct": null
   },
   "stations": [
     {
@@ -14,37 +14,37 @@
       "name": "Paradise",
       "elevation": 5150,
       "swe_in": 0.0,
-      "depth_in": 2.0,
+      "depth_in": 0.0,
       "temp_f": 47.5,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 2,
+      "days_since_snow": 16,
       "melt_alert": false,
-      "density_pct": 0.0
+      "density_pct": null
     },
     {
       "id": "642:WA:SNTL",
       "name": "Morse Lake",
       "elevation": 5400,
       "swe_in": 0.0,
-      "depth_in": 1.0,
+      "depth_in": 0.0,
       "temp_f": 47.7,
       "swe_change_24h": 0.0,
-      "depth_change_24h": 1.0,
-      "days_since_snow": 1,
+      "depth_change_24h": 0.0,
+      "days_since_snow": 13,
       "melt_alert": false,
-      "density_pct": 0.0
+      "density_pct": null
     },
     {
       "id": "672:WA:SNTL",
       "name": "Olallie Meadows",
       "elevation": 4010,
-      "swe_in": 0.5,
+      "swe_in": 0.0,
       "depth_in": 0.0,
       "temp_f": 50.2,
       "swe_change_24h": 0.0,
       "depth_change_24h": 0.0,
-      "days_since_snow": 4,
+      "days_since_snow": 7,
       "melt_alert": false,
       "density_pct": null
     },
@@ -91,7 +91,7 @@
       "id": "420:WA:SNTL",
       "name": "Cougar Mountain",
       "elevation": 3210,
-      "swe_in": 0.6,
+      "swe_in": 0.0,
       "depth_in": 0.0,
       "temp_f": 51.3,
       "swe_change_24h": 0.0,
