@@ -79,10 +79,10 @@
       "name": "Bumping Ridge",
       "elevation": 4600,
       "swe_in": 0.1,
-      "depth_in": null,
+      "depth_in": 0.0,
       "temp_f": 47.5,
       "swe_change_24h": 0.1,
-      "depth_change_24h": null,
+      "depth_change_24h": 0.0,
       "days_since_snow": 4,
       "melt_alert": false,
       "density_pct": null
