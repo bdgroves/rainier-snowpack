@@ -49,7 +49,8 @@ TILE          = "h09v04"
 RAINIER_BBOX  = (-122.5, 46.0, -121.0, 47.5)
 PARK_BBOX     = (-121.92, 46.73, -121.45, 47.01)   # Mt. Rainier National Park, roughly
 SNOW_NDSI_MIN = 10
-CLOUD_THRESH  = 80.0   # % cloud cover above which a granule is considered unusable
+CLOUD_THRESH  = 80.0   # % cloud over the wider box above which a granule is unusable
+PARK_CLOUD_MAX = 50.0  # ...and the park itself must be at least half visible
 MAX_DAYS_BACK = 14     # how far back to search for a clean pass
 
 RAW_DIR     = Path("data/raw/modis")
@@ -191,9 +192,12 @@ def reproject_to_wgs84(hdf_path, tif_path):
         LOG.info("Already reprojected: %s", tif_path.name)
         return
 
+    # band 1 = NDSI_Snow_Cover, band 2 = NDSI_Snow_Cover_Basic_QA (0 best … 3 poor)
     with rasterio.open(str(hdf_path)) as hdf:
-        layer = next((sd for sd in hdf.subdatasets if sd.endswith(":NDSI_Snow_Cover")),
-                     f"HDF4_EOS:EOS_GRID:{hdf_path}:MOD_Grid_Snow_500m:NDSI_Snow_Cover")
+        subs = hdf.subdatasets
+    layer = next((sd for sd in subs if sd.endswith(":NDSI_Snow_Cover")),
+                 f"HDF4_EOS:EOS_GRID:{hdf_path}:MOD_Grid_Snow_500m:NDSI_Snow_Cover")
+    qa_layer = next((sd for sd in subs if sd.endswith(":NDSI_Snow_Cover_Basic_QA")), None)
     LOG.info("Reprojecting to WGS84 ...")
     tif_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -202,20 +206,51 @@ def reproject_to_wgs84(hdf_path, tif_path):
             src.crs, "EPSG:4326", src.width, src.height, *src.bounds
         )
         kwargs = src.meta.copy()
-        kwargs.update({"crs": "EPSG:4326", "transform": transform,
+        kwargs.update({"crs": "EPSG:4326", "transform": transform, "count": 2,
                        "width": width, "height": height, "driver": "GTiff"})
-
         with rasterio.open(tif_path, "w", **kwargs) as dst:
-            reproject(
-                source=rasterio.band(src, 1),
-                destination=rasterio.band(dst, 1),
-                src_transform=src.transform,
-                src_crs=src.crs,
-                dst_transform=transform,
-                dst_crs="EPSG:4326",
-                resampling=Resampling.nearest,
-            )
+            for band, path in ((1, layer), (2, qa_layer)):
+                if path is None:
+                    dst.write(np.zeros((height, width), dtype=kwargs["dtype"]), 2)
+                    continue
+                with rasterio.open(path) as s2:
+                    reproject(
+                        source=rasterio.band(s2, 1),
+                        destination=rasterio.band(dst, band),
+                        src_transform=s2.transform,
+                        src_crs=s2.crs,
+                        dst_transform=transform,
+                        dst_crs="EPSG:4326",
+                        resampling=Resampling.nearest,
+                    )
     LOG.info("Reprojected: %s", tif_path.name)
+
+
+CLOUD_EDGE_PX = 2   # snow pixels this close to cloud are treated as cloud
+
+
+def read_clean(ds, bbox):
+    """NDSI for a box with doubtful snow pixels turned into cloud (250).
+
+    Doubtful = NSIDC basic QA worse than 'good' (≥ 2), or within CLOUD_EDGE_PX
+    pixels of a cloud pixel. Cloud edges and thin cloud are the classic MODIS
+    false snow; the first fixed run (28 Sep 2026) showed "snow" over the
+    lowlands west of the mountain, all of it at cloud edges."""
+    win = from_bounds(*bbox, ds.transform)
+    data = ds.read(1, window=win).astype(np.int16)
+    qa = ds.read(2, window=win) if ds.count >= 2 else np.zeros_like(data)
+    cloud = data == 250
+    near = cloud.copy()
+    for _ in range(CLOUD_EDGE_PX):
+        grown = near.copy()
+        grown[1:, :] |= near[:-1, :]; grown[:-1, :] |= near[1:, :]
+        grown[:, 1:] |= near[:, :-1]; grown[:, :-1] |= near[:, 1:]
+        near = grown
+    snow = (data >= SNOW_NDSI_MIN) & (data <= 100)
+    doubtful = snow & ((qa >= 2) & (qa <= 3) | near)
+    out = data.copy()
+    out[doubtful] = 250
+    return out, int(doubtful.sum())
 
 
 def _area_stats(data):
@@ -235,9 +270,10 @@ def _area_stats(data):
 def compute_stats(tif_path, obs_date, days_ago=0, sat="Terra", product="MOD10A1"):
     """Snow cover for the wider Rainier box and for the park itself."""
     with rasterio.open(tif_path) as ds:
-        region = ds.read(1, window=from_bounds(*RAINIER_BBOX, ds.transform))
-        park   = ds.read(1, window=from_bounds(*PARK_BBOX, ds.transform))
+        region, masked = read_clean(ds, RAINIER_BBOX)
+        park, _ = read_clean(ds, PARK_BBOX)
     reg, prk = _area_stats(region), _area_stats(park)
+    reg["masked_snow_pixels"] = masked
     stats = dict(reg,
                  date=str(obs_date), tile=TILE, satellite=sat, product=product,
                  days_ago=days_ago, is_latest=days_ago <= 1,
@@ -252,8 +288,7 @@ def compute_stats(tif_path, obs_date, days_ago=0, sat="Terra", product="MOD10A1"
 def make_map(tif_path, stats, obs_date):
     """Generate dark-themed snow cover map PNG."""
     with rasterio.open(tif_path) as ds:
-        window = from_bounds(*RAINIER_BBOX, ds.transform)
-        data   = ds.read(1, window=window)
+        data, _ = read_clean(ds, RAINIER_BBOX)
 
     snow  = np.where((data >= SNOW_NDSI_MIN) & (data <= 100), data.astype(float), np.nan)
     # snow-free clear land is drawn dark green, cloud grey, everything else (water, night, fill) background
@@ -351,8 +386,10 @@ def main():
             continue
         reproject_to_wgs84(hdf_path, tif_path)
         stats = compute_stats(tif_path, obs_date, days_ago, entry["_sat"], entry["_product"])
-        fallback = fallback or (stats, tif_path, obs_date)
-        if stats["pct_cloud"] is not None and stats["pct_cloud"] <= CLOUD_THRESH:
+        pc = stats["park"]["pct_cloud"]
+        if fallback is None or (pc is not None and (fallback[0]["park"]["pct_cloud"] or 100) > pc):
+            fallback = (stats, tif_path, obs_date)
+        if stats["pct_cloud"] is not None and stats["pct_cloud"] <= CLOUD_THRESH and pc is not None and pc <= PARK_CLOUD_MAX:
             LOG.info("✓ Clear enough: %s %s (%.1f%% cloud)", entry["_sat"], obs_date, stats["pct_cloud"])
             selected = (stats, tif_path, obs_date)
             break
@@ -362,7 +399,7 @@ def main():
         if not fallback:
             LOG.error("Nothing could be downloaded")
             raise SystemExit(1)
-        LOG.warning("No pass under %.0f%% cloud in %d days — using the newest one", CLOUD_THRESH, MAX_DAYS_BACK)
+        LOG.warning("No clear-enough pass in %d days — using the one that saw the most of the park", MAX_DAYS_BACK)
         selected = fallback
         selected[0]["all_cloudy"] = True
     stats, tif, obs_date = selected
