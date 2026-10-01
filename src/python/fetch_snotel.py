@@ -44,6 +44,7 @@ SNOW_DAY_DEPTH = 2.0          # in of new depth counts as a snow day
 SNOW_DAY_SWE = 0.2            # ...or this much SWE gained without depth falling
 MIN_SWE_FOR_DENSITY = 0.5     # below this, depth/SWE noise makes density meaningless
 MIN_MEDIAN_FOR_PCT = 1.0      # % of median is not shown until the median itself is ≥ 1"
+CALLS = {"ok": 0, "failed": 0}
 
 
 def get_data(triplet, elements, start, end, median=False, retries=3):
@@ -57,9 +58,11 @@ def get_data(triplet, elements, start, end, median=False, retries=3):
             r = SESSION.get(f"{AWDB}/data", params=params, timeout=90)
             r.raise_for_status()
             payload = r.json()
+            CALLS["ok"] += 1
             break
         except Exception as e:
             if attempt == retries - 1:
+                CALLS["failed"] += 1
                 LOG.warning("  %s %s failed: %s", triplet, ",".join(elements), e)
                 body = getattr(getattr(e, "response", None), "text", "") or ""
                 print(f"::warning::AWDB {triplet} {','.join(elements)} median={median}: {str(e)[:150]} {body[:200]}")
@@ -219,10 +222,15 @@ def main():
                  lswe, med_now, pct, lprec, prec_pct, dates[li] if li is not None else "—")
 
     # ── Guard: never overwrite good data with nothing ─────────────────────────
+    # On Oct 1 (and the first hours of a new water year) the API answers but has no
+    # readings yet — that is a real state to publish. Only bail out if the API itself failed.
     reporting = [s for s in latest_list if s["swe_in"] is not None or s["precip_wytd_in"] is not None]
-    if not reporting:
-        LOG.error("No station returned data — keeping the published files")
+    if not reporting and CALLS["ok"] < len(STATIONS):
+        LOG.error("AWDB requests failed (%s) — keeping the published files", CALLS)
         raise SystemExit(1)
+    if not reporting:
+        LOG.warning("No readings yet this water year (day %d) — publishing medians and last year only",
+                    pos.get(str(today), 0) + 1)
 
     # ── Rainier average: stations in the rainier group that have NRCS medians ─
     rain_ids = [s["id"] for s in STATIONS if s["group"] == "rainier" and any(v is not None for v in season[s["id"]]["median"])]

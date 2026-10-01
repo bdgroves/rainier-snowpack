@@ -465,7 +465,7 @@ async function init(){
   $('wy-day').textContent = L.wy_day ?? '—';
   const ageH = L.generated ? (Date.now()-Date.parse(L.generated.replace('Z',':00Z')))/3600000 : null;
   const live = $('live-status');
-  live.textContent = 'Data through ' + isoToNice(L.data_through, true);
+  live.textContent = L.data_through ? 'Data through ' + isoToNice(L.data_through, true) : 'New water year · first readings due';
   if(ageH!=null && ageH>30){ live.classList.add('stale'); live.textContent += ' · pipeline stale'; }
   $('updated-label').textContent = L.generated ? 'Checked ' + new Date(L.generated.replace('Z',':00Z')).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
 
@@ -494,7 +494,7 @@ function buildHero(){
     else if(pp!=null && pct<75 && pp<75) sentence += ` Precipitation is only ${pp}% of median too: a <b>dry snow drought</b> — the storms haven't come.`;
     else if(pp!=null && pct>=110 && pp>=110) sentence += ` Precipitation is ${pp}% of median: a wet winter, and it's staying as snow.`;
   } else {
-    big = `${fmt(ty)}<small>in</small>`;
+    big = ty==null ? '0.0<small>in</small>' : `${fmt(ty)}<small>in</small>`;
     label = 'mean snow water · Rainier stations';
     sentence = `The snow season is just starting. % of median waits until the normal pack passes 1″`
       + (startDate ? ` — around <b>${isoToNice(startDate)}</b> on the Rainier stations.` : '.')
