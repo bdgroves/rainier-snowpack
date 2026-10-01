@@ -61,6 +61,8 @@ def get_data(triplet, elements, start, end, median=False, retries=3):
         except Exception as e:
             if attempt == retries - 1:
                 LOG.warning("  %s %s failed: %s", triplet, ",".join(elements), e)
+                body = getattr(getattr(e, "response", None), "text", "") or ""
+                print(f"::warning::AWDB {triplet} {','.join(elements)} median={median}: {str(e)[:150]} {body[:200]}")
                 return {}, {}
             time.sleep(3 * (attempt + 1))
     out, timing = {}, {}
@@ -140,7 +142,10 @@ def main():
     for stn in STATIONS:
         sid = stn["id"]
         LOG.info("%s (%s)", stn["name"], sid)
-        cur, _ = get_data(sid, ["WTEQ", "SNWD", "TOBS", "PRCP", "PREC"], start, today, median=True)
+        # medians only exist for SWE and accumulated precipitation; asking for them on
+        # other elements can fail the whole request, so it's two calls
+        cur, _ = get_data(sid, ["WTEQ", "PREC"], start, today, median=True)
+        cur.update(get_data(sid, ["SNWD", "TOBS", "PRCP"], start, today)[0])
         prev, timing = get_data(sid, ["WTEQ", "PREC"], wy_start(wy - 1), wy_end(wy - 1), median=True)
 
         def col(el, key="value", src=cur):
@@ -313,7 +318,8 @@ def main():
         ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
         arows = []
         for stn in STATIONS:
-            d, _ = get_data(stn["id"], ["WTEQ", "SNWD", "TOBS", "PRCP", "PREC"], wy_start(last_wy), wy_end(last_wy), median=True)
+            d, _ = get_data(stn["id"], ["WTEQ", "PREC"], wy_start(last_wy), wy_end(last_wy), median=True)
+            d.update(get_data(stn["id"], ["SNWD", "TOBS", "PRCP"], wy_start(last_wy), wy_end(last_wy))[0])
             ds = sorted(set().union(*[set(v) for v in d.values()])) if d else []
             for day in ds:
                 g = lambda el, k="value": d.get(el, {}).get(day, {}).get(k)
