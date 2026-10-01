@@ -11,10 +11,9 @@ fetch-hourly   = "python src/python/fetch_hourly.py"
 fetch-gauges   = "python src/python/fetch_gauges.py"
 fetch-modis    = "python src/python/fetch_modis.py"
 fetch-sentinel = "python src/python/fetch_sentinel.py"
-process        = "python src/python/process_raster.py"
+fetch-history  = "python src/python/fetch_history.py"
 analyze        = "Rscript src/r/snowpack_stats.R"
-dashboard      = "python src/python/build_dashboard.py"
-update         = { depends-on = ["fetch", "fetch-hourly", "fetch-gauges", "fetch-modis", "fetch-sentinel", "process", "analyze", "dashboard"] }
+update         = { depends-on = ["fetch", "fetch-hourly", "fetch-history", "fetch-gauges", "fetch-modis", "fetch-sentinel", "analyze"] }
 
 [dependencies]
 python        = "3.12.*"

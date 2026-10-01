@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mt. Rainier Snowpack Monitor</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="description" content="Live Mt. Rainier snowpack: ten NRCS SNOTEL stations read against their medians, the 45-year record, El Niño and La Niña winters, satellites, webcams and rivers.">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -12,1019 +13,965 @@
   :root {
     --deep:#060f1e; --mid:#0d1f3c; --slate:#1e3a5f;
     --accent:#4fc3f7; --cold:#81d4fa; --melt:#ff8a65;
-    --green:#69f0ae; --text:#cdd6f4; --dim:#5a6a8a;
-    --warn:#ffb74d; --alert:#ff5252;
-    --grid:rgba(79,195,247,0.06);
+    --green:#69f0ae; --text:#cdd6f4; --dim:#7283a8; --faint:#4a5a7a;
+    --warn:#ffb74d; --alert:#ff5252; --violet:#ce93d8;
+    --grid:rgba(79,195,247,0.06); --line:rgba(79,195,247,0.12);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
   body{background:var(--deep);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden;}
   body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 100% 60% at 50% -5%,rgba(79,195,247,0.10) 0%,transparent 65%);pointer-events:none;z-index:0;}
   .grid-bg{position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;z-index:0;pointer-events:none;}
   .wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 28px 48px;}
+  a{color:var(--cold);}
+  .bg-home{display:block;position:relative;z-index:50;padding:8px 16px 0;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:inherit;opacity:.65;text-decoration:none;width:max-content}
+  .bg-home:hover{opacity:1;text-decoration:underline}
 
-  header{padding:28px 0 22px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid rgba(79,195,247,0.12);margin-bottom:24px;animation:fadeDown 0.6s ease both;}
+  header{padding:24px 0 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);margin-bottom:14px;animation:fadeDown .6s ease both;}
   @keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  .brand h1{font-family:'Syne',sans-serif;font-size:1.85rem;font-weight:800;letter-spacing:-0.02em;color:#fff;line-height:1;}
+  .brand h1{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;letter-spacing:-0.02em;color:#fff;line-height:1;}
   .brand h1 em{color:var(--accent);font-style:normal;}
-  .brand p{font-size:0.62rem;color:var(--dim);letter-spacing:0.14em;text-transform:uppercase;margin-top:5px;}
-  .header-right{text-align:right;font-size:0.65rem;color:var(--dim);line-height:2;}
+  .brand p{font-size:0.62rem;color:var(--dim);letter-spacing:0.14em;text-transform:uppercase;margin-top:6px;}
+  .header-right{text-align:right;font-size:0.65rem;color:var(--dim);line-height:1.9;}
   .live{color:var(--green);}
   .live::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-right:6px;animation:pulse 2s infinite;}
+  .live.stale{color:var(--warn);} .live.stale::before{background:var(--warn);box-shadow:0 0 8px var(--warn);}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
+  nav.jump{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+  nav.jump a{font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:4px 9px;transition:all .15s;}
+  nav.jump a:hover{color:var(--cold);border-color:rgba(79,195,247,0.35);}
+
   #loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;font-size:0.75rem;color:var(--dim);}
-  .spinner{width:32px;height:32px;border-radius:50%;border:2px solid rgba(79,195,247,0.15);border-top-color:var(--accent);animation:spin 0.8s linear infinite;}
+  .spinner{width:32px;height:32px;border-radius:50%;border:2px solid rgba(79,195,247,0.15);border-top-color:var(--accent);animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
   #dashboard{display:none;}
 
-  /* ── KPI rows ── */
-  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:12px;}
-  .kpi-row-2{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
-
-  .kpi{background:rgba(13,31,60,0.7);border:1px solid rgba(79,195,247,0.1);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;animation:fadeUp 0.5s ease both;transition:border-color 0.2s,transform 0.2s;}
-  .kpi:hover{border-color:rgba(79,195,247,0.3);transform:translateY(-2px);}
-  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0.5;}
-  .kpi.warn::before{background:var(--melt);}
-  .kpi.good::before{background:var(--green);}
-  .kpi.alert::before{background:var(--alert);opacity:0.9;}
-  .kpi.snow::before{background:#b3e5fc;}
-  .kpi.neutral::before{background:var(--dim);}
-
-  /* pulsing border for melt alert */
-  .kpi.alert{border-color:rgba(255,82,82,0.4);animation:fadeUp 0.5s ease both,alertPulse 2s ease-in-out infinite;}
-  @keyframes alertPulse{0%,100%{border-color:rgba(255,82,82,0.4)}50%{border-color:rgba(255,82,82,0.8)}}
-
-  .kpi-label{font-size:0.58rem;letter-spacing:0.13em;text-transform:uppercase;color:var(--dim);margin-bottom:7px;}
-  .kpi-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:700;color:#fff;line-height:1;}
-  .kpi-val.positive{color:var(--cold);}
-  .kpi-val.negative{color:var(--melt);}
-  .kpi-val.alert-red{color:var(--alert);}
-  .kpi-unit{font-size:0.7rem;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-left:3px;}
-  .kpi-sub{font-size:0.62rem;margin-top:5px;color:var(--dim);}
-  .kpi-sub.up{color:var(--green);}
-  .kpi-sub.down{color:var(--melt);}
-  .kpi-sub.alert{color:var(--alert);}
-
-  .main-grid{display:grid;grid-template-columns:1fr 1fr 360px;gap:16px;margin-bottom:16px;}
-  .panel{background:rgba(13,31,60,0.65);border:1px solid rgba(79,195,247,0.1);border-radius:8px;padding:18px 20px;backdrop-filter:blur(6px);animation:fadeUp 0.6s ease both;}
-  .panel-title{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+  .panel{background:rgba(13,31,60,0.65);border:1px solid rgba(79,195,247,0.1);border-radius:8px;padding:18px 20px;backdrop-filter:blur(6px);animation:fadeUp .6s ease both;min-width:0;}
+  .panel-title{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;}
   .panel-title span{color:var(--accent);font-size:0.58rem;}
-  .chart-wrap{position:relative;height:220px;}
-  .chart-wrap.tall{height:300px;}
+  .section-head{display:flex;align-items:baseline;gap:14px;margin:30px 0 12px;flex-wrap:wrap;}
+  .section-head h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:#fff;letter-spacing:-0.01em;}
+  .section-head p{font-size:0.64rem;color:var(--dim);max-width:760px;line-height:1.6;}
+  .explain{font-size:0.62rem;color:var(--dim);line-height:1.65;margin-top:10px;}
+  .explain b{color:var(--text);font-weight:500;}
+  .muted{color:var(--dim);}
 
-  .station-list{display:flex;flex-direction:column;gap:9px;}
-  .station-card{border:1px solid rgba(79,195,247,0.09);border-radius:6px;padding:11px 13px;transition:border-color 0.2s,background 0.2s;}
-  .station-card:hover{border-color:rgba(79,195,247,0.28);background:rgba(79,195,247,0.03);}
-  .sc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
-  .sc-name{font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:600;color:#fff;}
-  .sc-elev{font-size:0.58rem;color:var(--dim);}
-  .sc-swe{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--cold);}
-  .sc-swe span{font-size:0.6rem;color:var(--dim);font-family:'JetBrains Mono',monospace;}
-  .sc-change{font-size:0.65rem;font-weight:600;margin-left:8px;}
-  .sc-change.pos{color:var(--cold);}
-  .sc-change.neg{color:var(--melt);}
-  .sc-bars{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px;}
-  .bar-group label{font-size:0.52rem;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;display:block;margin-bottom:2px;}
-  .bar-track{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-bottom:2px;}
-  .bar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
-  .bar-fill.swe{background:linear-gradient(90deg,var(--accent),var(--cold));}
-  .bar-fill.depth{background:linear-gradient(90deg,#29b6f6,#b3e5fc);}
-  .bar-val{font-size:0.6rem;color:var(--text);}
+  /* ── Hero ── */
+  .hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);gap:14px;margin-bottom:14px;}
+  .hero-main{position:relative;overflow:hidden;}
+  .hero-main::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--pct-color,var(--accent));}
+  .hero-label{font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+  .hero-big{font-family:'Syne',sans-serif;font-size:3.6rem;font-weight:800;color:#fff;line-height:0.95;letter-spacing:-0.03em;}
+  .hero-big small{font-size:1.1rem;color:var(--dim);font-weight:600;letter-spacing:0;margin-left:6px;}
+  .hero-sub{font-size:0.66rem;color:var(--text);margin-top:10px;line-height:1.7;}
+  .hero-sub b{color:#fff;font-weight:500;}
+  .hero-sentence{font-size:0.68rem;color:var(--dim);margin-top:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:10px;}
+  .hero-sentence b{color:var(--text);font-weight:500;}
+  .tile .hero-big{font-size:2.3rem;}
+  .tile-note{font-size:0.6rem;color:var(--dim);margin-top:8px;line-height:1.6;}
+  .season-track{position:relative;height:30px;margin-top:14px;}
+  .season-track .bar{position:absolute;left:0;right:0;top:12px;height:4px;border-radius:2px;background:linear-gradient(90deg,rgba(79,195,247,0.08),rgba(79,195,247,0.45) 58%,rgba(255,138,101,0.35) 80%,rgba(79,195,247,0.06));}
+  .season-track .mark{position:absolute;top:2px;font-size:0.5rem;color:var(--dim);transform:translateX(-50%);white-space:nowrap;}
+  .season-track .tick{position:absolute;top:9px;width:1px;height:10px;background:var(--dim);}
+  .season-track .now{position:absolute;top:6px;width:3px;height:16px;border-radius:2px;background:#fff;box-shadow:0 0 8px #fff;transform:translateX(-1px);}
+  .season-track .lbl{position:absolute;top:22px;font-size:0.5rem;color:var(--dim);transform:translateX(-50%);white-space:nowrap;}
+  .badge{display:inline-block;font-size:0.55rem;letter-spacing:0.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px;padding:2px 6px;}
 
-  .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-  .elev-list{display:flex;flex-direction:column;gap:8px;}
-  .elev-row{display:grid;grid-template-columns:130px 1fr 56px;align-items:center;gap:10px;font-size:0.63rem;}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:6px;}
+  .kpi{background:rgba(13,31,60,0.7);border:1px solid rgba(79,195,247,0.1);border-radius:8px;padding:13px 15px;position:relative;overflow:hidden;animation:fadeUp .5s ease both;}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0.5;}
+  .kpi.warn::before{background:var(--melt);} .kpi.good::before{background:var(--green);} .kpi.alert::before{background:var(--alert);opacity:.9;} .kpi.snow::before{background:#b3e5fc;}
+  .kpi.alert{border-color:rgba(255,82,82,0.4);animation:fadeUp .5s ease both,alertPulse 2s ease-in-out infinite;}
+  @keyframes alertPulse{0%,100%{border-color:rgba(255,82,82,0.4)}50%{border-color:rgba(255,82,82,0.8)}}
+  .kpi-label{font-size:0.55rem;letter-spacing:0.13em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+  .kpi-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:#fff;line-height:1;}
+  .kpi-val.positive{color:var(--cold);} .kpi-val.negative{color:var(--melt);} .kpi-val.alert-red{color:var(--alert);}
+  .kpi-unit{font-size:0.66rem;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-left:3px;}
+  .kpi-sub{font-size:0.58rem;margin-top:5px;color:var(--dim);}
+
+  /* ── Season chart ── */
+  .chips{display:flex;gap:5px;flex-wrap:wrap;}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.05em;padding:4px 9px;border-radius:4px;border:1px solid rgba(79,195,247,0.18);background:rgba(6,15,30,0.5);color:var(--dim);cursor:pointer;transition:all .15s;}
+  .chip:hover{color:var(--text);border-color:rgba(79,195,247,0.35);}
+  .chip.active{color:var(--deep);background:var(--cold);border-color:var(--cold);font-weight:700;}
+  .chip.reg{border-style:dashed;}
+  .chart-wrap{position:relative;height:240px;}
+  .chart-wrap.tall{height:340px;}
+  .chart-wrap.mid{height:280px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:0.56rem;color:var(--dim);margin:10px 0 2px;}
+  .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px;}
+  .legend i.dash{background:repeating-linear-gradient(90deg,#8fa3cc 0 4px,transparent 4px 7px);}
+  .legend i.band{height:9px;background:rgba(79,195,247,0.16);}
+  .stat-line{font-size:0.64rem;color:var(--text);margin-top:8px;line-height:1.7;}
+  .stat-line b{color:#fff;font-weight:500;}
+  .toggle{display:inline-flex;border:1px solid rgba(79,195,247,0.18);border-radius:4px;overflow:hidden;}
+  .toggle button{font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:4px 9px;background:transparent;border:0;color:var(--dim);cursor:pointer;letter-spacing:0.05em;}
+  .toggle button.active{background:rgba(79,195,247,0.15);color:var(--cold);}
+
+  /* ── Stations ── */
+  .station-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
+  .st{background:rgba(13,31,60,0.55);border:1px solid rgba(79,195,247,0.09);border-radius:7px;padding:11px 12px 8px;cursor:pointer;transition:border-color .2s,transform .2s;position:relative;}
+  .st:hover{border-color:rgba(79,195,247,0.35);transform:translateY(-2px);}
+  .st.sel{border-color:var(--cold);box-shadow:0 0 0 1px var(--cold) inset;}
+  .st-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
+  .st-name{font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .st-pct{font-size:0.62rem;font-weight:700;}
+  .st-meta{font-size:0.53rem;color:var(--dim);margin-top:2px;}
+  .st-swe{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:700;color:var(--cold);margin-top:6px;line-height:1;}
+  .st-swe span{font-size:0.56rem;color:var(--dim);font-family:'JetBrains Mono',monospace;font-weight:400;}
+  .st-row{display:flex;justify-content:space-between;font-size:0.54rem;color:var(--dim);margin-top:5px;gap:6px;}
+  .st-row b{color:var(--text);font-weight:500;}
+  .st-spark{height:38px;margin-top:6px;}
+  .st-tag{position:absolute;right:8px;bottom:6px;font-size:0.45rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint);}
+  .elev-strip{margin-top:16px;}
+  .elev-row{display:grid;grid-template-columns:150px 1fr 80px;align-items:center;gap:10px;font-size:0.6rem;margin-bottom:6px;}
   .elev-name{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .elev-track{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;}
+  .elev-track{height:7px;background:rgba(255,255,255,0.05);border-radius:3px;position:relative;}
   .elev-fill{height:100%;border-radius:3px;}
-  .elev-val{text-align:right;color:var(--text);font-size:0.65rem;}
+  .elev-med{position:absolute;top:-3px;width:2px;height:13px;background:#fff;opacity:.55;}
+  .elev-val{text-align:right;color:var(--text);}
 
-  .temp-list{display:flex;flex-direction:column;gap:8px;}
-  .temp-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:5px;border:1px solid transparent;font-size:0.65rem;}
-  .temp-row.freezing{background:rgba(79,195,247,0.05);border-color:rgba(79,195,247,0.15);}
-  .temp-row.warm{background:rgba(255,138,101,0.05);border-color:rgba(255,138,101,0.15);}
-  .temp-name{flex:1;color:var(--text);}
-  .temp-val{font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;}
-  .temp-val.cold{color:var(--cold);}
-  .temp-val.warm{color:var(--melt);}
-  .temp-source{font-size:0.52rem;color:var(--dim);}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;}
+  .three{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;}
 
+  /* ── History ── */
+  .phase-table{width:100%;border-collapse:collapse;font-size:0.6rem;margin-top:6px;}
+  .phase-table th{text-align:left;font-weight:400;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;font-size:0.5rem;padding:5px 6px;border-bottom:1px solid var(--line);}
+  .phase-table td{padding:6px;border-bottom:1px solid rgba(79,195,247,0.05);color:var(--text);}
+  .phase-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .phase-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .review-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:6px;}
+  .review-cell{background:rgba(6,15,30,0.55);border:1px solid rgba(79,195,247,0.08);border-radius:6px;padding:10px 12px;}
+  .review-cell .l{font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+  .review-cell .v{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:#fff;}
+  .review-cell .s{font-size:0.55rem;color:var(--dim);margin-top:3px;line-height:1.5;}
+  .enso-status{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:var(--melt);margin:2px 0 6px;}
+  .quote{font-size:0.62rem;color:var(--text);line-height:1.65;border-left:2px solid var(--melt);padding-left:10px;margin:8px 0;}
+
+  /* ── Weather ── */
   .temp-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
-  .temp-stat{background:rgba(6,15,30,0.6);border:1px solid rgba(79,195,247,0.08);border-radius:6px;padding:10px 12px;text-align:center;}
-  .temp-stat-label{font-size:0.52rem;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
-  .temp-stat-val{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;}
-  .temp-stat-val.cold{color:var(--cold);}
-  .temp-stat-val.hot{color:var(--melt);}
+  .temp-stat{background:rgba(6,15,30,0.6);border:1px solid rgba(79,195,247,0.08);border-radius:6px;padding:9px 10px;text-align:center;}
+  .temp-stat-label{font-size:0.5rem;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
+  .temp-stat-val{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;}
+  .temp-stat-val.cold{color:var(--cold);} .temp-stat-val.hot{color:var(--melt);}
 
   /* ── Webcam ── */
-  /* Webcam full width, then MODIS+satellite 2-col below */
-  .webcam-full{margin-bottom:16px;}
-  .modis-sentinel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
   .webcam-wrap{position:relative;border-radius:6px;overflow:hidden;border:1px solid rgba(79,195,247,0.12);background:#0a1628;display:flex;flex-direction:column;}
-  .webcam-img-container{position:relative;flex:1;overflow:hidden;min-height:300px;}
-  .webcam-img-container img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity 0.3s ease;}
+  .webcam-img-container{position:relative;flex:1;overflow:hidden;min-height:260px;aspect-ratio:16/6.5;}
+  .webcam-img-container img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .3s ease;}
   .webcam-overlay{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:10px 12px;pointer-events:none;}
-  .webcam-badge{background:rgba(6,15,30,0.75);border:1px solid rgba(79,195,247,0.2);border-radius:4px;padding:3px 8px;font-size:0.55rem;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;backdrop-filter:blur(4px);}
-  .webcam-live{background:rgba(6,15,30,0.75);border:1px solid rgba(105,240,174,0.3);border-radius:4px;padding:3px 8px;font-size:0.55rem;color:var(--green);letter-spacing:0.1em;backdrop-filter:blur(4px);display:flex;align-items:center;gap:4px;}
+  .webcam-badge{background:rgba(6,15,30,0.75);border:1px solid rgba(79,195,247,0.2);border-radius:4px;padding:3px 8px;font-size:0.55rem;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;}
+  .webcam-live{background:rgba(6,15,30,0.75);border:1px solid rgba(105,240,174,0.3);border-radius:4px;padding:3px 8px;font-size:0.55rem;color:var(--green);letter-spacing:0.1em;display:flex;align-items:center;gap:4px;}
   .webcam-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
-  .webcam-footer{padding:10px 14px;background:rgba(6,15,30,0.5);border-top:1px solid rgba(79,195,247,0.08);}
-  .webcam-footer-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .webcam-footer{padding:10px 14px;background:rgba(6,15,30,0.5);border-top:1px solid rgba(79,195,247,0.08);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
   .webcam-name{font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;}
   .webcam-desc{font-size:0.58rem;color:var(--dim);}
   .webcam-refresh{font-size:0.55rem;color:var(--dim);}
-  .cam-selector{display:flex;gap:6px;flex-wrap:wrap;}
-  .cam-btn{background:rgba(13,31,60,0.8);border:1px solid rgba(79,195,247,0.12);border-radius:4px;padding:4px 9px;font-size:0.55rem;color:var(--dim);font-family:'JetBrains Mono',monospace;cursor:pointer;letter-spacing:0.08em;transition:all 0.15s ease;text-transform:uppercase;}
-  .cam-btn:hover{border-color:rgba(79,195,247,0.3);color:var(--text);}
-  .cam-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(79,195,247,0.08);}
 
-  /* ── MODIS ── */
-  .modis-panel-inner{display:grid;grid-template-columns:1fr 200px;gap:16px;}
-  .modis-img-wrap{position:relative;border-radius:6px;overflow:hidden;border:1px solid rgba(79,195,247,0.12);background:#0a1628;min-height:380px;display:flex;align-items:center;justify-content:center;}
-  .modis-img-wrap img{width:100%;display:block;transition:transform 0.3s ease;}
-  .modis-img-wrap:hover img{transform:scale(1.02);}
-  .modis-img-caption{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(6,15,30,0.9));padding:12px 14px 10px;font-size:0.58rem;color:var(--dim);letter-spacing:0.08em;}
-  .modis-img-error{font-size:0.7rem;color:var(--dim);text-align:center;padding:40px 20px;}
-  .modis-stats{display:flex;flex-direction:column;gap:10px;}
-  .modis-kpi{background:rgba(6,15,30,0.7);border:1px solid rgba(79,195,247,0.1);border-radius:7px;padding:12px 14px;position:relative;overflow:hidden;transition:border-color 0.2s,transform 0.2s;}
-  .modis-kpi:hover{border-color:rgba(79,195,247,0.3);transform:translateX(3px);}
-  .modis-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);opacity:0.6;}
-  .modis-kpi.satellite::before{background:#b39ddb;}
-  .modis-kpi.cloud::before{background:#78909c;}
-  .modis-kpi.ndsi::before{background:var(--cold);}
-  .modis-kpi.date::before{background:var(--green);}
-  .modis-kpi-label{font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
-  .modis-kpi-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:#fff;line-height:1;}
-  .modis-kpi-sub{font-size:0.57rem;color:var(--dim);margin-top:3px;}
-  .modis-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(179,157,219,0.1);border:1px solid rgba(179,157,219,0.2);border-radius:4px;padding:3px 8px;font-size:0.55rem;color:#b39ddb;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
-  .modis-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:#b39ddb;box-shadow:0 0 6px #b39ddb;}
+  /* ── Satellites ── */
+  .sat-img{position:relative;border-radius:6px;overflow:hidden;border:1px solid rgba(79,195,247,0.12);background:#0a1628;min-height:260px;display:flex;align-items:center;justify-content:center;}
+  .sat-img img{width:100%;display:block;}
+  .sat-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+  .sat-stat{background:rgba(6,15,30,0.6);border:1px solid rgba(79,195,247,0.08);border-radius:6px;padding:8px 10px;}
+  .sat-stat .l{font-size:0.48rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
+  .sat-stat .v{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;}
+  .sat-stat .s{font-size:0.5rem;color:var(--dim);margin-top:2px;}
+  .stale-note{font-size:0.58rem;color:var(--warn);margin-bottom:8px;}
+  .fresh-note{font-size:0.58rem;color:var(--green);margin-bottom:8px;}
+  .map-wrap{position:relative;height:440px;border-radius:6px;overflow:hidden;background:#060f1e;}
+  #snow-map{height:100%;width:100%;background:#0a1628;}
+  .layer-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+  .date-input{font-family:'JetBrains Mono',monospace;font-size:0.55rem;background:rgba(13,31,60,0.8);border:1px solid rgba(79,195,247,0.2);border-radius:3px;color:#cdd6f4;padding:3px 6px;color-scheme:dark;}
+  .map-legend{position:absolute;right:10px;bottom:26px;z-index:500;background:rgba(6,15,30,0.85);border:1px solid var(--line);border-radius:5px;padding:7px 9px;font-size:0.52rem;color:var(--dim);line-height:1.7;}
+  .map-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0d1f3c;color:#cdd6f4;border:1px solid rgba(79,195,247,0.25);}
+  .leaflet-popup-content{font-family:'JetBrains Mono',monospace;font-size:0.68rem;line-height:1.6;}
 
-
-  /* ── Station sparklines ── */
-  .sparkline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
-  .spark-card{background:rgba(13,31,60,0.5);border:1px solid rgba(79,195,247,0.09);border-radius:6px;padding:10px 12px;}
-  .spark-name{font-size:0.6rem;color:#81d4fa;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;}
-  .spark-val{font-size:1.1rem;font-weight:700;color:#cdd6f4;letter-spacing:0.04em;}
-  .spark-sub{font-size:0.55rem;color:var(--dim);margin-bottom:6px;}
-  .spark-wrap{height:50px;}
-
-  /* ── Stream gauges ── */
-  .gauge-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;}
-  .gauge-card{background:rgba(13,31,60,0.5);border:1px solid rgba(79,195,247,0.09);border-radius:6px;padding:10px 12px;}
+  /* ── Gauges ── */
+  .gauge-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;}
+  .gauge-card{background:rgba(13,31,60,0.5);border:1px solid rgba(79,195,247,0.09);border-radius:6px;padding:10px 12px;cursor:pointer;transition:border-color .2s;}
+  .gauge-card:hover{border-color:rgba(79,195,247,0.3);}
   .gauge-card.flood-warn{border-color:rgba(255,138,101,0.5);background:rgba(255,138,101,0.04);}
-  .gauge-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
   .gauge-name{font-size:0.6rem;color:#81d4fa;letter-spacing:0.08em;text-transform:uppercase;}
-  .gauge-loc{font-size:0.55rem;color:var(--dim);}
-  .gauge-cfs{font-size:1.3rem;font-weight:700;color:#cdd6f4;letter-spacing:0.04em;}
-  .gauge-cfs span{font-size:0.6rem;color:var(--dim);font-weight:400;margin-left:3px;}
+  .gauge-loc{font-size:0.53rem;color:var(--dim);}
+  .gauge-cfs{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:#cdd6f4;margin-top:4px;}
+  .gauge-cfs span{font-size:0.6rem;color:var(--dim);font-weight:400;margin-left:3px;font-family:'JetBrains Mono',monospace;}
   .gauge-meta{font-size:0.55rem;color:var(--dim);margin-bottom:6px;}
-  .gauge-chg{font-size:0.6rem;margin-left:6px;}
   .gauge-chg.up{color:#69f0ae;} .gauge-chg.down{color:#ff8a65;}
-  .gauge-wrap{height:110px;}
-  .gauge-card{cursor:pointer;transition:border-color 0.2s,box-shadow 0.2s;}
-  .gauge-card:hover{border-color:rgba(79,195,247,0.3);box-shadow:0 0 12px rgba(79,195,247,0.08);}
-  .gauge-expand-hint{font-size:0.48rem;color:var(--dim);letter-spacing:0.06em;margin-top:4px;opacity:0.6;}
-  .gauge-combined-wrap{height:200px;margin-top:4px;}
-  .gauge-toggles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-  .gauge-toggle{font-size:0.55rem;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;padding:3px 8px;border-radius:3px;border:1px solid;cursor:pointer;transition:opacity 0.15s;background:transparent;opacity:0.4;}
-  .gauge-toggle.active{opacity:1;}
+  .gauge-wrap{height:90px;}
   .flood-badge{font-size:0.5rem;background:rgba(255,138,101,0.2);color:#ff8a65;border:1px solid rgba(255,138,101,0.4);border-radius:3px;padding:1px 5px;letter-spacing:0.06em;}
 
-  @media(max-width:700px){
-    .sparkline-grid{grid-template-columns:repeat(2,1fr);}
-    .gauge-grid{grid-template-columns:1fr;}
-  }
-  /* ── Sentinel map panel ── */
-  .sentinel-map-wrap{position:relative;height:420px;border-radius:4px;overflow:hidden;background:#060f1e;}
-  #sentinel-map{height:100%;width:100%;}
-  .sentinel-layer-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-  .sentinel-layer-btn{font-size:0.52rem;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;padding:3px 8px;border-radius:3px;border:1px solid rgba(79,195,247,0.25);cursor:pointer;color:var(--dim);background:transparent;transition:border-color 0.15s,color 0.15s;}
-  .sentinel-layer-btn.active{border-color:#81d4fa;color:#81d4fa;}
-  .sentinel-date-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-  .sentinel-date-input{font-family:'JetBrains Mono',monospace;font-size:0.55rem;background:rgba(13,31,60,0.8);border:1px solid rgba(79,195,247,0.2);border-radius:3px;color:#cdd6f4;padding:3px 6px;}
-  .sentinel-badge{font-size:0.5rem;background:rgba(79,195,247,0.1);border:1px solid rgba(79,195,247,0.2);border-radius:3px;padding:2px 6px;color:#81d4fa;letter-spacing:0.06em;}
-  footer{margin-top:24px;padding-top:14px;border-top:1px solid rgba(79,195,247,0.07);display:flex;justify-content:space-between;font-size:0.56rem;color:var(--dim);letter-spacing:0.07em;}
+  footer{margin-top:28px;padding-top:14px;border-top:1px solid rgba(79,195,247,0.07);font-size:0.58rem;color:var(--dim);letter-spacing:0.04em;line-height:1.8;}
+  .health{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px 18px;margin:8px 0 14px;}
+  .health div::before{content:'●';margin-right:6px;color:var(--green);}
+  .health div.stale::before{color:var(--warn);}
+  .health div.missing::before{color:var(--alert);}
 
-  @media(max-width:1100px){
-    .kpi-row{grid-template-columns:repeat(3,1fr);}
-    .kpi-row-2{grid-template-columns:repeat(2,1fr);}
-    .main-grid{grid-template-columns:1fr;}
-    .bottom-grid{grid-template-columns:1fr;}
-    .modis-sentinel-grid{grid-template-columns:1fr;}
-    .modis-panel-inner{grid-template-columns:1fr;}
-    .temp-stat-row{grid-template-columns:repeat(2,1fr);}
+  @media(max-width:1200px){
+    .hero{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .station-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .gauge-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
+  @media(max-width:900px){
+    .two,.three{grid-template-columns:1fr;}
+    .kpi-row{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media(max-width:640px){
+    .wrap{padding:0 14px 40px;}
+    header{flex-direction:column;align-items:flex-start;}
+    .header-right{text-align:left;}
+    .brand h1{font-size:1.5rem;}
+    .hero{grid-template-columns:minmax(0,1fr);}
+    .hero-big{font-size:3rem;}
+    .station-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .gauge-grid{grid-template-columns:minmax(0,1fr);}
+    .sat-stats,.temp-stat-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .elev-row{grid-template-columns:100px 1fr 64px;}
+    .chart-wrap.tall{height:280px;}
+    .map-wrap{height:340px;}
+    .panel{padding:14px 14px;}
   }
 </style>
 </head>
 <body>
 <a class="bg-home" href="https://brooksgroves.com/">&larr; brooksgroves.com</a>
-<style>.bg-home{display:block;position:relative;z-index:50;padding:8px 16px 0;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:inherit;opacity:.65;text-decoration:none;width:max-content}.bg-home:hover{opacity:1;text-decoration:underline}</style>
 <div class="grid-bg"></div>
 <div class="wrap">
 
   <header>
     <div class="brand">
       <h1>Mt. Rainier <em>Snowpack</em></h1>
-      <p>SNOTEL Network · 7 Stations · Continuous Monitoring · 46.85°N 121.73°W</p>
+      <p>NRCS SNOTEL · <span id="n-stations">10</span> stations · measured against normal · 46.85°N 121.76°W</p>
     </div>
     <div class="header-right">
-      <div class="live" id="live-status">Loading...</div>
+      <div class="live" id="live-status">Loading…</div>
       <div id="updated-label">—</div>
-      <div>NRCS AWDB · WY<span id="wy-label">—</span></div>
+      <div>Water year <span id="wy-label">—</span> · day <span id="wy-day">—</span></div>
     </div>
   </header>
 
-  <div id="loading"><div class="spinner"></div><div>Fetching snowpack data...</div></div>
+  <nav class="jump">
+    <a href="#now">Now</a><a href="#season">Season</a><a href="#stations">Stations</a><a href="#history">45 winters</a>
+    <a href="#weather">Freezing level</a><a href="#eyes">Webcam &amp; satellites</a><a href="#rivers">Rivers</a><a href="#about">How it works</a>
+  </nav>
+
+  <div id="loading"><div class="spinner"></div><div>Fetching snowpack data…</div></div>
 
   <div id="dashboard">
 
-    <!-- Row 1: Core 5 KPIs -->
+    <!-- ═══ NOW ═══ -->
+    <div class="hero" id="now">
+      <div class="panel hero-main" id="hero-main"></div>
+      <div class="panel tile" id="hero-precip"></div>
+      <div class="panel tile" id="hero-freeze"></div>
+      <div class="panel tile" id="hero-enso"></div>
+    </div>
     <div class="kpi-row" id="kpi-row"></div>
 
-    <!-- Row 2: New snow KPIs -->
-    <div class="kpi-row-2" id="kpi-row-2"></div>
-
-    <div class="main-grid">
-      <div class="panel" style="grid-column:span 2">
-        <div class="panel-title">Basin Average SWE — Water Year 2026 <span id="chart-subtitle"></span></div>
-        <div class="chart-wrap"><canvas id="sweChart"></canvas></div>
-        <div style="border-top:1px solid rgba(79,195,247,0.08);margin:14px 0 12px;"></div>
-        <div style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Individual Stations <span style="color:var(--accent);font-size:0.58rem;">all 7 stations</span></div>
-        <div class="sparkline-grid" id="sparkline-grid"></div>
+    <!-- ═══ SEASON ═══ -->
+    <div class="section-head" id="season"><h2>This season against normal</h2>
+      <p>Snow water equivalent (SWE) is the depth of water you'd get by melting the snowpack — the number that matters for rivers and reservoirs. The dashed line is NRCS's 1991–2020 median for each date; the shading is the range of every year on record at that station.</p></div>
+    <div class="panel">
+      <div class="panel-title">
+        <span style="color:var(--dim)" id="season-title">Rainier average</span>
+        <div class="toggle" id="season-var"><button data-v="swe" class="active">Snow water</button><button data-v="prec">Precip since Oct 1</button></div>
       </div>
+      <div class="chips" id="season-chips" style="margin-bottom:12px"></div>
+      <div class="chart-wrap tall"><canvas id="seasonChart"></canvas></div>
+      <div class="legend" id="season-legend"></div>
+      <div class="stat-line" id="season-stat"></div>
+    </div>
+
+    <!-- ═══ STATIONS ═══ -->
+    <div class="section-head" id="stations"><h2>Ten stations, 2,250 to 5,810 feet</h2>
+      <p>Eight sit on Rainier or the crest beside it and make up the Rainier average. Olallie Meadows and Cougar Mountain, near Snoqualmie Pass, were part of the original seven and stay for continuity (dashed). Click a station to chart it.</p></div>
+    <div class="station-grid" id="station-grid"></div>
+    <div class="panel elev-strip">
+      <div class="panel-title">Snow water by elevation <span>white tick = median for today</span></div>
+      <div id="elev-list"></div>
+    </div>
+
+    <!-- ═══ HISTORY ═══ -->
+    <div class="section-head" id="history"><h2>45 winters, and what El Niño means here</h2>
+      <p>April 1 is the date water managers use to size up a winter. Bars are coloured by that winter's ENSO phase (NOAA's Oceanic Niño Index for Dec–Feb).</p></div>
+    <div class="three">
       <div class="panel">
-        <div class="panel-title">Station Conditions <span id="station-count"></span></div>
-        <div class="station-list" id="station-list"></div>
+        <div class="panel-title">
+          <span style="color:var(--dim)" id="hist-title">April 1 snowpack</span>
+          <div class="toggle" id="hist-var"><button data-v="apr1" class="active">April 1</button><button data-v="peak">Peak</button><button data-v="meltout">Melt-out date</button></div>
+        </div>
+        <div class="chips" id="hist-chips" style="margin-bottom:12px"></div>
+        <div class="chart-wrap mid"><canvas id="histChart"></canvas></div>
+        <div class="legend" id="hist-legend"></div>
+        <div class="stat-line" id="hist-stat"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="panel">
+          <div class="panel-title">The winter ahead <span id="enso-issued"></span></div>
+          <div id="enso-panel"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title"><span style="color:var(--dim)">Last winter in review</span><span id="review-wy"></span></div>
+          <div id="review-panel"></div>
+        </div>
       </div>
     </div>
 
-    <div class="bottom-grid">
+    <!-- ═══ WEATHER ═══ -->
+    <div class="section-head" id="weather"><h2>Rain or snow? The freezing level</h2>
+      <p>A storm that brings rain to 6,000 ft and one that brings snow to 2,000 ft can carry the same water. The freezing level is estimated by fitting the stations' latest temperatures against their elevations.</p></div>
+    <div class="two">
       <div class="panel">
-        <div class="panel-title">SWE by Station <span>sorted by elevation</span></div>
-        <div class="elev-list" id="elev-list"></div>
+        <div class="panel-title">48-hour temperature · all stations <span id="hourly-subtitle"></span></div>
+        <div class="temp-stat-row" id="hourly-stats"></div>
+        <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
       </div>
       <div class="panel">
-        <div class="panel-title">Current Temperatures <span id="temp-panel-subtitle">hourly latest</span></div>
-        <div class="temp-list" id="temp-list"></div>
+        <div class="panel-title">Estimated freezing level · 48 hours <span>ft above sea level</span></div>
+        <div class="chart-wrap" style="height:296px"><canvas id="freezeChart"></canvas></div>
+        <div class="explain" id="freeze-explain"></div>
       </div>
     </div>
 
-    <div class="panel" style="margin-bottom:16px">
-      <div class="panel-title">48-Hour Diurnal Temperature — All Stations <span id="hourly-subtitle">freeze/thaw cycle</span></div>
-      <div class="temp-stat-row" id="hourly-stats"></div>
-      <div class="chart-wrap tall"><canvas id="tempChart"></canvas></div>
-    </div>
-
-    <!-- Webcam — full width -->
-    <div class="panel webcam-full" style="padding:0;overflow:hidden;">
+    <!-- ═══ EYES ═══ -->
+    <div class="section-head" id="eyes"><h2>Eyes on the mountain</h2>
+      <p>NPS webcams at Paradise, NASA's daily MODIS snow map, the latest clear Sentinel-2 view, and a live satellite map with every station coloured by its % of median.</p></div>
+    <div class="panel" style="padding:0;overflow:hidden;margin-bottom:14px">
       <div style="padding:14px 18px 10px;border-bottom:1px solid rgba(79,195,247,0.08);">
-        <div class="panel-title" style="margin-bottom:8px;">Paradise Live Webcam <span>NPS · Jackson Visitor Center · 5,400 ft</span></div>
-        <div class="cam-selector" id="cam-selector"></div>
+        <div class="panel-title" style="margin-bottom:8px;">Paradise live webcams <span>NPS · Mount Rainier National Park</span></div>
+        <div class="chips" id="cam-selector"></div>
       </div>
       <div class="webcam-wrap">
         <div class="webcam-img-container">
-          <img id="webcam-img" src="" alt="Paradise Webcam">
-          <div class="webcam-overlay">
-            <div class="webcam-badge" id="webcam-badge">Paradise</div>
-            <div class="webcam-live">Live</div>
-          </div>
+          <img id="webcam-img" alt="Mount Rainier National Park webcam" style="visibility:hidden">
+          <div class="webcam-overlay"><div class="webcam-badge" id="webcam-badge">Paradise</div><div class="webcam-live">Live</div></div>
         </div>
         <div class="webcam-footer">
-          <div class="webcam-footer-top">
-            <div>
-              <div class="webcam-name" id="webcam-name">Jackson Visitor Center</div>
-              <div class="webcam-desc" id="webcam-desc">A view of the Jackson Visitor Center at Paradise</div>
-            </div>
-            <div class="webcam-refresh" id="webcam-timer">refreshes in 60s</div>
-          </div>
+          <div><div class="webcam-name" id="webcam-name">Jackson Visitor Center</div><div class="webcam-desc" id="webcam-desc"></div></div>
+          <div class="webcam-refresh" id="webcam-timer">refreshes in 60s</div>
         </div>
       </div>
     </div>
-
-    <!-- MODIS + Satellite Live Map — 2 col -->
-    <div class="modis-sentinel-grid">
+    <div class="two" style="margin-bottom:14px">
       <div class="panel">
-        <div class="panel-title">MODIS Satellite Snow Cover <span>MOD10A1 V061 · 500m · NASA</span></div>
-        <div class="modis-panel-inner">
-          <div class="modis-img-wrap" id="modis-img-wrap">
-            <div class="modis-img-error">Loading satellite image...</div>
-          </div>
-          <div class="modis-stats" id="modis-stats">
-            <div style="font-size:0.65rem;color:var(--dim)">Loading...</div>
-          </div>
-        </div>
+        <div class="panel-title">MODIS daily snow cover <span id="modis-sub">NASA · 500 m</span></div>
+        <div id="modis-note"></div>
+        <div class="sat-img" id="modis-img"><div class="muted" style="font-size:.65rem">Loading satellite image…</div></div>
+        <div class="sat-stats" id="modis-stats"></div>
+        <div class="explain">Snow = NDSI ≥ 0.10, as a share of the land the satellite could actually see that day (cloud excluded). The box spans the Cascades from Enumclaw to Packwood; "park" is Mount Rainier National Park.</div>
       </div>
-
-      <!-- Satellite Live Map -->
       <div class="panel">
-        <div class="panel-title">Satellite Live Map <span>NASA GIBS · HLS/MODIS · interactive</span></div>
-        <div class="sentinel-layer-bar">
-          <button class="sentinel-layer-btn" data-layer="HLS_L30_Nadir_BRDF_Adjusted_Reflectance" data-res="GoogleMapsCompatible_Level12" data-fmt="png">HLS True Color</button>
-          <button class="sentinel-layer-btn active" data-layer="MODIS_Terra_CorrectedReflectance_TrueColor" data-res="GoogleMapsCompatible_Level9" data-fmt="jpg">MODIS True Color</button>
-          <button class="sentinel-layer-btn" data-layer="MODIS_Terra_Snow_Cover_Daily" data-res="GoogleMapsCompatible_Level8" data-fmt="png">MODIS Snow Cover</button>
-        </div>
-        <div class="sentinel-date-row">
-          <span style="font-size:0.52rem;color:var(--dim);letter-spacing:0.06em;">DATE</span>
-          <input type="date" id="sentinel-date" class="sentinel-date-input">
-          <span class="sentinel-badge" id="sentinel-badge">🛰 Live</span>
-        </div>
-        <div class="sentinel-map-wrap">
-          <div id="sentinel-map"></div>
-        </div>
+        <div class="panel-title">Sentinel-2 · latest clear view <span id="s2-sub">ESA Copernicus · 10 m</span></div>
+        <div id="s2-note"></div>
+        <div class="sat-img" id="s2-img"><div class="muted" style="font-size:.65rem">Loading…</div></div>
+        <div class="explain" id="s2-explain">True colour from the most recent Sentinel-2 pass with under 30% cloud, via Microsoft Planetary Computer.</div>
       </div>
-    </div><!-- Stream Gauges -->
-    <div class="panel" style="margin-bottom:16px">
-      <div class="panel-title">Rainier Watershed — Stream Gauges <span>USGS · 4 rivers · 7-day flow</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Live satellite map <span>NASA GIBS · pick a layer and a date</span></div>
+      <div class="layer-bar" id="layer-bar">
+        <button class="chip" data-layer="MODIS_Terra_CorrectedReflectance_TrueColor">MODIS Terra true colour</button>
+        <button class="chip" data-layer="VIIRS_NOAA20_CorrectedReflectance_TrueColor">VIIRS NOAA-20 true colour</button>
+        <button class="chip" data-layer="MODIS_Terra_NDSI_Snow_Cover">MODIS snow cover</button>
+        <button class="chip" data-layer="HLS_L30_Nadir_BRDF_Adjusted_Reflectance">Landsat HLS 30 m</button>
+        <input type="date" id="map-date" class="date-input" aria-label="Imagery date">
+      </div>
+      <div class="map-wrap"><div id="snow-map"></div>
+        <div class="map-legend" id="map-legend"></div>
+      </div>
+    </div>
+
+    <!-- ═══ RIVERS ═══ -->
+    <div class="section-head" id="rivers"><h2>Where the water goes</h2>
+      <p>Four USGS gauges on rivers that drain the mountain, last 7 days, hourly. Winter floods here come from atmospheric rivers — warm, wet storms that rain on the snowpack. Watch the freezing level and these lines together.</p></div>
+    <div class="panel">
       <div class="gauge-grid" id="gauge-grid"></div>
-      <div style="border-top:1px solid rgba(79,195,247,0.08);margin:14px 0 12px;"></div>
-      <div style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">All Rivers — 7-Day Flow <span style="color:var(--accent);font-size:0.58rem;">click to toggle</span></div>
-      <div class="gauge-toggles" id="gauge-toggles"></div>
-      <div class="gauge-combined-wrap"><canvas id="gauge-combined"></canvas></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="gauge-combined"></canvas></div>
+      <div class="explain" id="gauge-explain">The combined chart puts each river as a % of its approximate minor-flood flow, so a creek and a big river share one axis (the flood line appears once any river passes 40%). Those flows are rough, for colour only — the <a href="https://www.weather.gov/sew/" target="_blank" rel="noopener">NWS Seattle</a> river forecasts are the authority.</div>
     </div>
 
   </div><!-- /dashboard -->
 
-  <footer>
-    <span>Data: NRCS SNOTEL AWDB · USGS NWIS Stream Gauges · NASA Earthdata MODIS · NPS Webcams · Updated hourly · github.com/bdgroves/rainier-snowpack</span>
-    <span id="footer-date"></span>
+  <footer id="about">
+    <div style="font-family:'Syne',sans-serif;font-size:.85rem;color:#fff;font-weight:700;margin-bottom:4px">Data freshness</div>
+    <div class="health" id="health"></div>
+    <div><b style="color:var(--text);font-weight:500">How it works.</b> Every hour a GitHub Action pulls daily and hourly readings from the
+      <a href="https://wcc.sc.egov.usda.gov/awdbRestApi/" target="_blank" rel="noopener">NRCS AWDB API</a> (with NRCS's 1991–2020 medians), the station records back to 1979,
+      NOAA's <a href="https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt" target="_blank" rel="noopener">ONI</a> and
+      <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml" target="_blank" rel="noopener">ENSO outlook</a>,
+      NASA MODIS (Terra, Aqua as backup) via Earthdata, Sentinel-2 via Planetary Computer, and USGS streamflow from the
+      <a href="https://api.waterdata.usgs.gov/" target="_blank" rel="noopener">Water Data API</a>.
+      The Rainier average is Σ SWE ÷ Σ median over the mountain's stations reporting both, so a missing station can't move it. % of median waits until the median itself passes 1″ — early-season percentages of a tiny number mean nothing.
+      Code: <a href="https://github.com/bdgroves/rainier-snowpack" target="_blank" rel="noopener">github.com/bdgroves/rainier-snowpack</a>.</div>
   </footer>
 </div>
 
 <script>
+const P = 'data/processed/';
 const PATHS = {
-  snotel:'dashboard/snotel_latest.json', basin:'dashboard/basin_daily.csv',
-  hourly:'dashboard/hourly_temps.json',  modis:'dashboard/modis_latest.json',
-  modisPng:'dashboard/modis_snow_cover.png',
-  gauges:'dashboard/gauges_latest.json',
+  latest: P+'snotel_latest.json', season: P+'snotel_season.json', history: P+'snow_history.json',
+  hourly: P+'hourly_temps.json', modis: P+'modis/modis_latest.json', gauges: P+'gauges_latest.json',
+  sentinel: P+'sentinel_latest.json', modisPng: 'dashboard/modis_snow_cover.png',
 };
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const FONT = {family:'JetBrains Mono', size:9};
+const TICK = 'rgba(114,131,168,0.85)', GRID = 'rgba(79,195,247,0.05)', BORDER = 'rgba(79,195,247,0.08)';
+const TOOLTIP = {backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10}};
+const PHASE_COLOR = {'strong El Niño':'#ff5252','El Niño':'#ff8a65','neutral':'#7283a8','La Niña':'#4fc3f7','strong La Niña':'#b388ff'};
+const PHASES = ['strong El Niño','El Niño','neutral','La Niña','strong La Niña'];
+const S = {};  // all loaded data
 
-const CAMS = [
-  {key:'gh',       label:'Visitor Ctr', name:'Jackson Visitor Center',  desc:'A view of the Jackson Visitor Center at Paradise', badge:'Paradise'},
-  {key:'mountain', label:'Mountain',    name:'Paradise Mountain',        desc:'Is the mountain out? What is the weather like at Paradise?', badge:'Paradise'},
-  {key:'east',     label:'East',        name:'Paradise East',            desc:'Looking east from the Jackson Visitor Center', badge:'Paradise'},
-  {key:'west',     label:'West',        name:'Paradise West',            desc:'Looking west from the Jackson Visitor Center', badge:'Paradise'},
-  {key:'tatoosh',  label:'Tatoosh',     name:'Tatoosh Range',            desc:'Looking south towards the Tatoosh Mountain Range', badge:'Paradise'},
-  {key:'longmire', label:'Longmire',    name:'Longmire',                 desc:'Looking southwest from the Administration Building', badge:'Longmire'},
-];
-let currentCam=CAMS[0], webcamTimer=60, timerInterval=null;
-
-function loadWebcam(cam) {
-  currentCam=cam;
-  const img=document.getElementById('webcam-img');
-  img.style.opacity='0.6';
-  const tmp=new Image();
-  tmp.onload=()=>{img.src=tmp.src;img.style.opacity='1';};
-  tmp.onerror=()=>{img.style.opacity='1';};
-  tmp.src=`https://www.nps.gov/webcams-mora/${cam.key}.jpg?t=${Date.now()}`;
-  document.getElementById('webcam-name').textContent=cam.name;
-  document.getElementById('webcam-desc').textContent=cam.desc;
-  document.getElementById('webcam-badge').textContent=cam.badge;
-  document.querySelectorAll('.cam-btn').forEach(b=>b.classList.toggle('active',b.dataset.key===cam.key));
-  webcamTimer=60;
-  if(timerInterval) clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    webcamTimer--;
-    const el=document.getElementById('webcam-timer');
-    if(el) el.textContent=`refreshes in ${webcamTimer}s`;
-    if(webcamTimer<=0) loadWebcam(currentCam);
-  },1000);
+async function loadJSON(p){try{const r=await fetch(p,{cache:'no-cache'});if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
+const $ = id => document.getElementById(id);
+const fmt = (v,d=1) => v==null||isNaN(v) ? '—' : Number(v).toFixed(d);
+const signed = (v,d=1) => v==null ? '—' : (v>0?'+':'')+Number(v).toFixed(d);
+const pctColor = p => p==null ? 'var(--dim)' : p<50 ? '#ff5252' : p<70 ? '#ff8a65' : p<90 ? '#ffb74d' : p<=110 ? '#69f0ae' : p<=130 ? '#4fc3f7' : '#b388ff';
+const pctWord = p => p==null ? '' : p<50 ? 'far below normal' : p<70 ? 'well below normal' : p<90 ? 'below normal' : p<=110 ? 'near normal' : p<=130 ? 'above normal' : 'well above normal';
+const isoToNice = (iso, withYear=false) => { if(!iso) return '—'; const [y,m,d]=iso.split('-').map(Number); return `${MONTHS[m-1]} ${d}${withYear?', '+y:''}`; };
+const ordinal = n => n+(['th','st','nd','rd'][(n%100>10&&n%100<14)?0:n%10]||'th');
+function wyDate(wy, i){ const d=new Date(Date.UTC(wy-1,9,1)); d.setUTCDate(d.getUTCDate()+i); return d.toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.round((Date.parse(b)-Date.parse(a))/86400000); }
+function axisDates(n, wy){ return Array.from({length:n}, (_,i)=>wyDate(wy,i)); }
+function monthTick(labels){ return (v,i)=>{ const d=labels[i]; return d && d.slice(8)==='01' ? MONTHS[+d.slice(5,7)-1] : ''; }; }
+function pctile(sorted, q){ if(!sorted.length) return null; const k=(sorted.length-1)*q, lo=Math.floor(k), hi=Math.min(lo+1,sorted.length-1); return sorted[lo]+(sorted[hi]-sorted[lo])*(k-lo); }
+function rankFromBand(v, band){
+  if(v==null || !band) return null;
+  const pts=[[0,band[0]],[10,band[1]],[25,band[2]],[50,band[3]],[75,band[4]],[90,band[5]],[100,band[6]]];
+  if(v<=band[0]) return 0; if(v>=band[6]) return 100;
+  for(let i=0;i<pts.length-1;i++){ const [q0,v0]=pts[i],[q1,v1]=pts[i+1]; if(v>=v0&&v<=v1) return Math.round(q0+(q1-q0)*(v1>v0?(v-v0)/(v1-v0):.5)); }
+  return null;
 }
 
-function buildCamSelector() {
-  const el=document.getElementById('cam-selector');
-  el.innerHTML=CAMS.map(c=>`<button class="cam-btn${c.key===currentCam.key?' active':''}" data-key="${c.key}">${c.label}</button>`).join('');
-  el.querySelectorAll('.cam-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{const cam=CAMS.find(c=>c.key===btn.dataset.key);if(cam)loadWebcam(cam);});
-  });
-}
-
-async function loadJSON(p){try{const r=await fetch(p);if(!r.ok)throw new Error();return await r.json();}catch(e){return null;}}
-async function loadCSV(p){try{const r=await fetch(p);if(!r.ok)throw new Error();return parseCSV(await r.text());}catch(e){return null;}}
-function parseCSV(text){
-  const lines=text.trim().split('\n'),headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
-  return lines.slice(1).map(line=>{const vals=line.split(','),obj={};headers.forEach((h,i)=>obj[h]=vals[i]?.trim().replace(/"/g,''));return obj;});
-}
-
-const DEMO={updated:'2026-03-05',water_year:2026,
-  basin:{swe_change_24h:0.3,days_since_snow:1,melt_alert:false,density_pct:34.2},
-  stations:[
-    {id:'679:WA:SNTL', name:'Paradise',       elevation:5150,swe_in:25.0,depth_in:63,temp_f:25.0,swe_change_24h:0.9,days_since_snow:0,melt_alert:false,density_pct:47.6},
-    {id:'642:WA:SNTL', name:'Morse Lake',     elevation:5400,swe_in:26.2,depth_in:76,temp_f:28.8,swe_change_24h:0.5,days_since_snow:1,melt_alert:false,density_pct:41.4},
-    {id:'672:WA:SNTL', name:'Olallie Meadows',elevation:4010,swe_in:15.6,depth_in:40,temp_f:30.4,swe_change_24h:0.1,days_since_snow:2,melt_alert:false,density_pct:46.8},
-    {id:'1085:WA:SNTL',name:'Cayuse Pass',    elevation:5260,swe_in:21.6,depth_in:58,temp_f:28.2,swe_change_24h:0.0,days_since_snow:3,melt_alert:false,density_pct:44.8},
-    {id:'418:WA:SNTL', name:'Corral Pass',    elevation:5810,swe_in:18.2,depth_in:53,temp_f:26.2,swe_change_24h:0.3,days_since_snow:1,melt_alert:false,density_pct:41.3},
-    {id:'375:WA:SNTL', name:'Bumping Ridge',  elevation:4600,swe_in:11.7,depth_in:37,temp_f:27.9,swe_change_24h:-0.1,days_since_snow:4,melt_alert:false,density_pct:37.9},
-    {id:'420:WA:SNTL', name:'Cougar Mountain',elevation:3210,swe_in:0.7, depth_in:3, temp_f:33.1,swe_change_24h:0.3,days_since_snow:2,melt_alert:false,density_pct:28.0},
-  ]
-};
-
-function getTemp(name,dailyF,hourly){
-  if(hourly?.[name]?.latest!=null)return{temp:hourly[name].latest,source:'hourly'};
-  return{temp:parseFloat(dailyF),source:'daily'};
-}
-
-function buildModisPanel(modis){
-  const wrap=document.getElementById('modis-img-wrap');
-  const img=new Image();
-  img.onload=()=>{wrap.innerHTML='';wrap.appendChild(img);const cap=document.createElement('div');cap.className='modis-img-caption';cap.textContent='NDSI Snow Cover · h09v04 · Pacific Northwest · 500m';wrap.appendChild(cap);};
-  img.onerror=()=>{wrap.innerHTML='<div class="modis-img-error">Image updates after next pipeline run</div>';};
-  img.src=PATHS.modisPng; img.style.width='100%';
-  const el=document.getElementById('modis-stats');
-  if(!modis){el.innerHTML='<div style="font-size:0.65rem;color:var(--dim)">Stats not yet available</div>';return;}
-  const daysAgo=modis.days_ago||0;
-  const staleness=daysAgo>0
-    ?`<div style="font-size:0.58rem;color:var(--melt);margin-bottom:8px">⚠ Last clean pass: ${daysAgo}d ago</div>`
-    :'<div style="font-size:0.58rem;color:var(--green);margin-bottom:8px">✓ Current pass</div>';
-  el.innerHTML=`<div class="modis-badge">🛰 NASA MODIS · Terra</div>${staleness}
-    <div class="modis-kpi satellite"><div class="modis-kpi-label">Snow Cover</div><div class="modis-kpi-val">${modis.pct_snow??'—'}<span style="font-size:0.9rem;color:var(--dim)">%</span></div><div class="modis-kpi-sub">of Rainier watershed</div></div>
-    <div class="modis-kpi cloud"><div class="modis-kpi-label">Cloud Cover</div><div class="modis-kpi-val">${modis.pct_cloud??'—'}<span style="font-size:0.9rem;color:var(--dim)">%</span></div><div class="modis-kpi-sub">${parseFloat(modis.pct_cloud)<10?'Clean pass ✓':'Partial cloud'}</div></div>
-    <div class="modis-kpi ndsi"><div class="modis-kpi-label">Avg NDSI</div><div class="modis-kpi-val">${modis.avg_ndsi??'—'}</div><div class="modis-kpi-sub">snow index</div></div>
-    <div class="modis-kpi date"><div class="modis-kpi-label">Observation</div><div class="modis-kpi-val" style="font-size:0.95rem">${modis.date??'—'}</div><div class="modis-kpi-sub">tile ${modis.tile??'h09v04'} · 500m</div></div>`;
-}
-
+// ═══════════════════════════════════════════════════════════════════════
 async function init(){
-  const [raw,basin,hourly,modis,gaugesData]=await Promise.all([loadJSON(PATHS.snotel),loadCSV(PATHS.basin),loadJSON(PATHS.hourly),loadJSON(PATHS.modis),loadJSON(PATHS.gauges)]);
-  const data=raw||DEMO;
-  document.getElementById('loading').style.display='none';
-  document.getElementById('dashboard').style.display='block';
+  const keys = Object.keys(PATHS).filter(k=>k!=='modisPng');
+  const vals = await Promise.all(keys.map(k=>loadJSON(PATHS[k])));
+  keys.forEach((k,i)=>S[k]=vals[i]);
+  $('loading').style.display='none';
+  $('dashboard').style.display='block';
+  if(!S.latest){ $('dashboard').innerHTML='<div class="panel">The snowpack data could not be loaded. Try again in a few minutes.</div>'; return; }
 
-  const {stations=[],updated='—',water_year:wy=2026,basin:basinMeta={}}=data;
-  document.getElementById('live-status').textContent='Live · '+updated;
-  document.getElementById('updated-label').textContent='Updated: '+updated;
-  document.getElementById('wy-label').textContent=wy;
-  document.getElementById('footer-date').textContent='Last run: '+updated;
+  const L = S.latest;
+  S.stations = L.stations || [];
+  S.byId = Object.fromEntries(S.stations.map(s=>[s.id,s]));
+  const hourly = S.hourly || {};
+  S.hourlyMeta = hourly._meta || null;
+  S.temps = Object.fromEntries(Object.entries(hourly).filter(([k])=>k!=='_meta'));
+  $('n-stations').textContent = S.stations.length;
+  $('wy-label').textContent = L.water_year;
+  $('wy-day').textContent = L.wy_day ?? '—';
+  const ageH = L.generated ? (Date.now()-Date.parse(L.generated.replace('Z',':00Z')))/3600000 : null;
+  const live = $('live-status');
+  live.textContent = 'Data through ' + isoToNice(L.data_through, true);
+  if(ageH!=null && ageH>30){ live.classList.add('stale'); live.textContent += ' · pipeline stale'; }
+  $('updated-label').textContent = L.generated ? 'Checked ' + new Date(L.generated.replace('Z',':00Z')).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
 
-  const validSWE=stations.filter(s=>s.swe_in!=null&&s.swe_in!=='NA');
-  const validDepth=stations.filter(s=>s.depth_in!=null&&s.depth_in!=='NA');
-  const avgSWE=validSWE.length?(validSWE.reduce((a,s)=>a+parseFloat(s.swe_in),0)/validSWE.length).toFixed(1):'—';
-  const avgDepth=validDepth.length?(validDepth.reduce((a,s)=>a+parseFloat(s.depth_in),0)/validDepth.length).toFixed(0):'—';
-  const maxSWE=validSWE.length?Math.max(...validSWE.map(s=>parseFloat(s.swe_in))).toFixed(1):'—';
-  const maxName=validSWE.length?validSWE.reduce((a,s)=>parseFloat(s.swe_in)>parseFloat(a.swe_in)?s:a).name:'—';
+  buildHero(); buildKPIs(); buildSeason(); buildStations(); buildHistory();
+  buildTemps(); buildFreeze(); buildCams(); buildModis(); buildSentinel(); buildMap(); buildGauges(); buildHealth();
+}
 
-  let avgTemp,freezingCount;
-  if(hourly&&Object.keys(hourly).length>0){
-    const temps=Object.values(hourly).map(s=>s.latest).filter(t=>t!=null);
-    avgTemp=temps.length?(temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(1):'—';
-    freezingCount=temps.filter(t=>t<=32).length;
-    document.getElementById('temp-panel-subtitle').textContent='hourly latest';
+// ── Hero ──────────────────────────────────────────────────────────────
+function buildHero(){
+  const L=S.latest, I=L.index||{}, se=S.season, wy=L.water_year;
+  const pct=I.pct_median, col=pctColor(pct);
+  const el=$('hero-main'); el.style.setProperty('--pct-color', col);
+  const ty = I.swe_in, med=I.median_in, last=I.last_year_in;
+  let big, label, sentence;
+  // first day the Rainier median reaches 1" — when % of median starts to mean something
+  let startIdx = null;
+  if(se?.rainier?.median){ startIdx = se.rainier.median.findIndex(v=>v!=null && v>=1); }
+  const startDate = startIdx!=null && startIdx>=0 ? wyDate(wy,startIdx) : null;
+  if(pct!=null){
+    big = `${pct}<small>%</small>`;
+    label = 'of median · Rainier snowpack';
+    sentence = `Rainier's snowpack is <b style="color:${col}">${pctWord(pct)}</b> for ${isoToNice(L.data_through)}: <b>${fmt(ty)}″</b> of water against <b>${fmt(med)}″</b> normally`
+      + (last!=null ? `, and ${ty>last+0.5?'ahead of':ty<last-0.5?'behind':'level with'} last year (${fmt(last)}″).` : '.');
+    const pp=I.precip_pct_median;
+    if(pp!=null && pct<75 && pp>=90) sentence += ` Precipitation is ${pp}% of median, so the storms have come — they've fallen as rain or melted. That pattern is a <b>warm snow drought</b>.`;
+    else if(pp!=null && pct<75 && pp<75) sentence += ` Precipitation is only ${pp}% of median too: a <b>dry snow drought</b> — the storms haven't come.`;
+    else if(pp!=null && pct>=110 && pp>=110) sentence += ` Precipitation is ${pp}% of median: a wet winter, and it's staying as snow.`;
   } else {
-    const vt=stations.filter(s=>s.temp_f!=null&&s.temp_f!=='NA');
-    avgTemp=vt.length?(vt.reduce((a,s)=>a+parseFloat(s.temp_f),0)/vt.length).toFixed(1):'—';
-    freezingCount=vt.filter(s=>parseFloat(s.temp_f)<=32).length;
-    document.getElementById('temp-panel-subtitle').textContent='daily snapshot';
+    big = `${fmt(ty)}<small>in</small>`;
+    label = 'mean snow water · Rainier stations';
+    sentence = `The snow season is just starting. % of median waits until the normal pack passes 1″`
+      + (startDate ? ` — around <b>${isoToNice(startDate)}</b> on the Rainier stations.` : '.')
+      + (S.byId['679:WA:SNTL']?.median_onset_date ? ` Median snow onset at Paradise is <b>${isoToNice(S.byId['679:WA:SNTL'].median_onset_date)}</b>.` : '')
+      + (I.precip_pct_median!=null ? ` Water-year precipitation so far is <b>${I.precip_pct_median}%</b> of median.` : '');
   }
-
-  // ── Row 1: Core 5 KPIs ──
-  document.getElementById('kpi-row').innerHTML=[
-    {label:'Basin Avg SWE',    val:avgSWE,        unit:'in', sub:`${validSWE.length} stations`,    cls:'good'},
-    {label:'Avg Snow Depth',   val:avgDepth,      unit:'in', sub:'basin average',                  cls:''},
-    {label:'Peak SWE',         val:maxSWE,        unit:'in', sub:maxName,                          cls:''},
-    {label:'Avg Temperature',  val:avgTemp,       unit:'°F', sub:parseFloat(avgTemp)<=32?'↓ below freezing':'↑ above freezing', cls:parseFloat(avgTemp)<=32?'':'warn'},
-    {label:'Stations Freezing',val:freezingCount, unit:'',   sub:`of ${stations.length} reporting`,cls:freezingCount>=4?'good':''},
-  ].map((k,i)=>`<div class="kpi ${k.cls}" style="animation-delay:${i*0.07}s">
-    <div class="kpi-label">${k.label}</div>
-    <div class="kpi-val">${k.val}<span class="kpi-unit">${k.unit}</span></div>
-    <div class="kpi-sub ${k.cls==='warn'?'down':k.cls==='good'?'up':''}">${k.sub}</div>
-  </div>`).join('');
-
-  // ── Row 2: Snow event KPIs ──
-  const change24h  = basinMeta.swe_change_24h  ?? null;
-  const daysSince  = basinMeta.days_since_snow ?? null;
-  const meltAlert  = basinMeta.melt_alert      ?? false;
-
-  const changeVal  = change24h !== null ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}` : '—';
-  const changeCls  = change24h === null ? '' : change24h > 0 ? 'positive' : change24h < 0 ? 'negative' : '';
-  const changeSub  = change24h === null ? '24hr SWE change' : change24h >= 0.1 ? '❄ new snow accumulating' : change24h <= -0.5 ? '⚠ significant melt' : change24h < 0 ? 'minor settling' : 'stable snowpack';
-  const changeKpiCls = change24h !== null && change24h >= 0.1 ? 'snow' : change24h !== null && change24h <= -0.5 ? 'warn' : '';
-
-  const daysSub  = daysSince === null ? '—' : daysSince === 0 ? '❄ snowing today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`;
-  const daysCls  = daysSince !== null && daysSince <= 1 ? 'good' : daysSince !== null && daysSince >= 7 ? 'warn' : '';
-
-  const meltVal  = meltAlert ? '🔴 Alert' : '✓ Normal';
-  const meltSub  = meltAlert ? `>${stations.filter(s=>s.melt_alert).length} stations losing >0.5" SWE` : 'no rapid melt detected';
-  const meltKpiCls = meltAlert ? 'alert' : 'good';
-  const meltValCls = meltAlert ? 'alert-red' : '';
-
-  document.getElementById('kpi-row-2').innerHTML=`
-    <div class="kpi ${changeKpiCls}" style="animation-delay:0.35s">
-      <div class="kpi-label">New Snow · 24hr</div>
-      <div class="kpi-val ${changeCls}">${changeVal}<span class="kpi-unit">in</span></div>
-      <div class="kpi-sub">${changeSub}</div>
+  // season track: Oct 1 … Sep 30, with median onset, peak and melt-out at Paradise
+  const par = S.byId['679:WA:SNTL']||{};
+  const n = se?.dates_n || 365, pos = iso => iso ? Math.max(0,Math.min(100, 100*daysBetween(wyDate(wy,0), iso)/(n-1))) : null;
+  const marks = [['onset',par.median_onset_date],['peak',par.median_peak_date],['melt-out',par.median_meltout_date]].filter(m=>m[1]);
+  const nowPos = pos(L.data_through);
+  el.innerHTML = `
+    <div class="hero-label">Rainier snowpack · water year ${wy}</div>
+    <div class="hero-big" style="color:${pct!=null?col:'#fff'}">${big}</div>
+    <div class="hero-sub">${label} · <b>${I.n||0}</b> stations${med!=null&&pct!=null?` · median ${fmt(med)}″`:''}${last!=null?` · last year ${fmt(last)}″`:''}</div>
+    <div class="season-track" title="Paradise median timing (NRCS)">
+      <div class="bar"></div>
+      ${['Oct','Dec','Feb','Apr','Jun','Aug'].map((m,i)=>`<div class="lbl" style="left:${[0,16.7,33.4,49.6,66.3,83.0][i]}%">${m}</div>`).join('')}
+      ${marks.map(([k,iso])=>`<div class="tick" style="left:${pos(iso)}%"></div><div class="mark" style="left:${pos(iso)}%">${k} ${isoToNice(iso)}</div>`).join('')}
+      ${nowPos!=null?`<div class="now" style="left:${nowPos}%" title="today"></div>`:''}
     </div>
-    <div class="kpi ${daysCls}" style="animation-delay:0.42s">
-      <div class="kpi-label">Last Snowfall</div>
-      <div class="kpi-val">${daysSince !== null ? daysSince : '—'}<span class="kpi-unit">${daysSince !== null ? 'd' : ''}</span></div>
-      <div class="kpi-sub ${daysSince !== null && daysSince <= 1 ? 'up' : ''}">${daysSub}</div>
-    </div>
-    <div class="kpi ${meltKpiCls}" style="animation-delay:0.49s">
-      <div class="kpi-label">Melt Rate</div>
-      <div class="kpi-val ${meltValCls}" style="font-size:${meltAlert?'1.2rem':'1.8rem'}">${meltVal}</div>
-      <div class="kpi-sub ${meltAlert?'alert':''}">${meltSub}</div>
-    </div>`;
+    <div class="hero-sentence">${sentence}</div>`;
 
-  // ── Station cards ──
-  const maxSweVal=Math.max(...stations.map(s=>parseFloat(s.swe_in||0)));
-  const maxDepVal=Math.max(...stations.map(s=>parseFloat(s.depth_in||0)));
-  const sorted=[...stations].sort((a,b)=>parseFloat(b.swe_in||0)-parseFloat(a.swe_in||0));
-  document.getElementById('station-count').textContent=stations.length+' active';
-  document.getElementById('station-list').innerHTML=sorted.map(s=>{
-    const swe=parseFloat(s.swe_in||0),dep=parseFloat(s.depth_in||0);
-    const {temp}=getTemp(s.name,s.temp_f,hourly);
-    const chg=s.swe_change_24h!=null?s.swe_change_24h:null;
-    const chgHtml=chg!==null?`<span class="sc-change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}"</span>`:'';
-    return `<div class="station-card">
-      <div class="sc-top"><span class="sc-name">${s.name}</span><span class="sc-elev">${s.elevation?.toLocaleString()} ft · ${temp.toFixed(1)}°F</span></div>
-      <div style="display:flex;align-items:baseline">
-        <div class="sc-swe">${swe.toFixed(1)}<span> in SWE</span></div>${chgHtml}
-        ${s.melt_alert?'<span style="font-size:0.6rem;color:var(--alert);margin-left:8px">⚠ melt</span>':''}
-      </div>
-      <div class="sc-bars">
-        <div class="bar-group"><label>SWE</label><div class="bar-track"><div class="bar-fill swe" style="width:${maxSweVal>0?(swe/maxSweVal*100).toFixed(0):0}%"></div></div><span class="bar-val">${swe.toFixed(1)} in</span></div>
-        <div class="bar-group"><label>Depth</label><div class="bar-track"><div class="bar-fill depth" style="width:${maxDepVal>0?(dep/maxDepVal*100).toFixed(0):0}%"></div></div><span class="bar-val">${dep} in</span></div>
-      </div></div>`;
-  }).join('');
+  // precip tile
+  const pp=I.precip_pct_median;
+  $('hero-precip').innerHTML = `
+    <div class="hero-label">Precipitation since Oct 1</div>
+    <div class="hero-big" style="color:${pp!=null?pctColor(pp):'#fff'}">${pp!=null?pp+'<small>%</small>':fmt(I.precip_wytd_in)+'<small>in</small>'}</div>
+    <div class="hero-sub">${fmt(I.precip_wytd_in)}″ fallen · median ${fmt(I.precip_median_in)}″</div>
+    <div class="tile-note">Rain and snow together, from the stations' gauges. It says whether the storms are coming; the snowpack says whether they're staying.</div>`;
 
-  document.getElementById('elev-list').innerHTML=[...stations]
-    .sort((a,b)=>parseFloat(b.elevation||0)-parseFloat(a.elevation||0))
-    .map(s=>{
-      const swe=parseFloat(s.swe_in||0),pct=maxSweVal>0?(swe/maxSweVal*100):0;
-      const hue=Math.round(190+(parseFloat(s.elevation||3000)-3000)/3000*30);
-      return `<div class="elev-row"><span class="elev-name">${s.name}</span><div class="elev-track"><div class="elev-fill" style="width:${pct}%;background:hsl(${hue},80%,${55+pct*0.2}%)"></div></div><span class="elev-val">${swe.toFixed(1)}"</span></div>`;
-    }).join('');
-
-  document.getElementById('temp-list').innerHTML=stations
-    .map(s=>{const{temp,source}=getTemp(s.name,s.temp_f,hourly);return{name:s.name,temp,source};})
-    .sort((a,b)=>a.temp-b.temp)
-    .map(s=>`<div class="temp-row ${s.temp<=32?'freezing':'warm'}">
-      <span>${s.temp<=32?'❄':'🌡'}</span>
-      <span class="temp-name">${s.name}</span>
-      <span class="temp-val ${s.temp<=32?'cold':'warm'}">${s.temp.toFixed(1)}°F</span>
-      <span class="temp-source">${s.source}</span></div>`).join('');
-
-  buildSWEChart(basin,stations);
-  buildTempChart(hourly);
-  buildSparklines(basin,stations);
-  buildGauges(gaugesData);
-  buildModisPanel(modis);
-  buildCamSelector();
-  loadWebcam(currentCam);
-}
-
-function buildSWEChart(basin,stations){
-  const ctx=document.getElementById('sweChart').getContext('2d');
-  let labels=[],sweVals=[];
-  if(basin?.length){labels=basin.map(r=>r.date);sweVals=basin.map(r=>parseFloat(r.basin_swe)||null);document.getElementById('chart-subtitle').textContent=`${basin.length} days · through ${labels[labels.length-1]}`;}
-  else{const avg=stations.reduce((a,s)=>a+parseFloat(s.swe_in||0),0)/stations.length;for(let d=1;d<=154;d++){const dt=new Date(2025,9,1);dt.setDate(dt.getDate()+d-1);labels.push(dt.toISOString().slice(0,10));sweVals.push(+(avg*(d/154)+Math.sin(d*0.12)*1.5).toFixed(1));}document.getElementById('chart-subtitle').textContent='WY2026 · simulated';}
-  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Basin Avg SWE',data:sweVals,borderColor:'#81d4fa',borderWidth:2,backgroundColor:'rgba(79,195,247,0.08)',fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10},callbacks:{label:i=>` Basin avg SWE: ${i.raw?.toFixed(1)??'—'} in`}}},scales:{x:{ticks:{color:'rgba(90,106,138,0.8)',font:{family:'JetBrains Mono',size:9},maxTicksLimit:10,callback:(v,i)=>{const d=labels[i];if(!d)return'';const day=d.slice(8);return(day==='01'||day==='02')?d.slice(5,7)+'/'+d.slice(0,4):''}},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}},y:{ticks:{color:'rgba(90,106,138,0.8)',font:{family:'JetBrains Mono',size:9},callback:v=>v+'"'},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}}}}}); 
-}
-
-function buildTempChart(hourly){
-  if(!hourly){document.getElementById('hourly-subtitle').textContent='no data';return;}
-  const COLORS=['#e8f4f8','#b3e5fc','#81d4fa','#4fc3f7','#29b6f6','#0288d1','#4dd0e1'];
-  const names=Object.keys(hourly).sort((a,b)=>(hourly[b].elevation||0)-(hourly[a].elevation||0));
-  const labels=hourly[names[0]]?.labels||[];
-  let mins=[],maxes=[],latest=[],totalFreeze=0;
-  names.forEach(n=>{const s=hourly[n];if(s.min_temp!=null)mins.push(s.min_temp);if(s.max_temp!=null)maxes.push(s.max_temp);if(s.latest!=null)latest.push(s.latest);totalFreeze+=(s.freezing||[]).filter(Boolean).length;});
-  const low=mins.length?Math.min(...mins).toFixed(1):'—',high=maxes.length?Math.max(...maxes).toFixed(1):'—',avg=latest.length?(latest.reduce((a,b)=>a+b,0)/latest.length).toFixed(1):'—',fh=names.length?Math.round(totalFreeze/names.length):0;
-  document.getElementById('hourly-stats').innerHTML=`<div class="temp-stat"><div class="temp-stat-label">48hr Low</div><div class="temp-stat-val cold">${low}°F</div></div><div class="temp-stat"><div class="temp-stat-label">48hr High</div><div class="temp-stat-val hot">${high}°F</div></div><div class="temp-stat"><div class="temp-stat-label">Current Avg</div><div class="temp-stat-val">${avg}°F</div></div><div class="temp-stat"><div class="temp-stat-label">Avg Hrs Freezing</div><div class="temp-stat-val cold">${fh}h</div></div>`;
-  document.getElementById('hourly-subtitle').textContent=`${names.length} stations · ${labels[0]} → ${labels[labels.length-1]}`;
-  const datasets=names.map((n,i)=>({label:n,data:hourly[n].temps,borderColor:COLORS[i%COLORS.length],borderWidth:1.5,pointRadius:0,pointHoverRadius:3,tension:0.3,fill:false}));
-  datasets.push({label:'32°F Freezing',data:labels.map(()=>32),borderColor:'rgba(79,195,247,0.35)',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false,tension:0});
-  new Chart(document.getElementById('tempChart').getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'rgba(180,196,214,0.7)',font:{family:'JetBrains Mono',size:9},boxWidth:14,padding:10,filter:i=>i.text!=='32°F Freezing'}},tooltip:{backgroundColor:'rgba(6,15,30,0.95)',borderColor:'rgba(79,195,247,0.2)',borderWidth:1,titleColor:'#81d4fa',bodyColor:'#cdd6f4',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:9},callbacks:{label:i=>i.dataset.label==='32°F Freezing'?null:` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`}}},scales:{x:{ticks:{color:'rgba(90,106,138,0.7)',font:{family:'JetBrains Mono',size:8},maxTicksLimit:16,maxRotation:30},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}},y:{ticks:{color:'rgba(90,106,138,0.7)',font:{family:'JetBrains Mono',size:9},callback:v=>v+'°F'},grid:{color:'rgba(79,195,247,0.05)'},border:{color:'rgba(79,195,247,0.08)'}}}}});
-}
-
-// ── Station SWE Sparklines ─────────────────────────────────────────────────
-function buildSparklines(basin, stations) {
-  if (!basin || !basin.length) return;
-
-  // Station colors
-  const SPARK_COLORS = ['#81d4fa','#69f0ae','#ff8a65','#ce93d8','#fff176','#80deea','#f48fb1'];
-
-  const grid = document.getElementById('sparkline-grid');
-  if (!grid) return;
-
-  // Build a lookup of station name → full season series from basin_daily isn't per-station
-  // So we use what we have: show current SWE bar + sparkline from snotel_wy2026 if available
-  // For now build mini cards with latest values — sparkline charts from basin data
-  const labels = basin.map(r => r.date);
-  const basinVals = basin.map(r => r.basin_swe != null ? parseFloat(r.basin_swe) : null);
-
-  grid.innerHTML = stations.map((s, i) => {
-    const swe = s.swe_in != null ? parseFloat(s.swe_in).toFixed(1) : '—';
-    const chg = s.swe_change_24h != null
-      ? `<span style="color:${s.swe_change_24h >= 0 ? '#69f0ae' : '#ff8a65'}">${s.swe_change_24h >= 0 ? '+' : ''}${s.swe_change_24h.toFixed(2)}"</span>`
-      : '';
-    return `<div class="spark-card">
-      <div class="spark-name">${s.name}</div>
-      <div class="spark-val">${swe}<span style="font-size:0.6rem;color:var(--dim);font-weight:400"> in</span> ${chg}</div>
-      <div class="spark-sub">${s.elevation?.toLocaleString()} ft · ${s.temp_f != null ? s.temp_f.toFixed(1) + '°F' : '—'}</div>
-      <div class="spark-wrap"><canvas id="spark-${i}"></canvas></div>
-    </div>`;
-  }).join('');
-
-  // Draw per-station sparklines using basin series as proxy (replace with per-station when CSV available)
-  stations.forEach((s, i) => {
-    const ctx = document.getElementById(`spark-${i}`)?.getContext('2d');
-    if (!ctx) return;
-    // Use basin trend as shape, scale to station's latest SWE
-    const latestBasin = basinVals.filter(v => v != null).slice(-1)[0] || 1;
-    const scale = s.swe_in != null ? s.swe_in / latestBasin : 1;
-    const vals = basinVals.map(v => v != null ? parseFloat((v * scale).toFixed(1)) : null);
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data: vals,
-          borderColor: SPARK_COLORS[i % SPARK_COLORS.length],
-          borderWidth: 1.5,
-          backgroundColor: `${SPARK_COLORS[i % SPARK_COLORS.length]}18`,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 0,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: {
-          x: { display: false },
-          y: { display: false, min: 0 }
-        },
-        animation: false,
-      }
-    });
-  });
-}
-
-// ── Stream Gauges ──────────────────────────────────────────────────────────
-function buildGauges(gaugesData) {
-  const grid = document.getElementById('gauge-grid');
-  if (!grid) return;
-
-  const DEMO_GAUGES = {
-    updated: '—',
-    gauges: [
-      {id:'12082500', name:'Nisqually River', location:'nr National',         latest_cfs:4440,  change_24h:1800, peak_7d_cfs:5470,  flood_cfs:8000,  flood_alert:false, series:[]},
-      {id:'12083000', name:'Mineral Creek',   location:'nr Mineral',           latest_cfs:1180,  change_24h:250,  peak_7d_cfs:4170,  flood_cfs:3000,  flood_alert:false, series:[]},
-      {id:'12101500', name:'Puyallup River',  location:'at Puyallup',          latest_cfs:19900, change_24h:5700, peak_7d_cfs:20400, flood_cfs:25000, flood_alert:false, series:[]},
-      {id:'12099200', name:'White River',     location:'ab Boise Cr, Buckley', latest_cfs:4930,  change_24h:140,  peak_7d_cfs:5000,  flood_cfs:8000,  flood_alert:false, series:[]},
-    ]
-  };
-
-  const d = gaugesData || DEMO_GAUGES;
-  const gauges = d.gauges || [];
-  const GAUGE_COLORS = ['#81d4fa','#69f0ae','#ff8a65','#ce93d8'];
-
-  // ── 2x2 cards ────────────────────────────────────────────────────────────
-  grid.innerHTML = gauges.map((g, i) => {
-    const cfs      = g.latest_cfs != null ? g.latest_cfs.toLocaleString() : '—';
-    const chgVal   = g.change_24h;
-    const chgHtml  = chgVal != null
-      ? `<span class="gauge-chg ${chgVal >= 0 ? 'up' : 'down'}">${chgVal >= 0 ? '▲' : '▼'} ${Math.abs(chgVal).toLocaleString()} cfs</span>`
-      : '';
-    const floodPct  = g.latest_cfs && g.flood_cfs ? Math.round(g.latest_cfs / g.flood_cfs * 100) : null;
-    const floodHtml = g.flood_alert ? '<span class="flood-badge">⚠ FLOOD WATCH</span>' : '';
-    return `<div class="gauge-card ${g.flood_alert ? 'flood-warn' : ''}" style="cursor:pointer" onclick="openGaugeModal(${i})" title="Click to expand">
-      <div class="gauge-header">
-        <div>
-          <div class="gauge-name">${g.name} ${floodHtml}</div>
-          <div class="gauge-loc">${g.location}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="gauge-cfs">${cfs}<span>cfs</span></div>
-          <div class="gauge-meta">${chgHtml}${floodPct != null ? ` · ${floodPct}% of flood` : ''}</div>
-        </div>
-      </div>
-      <div class="gauge-wrap"><canvas id="gauge-${i}"></canvas></div>
-      <div style="font-size:0.48rem;color:var(--dim);letter-spacing:0.06em;margin-top:4px;opacity:0.6;">↗ click to expand</div>
-    </div>`;
-  }).join('');
-
-  // ── Sparklines with flood line + tooltip ─────────────────────────────────
-  gauges.forEach((g, i) => {
-    const ctx = document.getElementById(`gauge-${i}`)?.getContext('2d');
-    if (!ctx || !g.series || g.series.length < 2) return;
-    const step    = Math.max(1, Math.floor(g.series.length / 80));
-    const sampled = g.series.filter((_, idx) => idx % step === 0);
-    const labels  = sampled.map(v => v.dt);
-    const vals    = sampled.map(v => v.cfs);
-    const color   = GAUGE_COLORS[i % GAUGE_COLORS.length];
-    const flood   = g.flood_cfs;
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: g.name, data: vals, borderColor: color, borderWidth: 1.5,
-            backgroundColor: `${color}18`, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4 },
-          ...(flood ? [{ label: 'Flood Stage', data: labels.map(() => flood),
-            borderColor: 'rgba(255,138,101,0.5)', borderWidth: 1, borderDash: [5,4],
-            pointRadius: 0, fill: false, tension: 0 }] : [])
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(6,15,30,0.95)', borderColor: 'rgba(79,195,247,0.2)', borderWidth: 1,
-            titleColor: '#81d4fa', bodyColor: '#cdd6f4',
-            titleFont: { family: 'JetBrains Mono', size: 9 }, bodyFont: { family: 'JetBrains Mono', size: 9 },
-            callbacks: {
-              title: items => (items[0]?.label || '').replace('T',' ').slice(0,16) + ' PST',
-              label: item => item.dataset.label === 'Flood Stage'
-                ? ` ⚠ Flood: ${item.raw?.toLocaleString()} cfs`
-                : ` ${item.dataset.label}: ${item.raw?.toLocaleString()} cfs`
-            }
-          }
-        },
-        scales: {
-          x: { display: false },
-          y: { display: true, min: 0,
-            ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 },
-              maxTicksLimit: 3, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
-            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }
-          }
-        },
-        animation: false,
-      }
-    });
-  });
-
-  // ── Combined toggle chart ─────────────────────────────────────────────────
-  const combinedCtx = document.getElementById('gauge-combined')?.getContext('2d');
-  const toggleBox   = document.getElementById('gauge-toggles');
-  if (combinedCtx && gauges.some(g => g.series?.length > 1)) {
-    const allLabels = gauges.reduce((best, g) =>
-      (g.series?.length || 0) > best.length ? g.series.map(v => v.dt) : best, []);
-    const step = Math.max(1, Math.floor(allLabels.length / 100));
-    const combinedLabels = allLabels.filter((_, idx) => idx % step === 0);
-
-    const combinedDatasets = gauges.map((g, i) => {
-      const color = GAUGE_COLORS[i % GAUGE_COLORS.length];
-      const labelSet = new Map((g.series||[]).map(v => [v.dt, v.cfs]));
-      const vals = combinedLabels.map(dt => labelSet.get(dt) ?? null);
-      return { label: g.name, data: vals, borderColor: color, borderWidth: 1.5,
-        backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, pointHoverRadius: 3, hidden: false };
-    });
-
-    const combinedChart = new Chart(combinedCtx, {
-      type: 'line',
-      data: { labels: combinedLabels, datasets: combinedDatasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(6,15,30,0.95)', borderColor: 'rgba(79,195,247,0.2)', borderWidth: 1,
-            titleColor: '#81d4fa', bodyColor: '#cdd6f4',
-            titleFont: { family: 'JetBrains Mono', size: 9 }, bodyFont: { family: 'JetBrains Mono', size: 9 },
-            filter: item => item.raw != null,
-            callbacks: {
-              title: items => (items[0]?.label || '').replace('T',' ').slice(0,16) + ' PST',
-              label: item => ` ${item.dataset.label}: ${item.raw?.toLocaleString()} cfs`
-            }
-          }
-        },
-        scales: {
-          x: { ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 },
-            maxTicksLimit: 8, callback: (v, i) => { const l = combinedLabels[i]; return l ? l.slice(5,10).replace('-','/') : ''; }},
-            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }},
-          y: { min: 0, ticks: { color: 'rgba(90,106,138,0.7)', font: { family: 'JetBrains Mono', size: 8 },
-            maxTicksLimit: 5, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
-            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }}
-        },
-        animation: false,
-      }
-    });
-
-    if (toggleBox) {
-      gauges.forEach((g, i) => {
-        const color = GAUGE_COLORS[i % GAUGE_COLORS.length];
-        const btn = document.createElement('button');
-        btn.className = 'gauge-toggle active';
-        btn.textContent = g.name;
-        btn.style.borderColor = color;
-        btn.style.color = color;
-        btn.onclick = () => {
-          combinedChart.data.datasets[i].hidden = !combinedChart.data.datasets[i].hidden;
-          btn.classList.toggle('active');
-          combinedChart.update();
-        };
-        toggleBox.appendChild(btn);
-      });
+  // freezing level tile
+  const fl = S.hourlyMeta?.freezing_level;
+  let flBig='—', flNote='Not enough hourly temperatures for an estimate.';
+  if(fl){
+    if(fl.level_ft!=null){
+      flBig = `${Number(fl.level_ft).toLocaleString()}<small>ft</small>`;
+      flNote = `Snow above, rain below (roughly). ${fl.extrapolated?'Outside the stations\' 2,250–5,810 ft range, so extrapolated. ':''}Lapse ${fmt(Math.abs(fl.lapse_f_per_1000ft))}°F per 1,000 ft.`;
+    } else {
+      flBig = fl.note==='inversion' ? 'Inverted' : 'Flat';
+      flNote = fl.note==='inversion' ? 'Warmer up high than down low — a temperature inversion, so a single freezing level doesn\'t apply.' : 'Temperature barely changes with elevation right now, so the fit gives no freezing level.';
     }
   }
+  const paradiseRaw = S.temps['Paradise']?.latest;
+  $('hero-freeze').innerHTML = `
+    <div class="hero-label">Freezing level now</div>
+    <div class="hero-big">${flBig}</div>
+    <div class="hero-sub">Paradise ${fmt(paradiseRaw)}°F${fl?.time?` · ${fl.time.slice(11,16)} PST`:''}</div>
+    <div class="tile-note">${flNote}</div>`;
 
-  window._gauges      = gauges;
-  window._gaugeColors = GAUGE_COLORS;
+  // ENSO tile
+  const H=S.history, o=H?.outlook, ol=H?.oni_latest;
+  const st = phaseStats();
+  const nino = st && st['El Niño+'];
+  $('hero-enso').innerHTML = `
+    <div class="hero-label">El Niño / La Niña</div>
+    <div class="hero-big" style="font-size:1.45rem;line-height:1.15;color:${o&&/Ni(ñ|n)o/.test(o.status)?'var(--melt)':o&&/Ni(ñ|n)a/.test(o.status)?'var(--accent)':'#fff'}">${o?o.status.replace('ENSO Alert System Status:','').trim():'—'}</div>
+    <div class="hero-sub">${ol?`Latest ONI ${signed(ol.oni)} (${ol.season} ${ol.year})`:''}</div>
+    <div class="tile-note">${nino && nino.n ? `In ${nino.n} El Niño winters since ${st.first}, the Rainier stations' April 1 snowpack was <b style="color:var(--text)">${nino.median}%</b> of median (median year), and ${nino.below} of ${nino.n} came in below normal.` : 'NOAA Climate Prediction Center outlook.'} <a href="#history">More ↓</a></div>`;
 }
 
-// ── Gauge expand modal ────────────────────────────────────────────────────
-let _modalChart = null;
+// ── KPIs ──────────────────────────────────────────────────────────────
+function buildKPIs(){
+  const b=S.latest.basin||{}, st=S.stations;
+  const ch=b.swe_change_24h, dd=b.depth_change_24h, days=b.days_since_snow, melt=b.melt_alert, dens=b.density_pct;
+  const melters = st.filter(s=>s.melt_alert).map(s=>s.name);
+  const k=[
+    {l:'SWE change · 24 h', v:signed(ch,2), u:'in', cls:ch==null?'':ch>=0.1?'snow':ch<=-0.5?'warn':'', vc:ch>0?'positive':ch<0?'negative':'',
+     s: ch==null?'Rainier stations':ch>=0.1?'❄ adding water':ch<=-0.5?'⚠ losing water fast':ch<0?'settling / minor melt':'steady'},
+    {l:'Snow depth change · 24 h', v:signed(dd,1), u:'in', cls:dd!=null&&dd>=2?'snow':'', vc:dd>0?'positive':dd<0?'negative':'',
+     s: dd!=null&&dd>=2?'new snow on the ground':'average of Rainier stations'},
+    {l:'Last snow day', v: days==null?'—':days, u: days==null?'':'d ago', cls: days!=null&&days<=1?'good':days!=null&&days>=10?'warn':'',
+     s: days==null?'none yet this water year':days===0?'❄ snowing at a station today':'depth +2″ or SWE +0.2″ at any Rainier station'},
+    {l:'Melt watch', v: melt?'Alert':'Quiet', u:'', cls: melt?'alert':'good', vc: melt?'alert-red':'',
+     s: melt?`${melters.join(', ')} lost >0.5″ SWE in a day`:'no station lost >0.5″ in a day'},
+    {l:'Snow density', v: fmt(dens,0), u: dens!=null?'%':'', cls:'',
+     s: dens==null?'shown once there\'s a real pack':dens<25?'light, fresh snow':dens<35?'settled snow':'dense, ripening pack'},
+  ];
+  $('kpi-row').innerHTML = k.map((x,i)=>`<div class="kpi ${x.cls}" style="animation-delay:${i*0.05}s">
+    <div class="kpi-label">${x.l}</div><div class="kpi-val ${x.vc||''}">${x.v}<span class="kpi-unit">${x.v==='—'?'':x.u}</span></div><div class="kpi-sub">${x.s}</div></div>`).join('');
+}
 
-function openGaugeModal(idx) {
-  const g     = window._gauges?.[idx];
-  const color = window._gaugeColors?.[idx] || '#81d4fa';
-  if (!g) return;
-  // Simple expand — just alert for now, can build full modal later
-  // For now use a lightweight approach: swap to full-width inline
-  const modal = document.getElementById('gauge-modal');
-  if (!modal) {
-    // Build a quick modal on the fly
-    const el = document.createElement('div');
-    el.id = 'gauge-modal';
-    el.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(4,10,24,0.92);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
-    el.innerHTML = `<div style="background:#060f1e;border:1px solid rgba(79,195,247,0.18);border-radius:10px;padding:24px;width:min(900px,92vw);max-height:90vh;overflow-y:auto">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px">
-        <div>
-          <div style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#81d4fa" id="modal-title"></div>
-          <div style="font-size:0.6rem;color:var(--dim)" id="modal-meta"></div>
-        </div>
-        <span style="font-size:1.2rem;color:var(--dim);cursor:pointer;padding:0 6px" onclick="closeGaugeModal()">✕</span>
-      </div>
-      <div style="height:320px;margin-bottom:16px"><canvas id="modal-chart"></canvas></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px" id="modal-stats"></div>
-    </div>`;
-    document.body.appendChild(el);
-    el.addEventListener('click', e => { if (e.target === el) closeGaugeModal(); });
+// ── Season chart ──────────────────────────────────────────────────────
+let seasonChart=null, seasonSel='rainier', seasonVar='swe';
+function buildSeason(){
+  const se=S.season; if(!se){ $('season-stat').textContent='Season data not available yet.'; return; }
+  const chips=[{id:'rainier',name:'Rainier average'}].concat(S.stations.map(s=>({id:s.id,name:s.name,reg:s.group!=='rainier'})));
+  $('season-chips').innerHTML = chips.map(c=>`<button class="chip${c.id===seasonSel?' active':''}${c.reg?' reg':''}" data-id="${c.id}">${c.name}</button>`).join('');
+  $('season-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>selectSeason(b.dataset.id, true));
+  $('season-var').querySelectorAll('button').forEach(b=>b.onclick=()=>{ seasonVar=b.dataset.v; $('season-var').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b)); drawSeason(); });
+  drawSeason();
+}
+function selectSeason(id, scroll){
+  seasonSel=id;
+  $('season-chips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.id===id));
+  document.querySelectorAll('.st').forEach(c=>c.classList.toggle('sel', c.dataset.id===id));
+  drawSeason();
+  if(scroll) $('season').scrollIntoView({behavior:'smooth'});
+}
+function drawSeason(){
+  const se=S.season, wy=se.water_year, n=se.dates_n, labels=axisDates(n,wy);
+  const isR = seasonSel==='rainier';
+  const src = isR ? se.rainier : se.stations[seasonSel];
+  if(!src) return;
+  const name = isR ? 'Rainier average' : S.byId[seasonSel]?.name;
+  const swe = seasonVar==='swe';
+  const cur = swe ? src.swe : src.prec, med = swe ? src.median : src.prec_median, last = swe ? src.last : null;
+  const band = swe && !isR ? S.history?.stations?.[seasonSel]?.bands : null;
+  const hist = !isR ? S.history?.stations?.[seasonSel] : null;
+  $('season-title').innerHTML = `${name} · ${swe?'snow water equivalent':'precipitation since Oct 1'} · WY${wy}`;
+  const ds=[];
+  if(band){
+    const b=(k)=>labels.map((_,i)=>band[i]?band[i][k]:null);
+    ds.push({label:'Record low',data:b(0),borderColor:'transparent',pointRadius:0,fill:false,order:9});
+    ds.push({label:'Record high',data:b(6),borderColor:'transparent',backgroundColor:'rgba(79,195,247,0.07)',pointRadius:0,fill:'-1',order:9});
+    ds.push({label:'p25',data:b(2),borderColor:'transparent',pointRadius:0,fill:false,order:8});
+    ds.push({label:'p75',data:b(4),borderColor:'transparent',backgroundColor:'rgba(79,195,247,0.12)',pointRadius:0,fill:'-1',order:8});
   }
+  ds.push({label:'Median (1991–2020)',data:med,borderColor:'#8fa3cc',borderDash:[5,4],borderWidth:1.4,pointRadius:0,fill:false,tension:.3,order:3});
+  if(last) ds.push({label:`Last year (WY${wy-1})`,data:last,borderColor:'rgba(206,147,216,0.75)',borderWidth:1.3,pointRadius:0,fill:false,tension:.3,order:2});
+  ds.push({label:`This year (WY${wy})`,data:cur,borderColor:'#e3f6ff',backgroundColor:'rgba(129,212,250,0.10)',borderWidth:2.4,pointRadius:0,pointHoverRadius:4,fill:swe&&!band?'origin':false,tension:.3,order:1});
+  const ti = se.today_index;
+  const todayLine = {id:'today',afterDatasetsDraw(c){ if(ti==null) return; const x=c.scales.x.getPixelForValue(ti); const {top,bottom}=c.chartArea; const g=c.ctx; g.save(); g.strokeStyle='rgba(255,255,255,0.35)'; g.setLineDash([2,3]); g.beginPath(); g.moveTo(x,top); g.lineTo(x,bottom); g.stroke(); g.fillStyle='rgba(255,255,255,0.6)'; g.font='9px JetBrains Mono'; g.fillText('today',x+4,top+10); g.restore(); }};
+  if(seasonChart) seasonChart.destroy();
+  seasonChart = new Chart($('seasonChart'),{type:'line',data:{labels,datasets:ds},plugins:[todayLine],
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},interaction:{mode:'index',intersect:false},spanGaps:true,
+      plugins:{legend:{display:false},tooltip:{...TOOLTIP,filter:i=>i.raw!=null&&!['Record low','Record high','p25','p75'].includes(i.dataset.label),
+        callbacks:{title:it=>isoToNice(it[0].label,true),label:i=>` ${i.dataset.label}: ${fmt(i.raw, swe?1:2)}″`,
+          afterBody:it=>{ const i=it[0].dataIndex; if(!band||!band[i]) return ''; return ` Range on record: ${fmt(band[i][0])}–${fmt(band[i][6])}″`; }}}},
+      scales:{x:{ticks:{color:TICK,font:FONT,autoSkip:false,maxRotation:0,callback:monthTick(labels)},grid:{color:c=>labels[c.index]?.slice(8)==='01'?GRID:'transparent'},border:{color:BORDER}},
+              y:{min:0,ticks:{color:TICK,font:FONT,callback:v=>v+'″'},grid:{color:GRID},border:{color:BORDER}}}}});
+  $('season-legend').innerHTML = `<span><i style="background:#e3f6ff"></i>This year</span><span><i class="dash"></i>Median 1991–2020</span>`
+    + (last?`<span><i style="background:rgba(206,147,216,0.75)"></i>Last year</span>`:'')
+    + (band?`<span><i class="band" style="background:rgba(79,195,247,0.22)"></i>Middle half of years</span><span><i class="band" style="background:rgba(79,195,247,0.09)"></i>Record range (${hist.n_years} yrs since ${hist.first_wy})</span>`:'');
+  // stat line
+  const li = (()=>{ for(let i=cur.length-1;i>=0;i--) if(cur[i]!=null) return i; return null; })();
+  let txt='';
+  if(li!=null){
+    const v=cur[li], m=med[li];
+    txt = `<b>${isoToNice(labels[li])}:</b> ${fmt(v, swe?1:2)}″`;
+    if(m!=null) txt += ` vs median ${fmt(m, swe?1:2)}″` + (m>=1 ? ` — <b style="color:${pctColor(100*v/m)}">${Math.round(100*v/m)}%</b>` : '');
+    if(last && last[li]!=null) txt += ` · last year ${fmt(last[li])}″ on this date`;
+    if(band && band[li] && swe){ const r=rankFromBand(v,band[li]); if(r!=null && band[li][6]>=1) txt += ` · <b>${ordinal(r)} percentile</b> of ${hist.n_years} years for this date`; }
+    if(!isR && swe){ const s=S.byId[seasonSel]; if(s?.median_peak_in) txt += ` · median peak ${fmt(s.median_peak_in)}″ around ${isoToNice(s.median_peak_date)}`; }
+  }
+  if(isR) txt += `<div class="explain">Rainier average = the mean of the ${se.rainier_ids.length} Rainier stations that have NRCS medians${se.rainier_ids.length<8?'':''}. Pick a single station to see the full range of its record.</div>`;
+  $('season-stat').innerHTML = txt;
+}
 
-  document.getElementById('modal-title').textContent = g.name;
-  document.getElementById('modal-meta').textContent  = `${g.location} · USGS ${g.id} · 7-day flow`;
-
-  const chgVal = g.change_24h;
-  const floodPct = g.latest_cfs && g.flood_cfs ? Math.round(g.latest_cfs / g.flood_cfs * 100) : null;
-  document.getElementById('modal-stats').innerHTML = [
-    { label: 'Current Flow',  val: g.latest_cfs != null ? g.latest_cfs.toLocaleString() + ' cfs' : '—' },
-    { label: '24hr Change',   val: chgVal != null ? (chgVal >= 0 ? '+' : '') + chgVal.toLocaleString() + ' cfs' : '—' },
-    { label: '7-Day Peak',    val: g.peak_7d_cfs != null ? g.peak_7d_cfs.toLocaleString() + ' cfs' : '—' },
-    { label: 'Flood Stage',   val: g.flood_cfs ? g.flood_cfs.toLocaleString() + ' cfs' + (floodPct ? ` (${floodPct}%)` : '') : '—' },
-  ].map(s => `<div style="background:rgba(13,31,60,0.5);border-radius:4px;padding:8px 10px"><div style="font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:3px">${s.label}</div><div style="font-size:1rem;font-weight:700;color:#cdd6f4">${s.val}</div></div>`).join('');
-
-  if (_modalChart) { _modalChart.destroy(); _modalChart = null; }
-  const mctx = document.getElementById('modal-chart')?.getContext('2d');
-  if (mctx && g.series?.length > 1) {
-    const labels = g.series.map(v => v.dt);
-    const vals   = g.series.map(v => v.cfs);
-    _modalChart  = new Chart(mctx, {
-      type: 'line',
-      data: { labels, datasets: [
-        { label: g.name, data: vals, borderColor: color, borderWidth: 2,
-          backgroundColor: `${color}18`, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 5 },
-        ...(g.flood_cfs ? [{ label: 'Flood Stage', data: labels.map(() => g.flood_cfs),
-          borderColor: 'rgba(255,138,101,0.6)', borderWidth: 1.5, borderDash: [6,4],
-          pointRadius: 0, fill: false, tension: 0 }] : [])
-      ]},
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, tooltip: {
-          backgroundColor: 'rgba(6,15,30,0.95)', borderColor: `${color}44`, borderWidth: 1,
-          titleColor: color, bodyColor: '#cdd6f4',
-          titleFont: { family: 'JetBrains Mono', size: 10 }, bodyFont: { family: 'JetBrains Mono', size: 10 },
-          callbacks: {
-            title: items => (items[0]?.label || '').replace('T',' ').slice(0,16) + ' PST',
-            label: item => item.dataset.label === 'Flood Stage' ? ` ⚠ Flood: ${item.raw?.toLocaleString()} cfs` : ` Flow: ${item.raw?.toLocaleString()} cfs`
-          }
-        }},
-        scales: {
-          x: { ticks: { color: 'rgba(90,106,138,0.8)', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10,
-            callback: (v, i) => { const l = labels[i]; return l ? l.slice(5,10).replace('-','/') + ' ' + l.slice(11,16) : ''; }},
-            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }},
-          y: { min: 0, ticks: { color: 'rgba(90,106,138,0.8)', font: { family: 'JetBrains Mono', size: 9 },
-            callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k cfs' : v+' cfs' },
-            grid: { color: 'rgba(79,195,247,0.05)' }, border: { color: 'rgba(79,195,247,0.08)' }}
-        }
-      }
+// ── Stations ──────────────────────────────────────────────────────────
+function buildStations(){
+  const se=S.season;
+  const order=[...S.stations].sort((a,b)=>(a.group===b.group?0:a.group==='rainier'?-1:1) || b.elevation-a.elevation);
+  $('station-grid').innerHTML = order.map(s=>{
+    const t = S.temps[s.name]?.latest ?? s.temp_f;
+    return `<div class="st" data-id="${s.id}" title="Chart ${s.name}">
+      <div class="st-top"><span class="st-name">${s.name}</span><span class="st-pct" style="color:${pctColor(s.pct_median)}">${s.pct_median!=null?s.pct_median+'%':''}</span></div>
+      <div class="st-meta">${s.elevation.toLocaleString()} ft · ${t!=null?fmt(t)+'°F':'—'}${s.group==='rainier'?'':' · <span style="color:var(--warn)">regional</span>'}</div>
+      <div class="st-swe">${fmt(s.swe_in)}<span> in SWE</span></div>
+      <div class="st-row"><span>depth <b>${s.depth_in!=null?fmt(s.depth_in,0)+'″':'—'}</b></span><span>24h <b style="color:${(s.swe_change_24h||0)<0?'var(--melt)':'var(--cold)'}">${signed(s.swe_change_24h,1)}</b></span><span>med <b>${fmt(s.median_swe_in)}</b></span></div>
+      <div class="st-spark"><canvas id="sp-${s.id.replace(/:/g,'_')}"></canvas></div>
+    </div>`;}).join('');
+  document.querySelectorAll('.st').forEach(c=>c.onclick=()=>selectSeason(c.dataset.id,true));
+  if(se){
+    const ti = se.today_index ?? se.dates_n-1;
+    order.forEach(s=>{
+      const d=se.stations[s.id]; if(!d) return;
+      // last ~4 months, with the median behind it; early in the season, the median ahead too
+      const lo=Math.max(0, ti-120), hi=Math.min(se.dates_n-1, Math.max(ti, lo+150));
+      const cur=d.swe.slice(lo,ti+1), med=d.median.slice(lo,hi+1);
+      new Chart($('sp-'+s.id.replace(/:/g,'_')),{type:'line',data:{labels:med.map((_,i)=>i),datasets:[
+        {data:med,borderColor:'rgba(143,163,204,0.55)',borderDash:[3,3],borderWidth:1,pointRadius:0,tension:.3},
+        {data:cur,borderColor:pctColor(s.pct_median)==='var(--dim)'?'#81d4fa':pctColor(s.pct_median),backgroundColor:'rgba(129,212,250,0.08)',fill:'origin',borderWidth:1.5,pointRadius:0,tension:.3}]},
+        options:{responsive:true,maintainAspectRatio:false,animation:false,spanGaps:true,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false,min:0}}}});
     });
   }
-
-  document.getElementById('gauge-modal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  // elevation strip
+  const max = Math.max(1, ...S.stations.map(s=>Math.max(s.swe_in||0, s.median_swe_in||0)));
+  $('elev-list').innerHTML = [...S.stations].sort((a,b)=>b.elevation-a.elevation).map(s=>{
+    const w=100*(s.swe_in||0)/max, m=s.median_swe_in!=null?100*s.median_swe_in/max:null;
+    return `<div class="elev-row"><span class="elev-name">${s.name} · ${s.elevation.toLocaleString()}′</span>
+      <div class="elev-track"><div class="elev-fill" style="width:${w}%;background:${pctColor(s.pct_median)==='var(--dim)'?'#4fc3f7':pctColor(s.pct_median)}"></div>${m!=null?`<div class="elev-med" style="left:${m}%"></div>`:''}</div>
+      <span class="elev-val">${fmt(s.swe_in)}″${s.pct_median!=null?` · ${s.pct_median}%`:''}</span></div>`;
+  }).join('');
 }
 
-function closeGaugeModal() {
-  const el = document.getElementById('gauge-modal');
-  if (el) el.style.display = 'none';
-  document.body.style.overflow = '';
+// ── History & ENSO ────────────────────────────────────────────────────
+function phaseOf(wy){ return S.history?.phase?.[wy] || null; }
+function phaseStats(){
+  const H=S.history; if(!H?.apr1_index?.years) return null;
+  const yrs=Object.entries(H.apr1_index.years).map(([wy,v])=>({wy:+wy,pct:v.pct,phase:phaseOf(wy)})).filter(y=>y.phase);
+  if(!yrs.length) return null;
+  const group = f => { const v=yrs.filter(f).map(y=>y.pct).sort((a,b)=>a-b); return {n:v.length, median:v.length?Math.round(pctile(v,.5)):null, below:v.filter(x=>x<100).length, min:v[0], max:v[v.length-1], years:yrs.filter(f).map(y=>y.wy)}; };
+  const out={first:Math.min(...yrs.map(y=>y.wy)), all:group(()=>true)};
+  PHASES.forEach(p=>out[p]=group(y=>y.phase===p));
+  out['El Niño+']=group(y=>/El Niño/.test(y.phase));
+  out['La Niña+']=group(y=>/La Niña/.test(y.phase));
+  return out;
+}
+let histChart=null, histSel='index', histVar='apr1';
+function buildHistory(){
+  const H=S.history;
+  if(!H){ $('hist-stat').textContent='History not available yet — it builds on the first pipeline run.'; return; }
+  const chips=[{id:'index',name:'Rainier index'}].concat(Object.entries(H.stations).filter(([,s])=>s.n_years>=10).map(([id,s])=>({id,name:s.name,reg:s.group!=='rainier'})));
+  $('hist-chips').innerHTML = chips.map(c=>`<button class="chip${c.id===histSel?' active':''}${c.reg?' reg':''}" data-id="${c.id}">${c.name}</button>`).join('');
+  $('hist-chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ histSel=b.dataset.id; $('hist-chips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===b)); drawHistory(); });
+  $('hist-var').querySelectorAll('button').forEach(b=>b.onclick=()=>{ histVar=b.dataset.v; $('hist-var').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b)); drawHistory(); });
+  drawHistory(); buildEnso(); buildReview();
+}
+function linfit(xs, ys){
+  const n=xs.length; if(n<8) return null;
+  const mx=xs.reduce((a,b)=>a+b)/n, my=ys.reduce((a,b)=>a+b)/n;
+  let sxy=0,sxx=0,syy=0; xs.forEach((x,i)=>{sxy+=(x-mx)*(ys[i]-my);sxx+=(x-mx)**2;syy+=(ys[i]-my)**2;});
+  const slope=sxy/sxx, r=sxy/Math.sqrt(sxx*syy);
+  // two-sided p for r with n-2 df, t approx via normal for n>=20 (good enough for a caption)
+  const t=r*Math.sqrt((n-2)/(1-r*r));
+  return {slope, icept:my-slope*mx, r, n, t};
+}
+function drawHistory(){
+  const H=S.history; const isIdx = histSel==='index';
+  let years, vals, unit='″', title;
+  if(isIdx){
+    if(histVar!=='apr1'){ histVar='apr1'; $('hist-var').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x.dataset.v==='apr1')); }
+    years=Object.keys(H.apr1_index.years).map(Number).sort((a,b)=>a-b);
+    vals=years.map(y=>H.apr1_index.years[y].pct); unit='%';
+    title=`Rainier April 1 index · % of each station's own median`;
+  } else {
+    const st=H.stations[histSel];
+    years=Object.keys(st.years).map(Number).sort((a,b)=>a-b);
+    if(histVar==='meltout'){ vals=years.map(y=>st.years[y].meltout_doy); unit=' d'; }
+    else vals=years.map(y=>st.years[y][histVar]);
+    title=`${st.name} · ${histVar==='apr1'?'April 1 SWE':histVar==='peak'?'peak SWE':'melt-out date'} · ${st.elevation.toLocaleString()} ft`;
+  }
+  $('hist-var').querySelectorAll('button').forEach(b=>b.disabled = isIdx && b.dataset.v!=='apr1');
+  $('hist-title').textContent=title;
+  const colors=years.map(y=>PHASE_COLOR[phaseOf(y)]||'#5a6a8a');
+  const isMelt = histVar==='meltout' && !isIdx;
+  const valid=vals.filter(v=>v!=null).slice().sort((a,b)=>a-b), med=pctile(valid,.5);
+  const ds=[{type:'bar',label:title,data:vals,backgroundColor:colors.map(c=>c+'cc'),borderColor:colors,borderWidth:1,borderRadius:2,order:2}];
+  ds.push({type:'line',label:'Median of these years',data:years.map(()=>isIdx?100:med),borderColor:'rgba(255,255,255,0.45)',borderDash:[4,4],borderWidth:1,pointRadius:0,order:1});
+  // trend line for melt-out and peak
+  const xs=[],ys=[]; years.forEach((y,i)=>{ if(vals[i]!=null){xs.push(y);ys.push(vals[i]);} });
+  const fit=linfit(xs,ys);
+  if(fit && !isIdx) ds.push({type:'line',label:'Linear trend',data:years.map(y=>fit.icept+fit.slope*y),borderColor:'rgba(255,183,77,0.8)',borderWidth:1.3,pointRadius:0,order:0});
+  if(histChart) histChart.destroy();
+  const yTick = isMelt ? (v=>{ const d=wyDate(2001,Math.round(v)-1); return isoToNice(d); }) : (v=>v+(isIdx?'%':'″'));
+  histChart=new Chart($('histChart'),{data:{labels:years,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},
+    plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{title:it=>`WY${it[0].label} · ${phaseOf(it[0].label)||'—'}${S.history.oni?.[it[0].label]!=null?' (ONI '+signed(S.history.oni[it[0].label])+')':''}`,
+      label:i=> i.dataset.type==='bar' ? ` ${isMelt?isoToNice(wyDate(+i.label, i.raw-1)):fmt(i.raw, isIdx?0:1)+(isIdx?'% of median':'″')}` : (i.dataset.label==='Linear trend'?null:` median ${isMelt?isoToNice(wyDate(2001,Math.round(i.raw)-1)):fmt(i.raw,isIdx?0:1)+(isIdx?'%':'″')}`)}}},
+    scales:{x:{ticks:{color:TICK,font:FONT,maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{display:false},border:{color:BORDER}},
+            y:{min:isMelt?undefined:0,ticks:{color:TICK,font:FONT,callback:yTick},grid:{color:GRID},border:{color:BORDER}}}}});
+  $('hist-legend').innerHTML = PHASES.map(p=>`<span><i style="background:${PHASE_COLOR[p]};height:8px"></i>${p}</span>`).join('') + (fit&&!isIdx?'<span><i style="background:rgba(255,183,77,0.8)"></i>trend</span>':'');
+  // stat line
+  let txt='';
+  if(fit && !isIdx){
+    const per10 = fit.slope*10;
+    const sig = Math.abs(fit.t) >= 2.0;
+    if(isMelt) txt = `Melt-out has moved <b>${Math.abs(per10).toFixed(1)} days ${per10<0?'earlier':'later'} per decade</b> over ${fit.n} years (r = ${fit.r.toFixed(2)}${sig?'':', not statistically clear — year-to-year swings are bigger than the trend'}).`;
+    else txt = `Trend: <b>${signed(per10,1)}″ per decade</b> over ${fit.n} years (r = ${fit.r.toFixed(2)}${sig?'':' — not statistically clear; the year-to-year swings dominate'}).`;
+  }
+  if(isIdx){
+    const ranked=[...years].filter((y,i)=>vals[i]!=null).sort((a,b)=>H.apr1_index.years[a].pct-H.apr1_index.years[b].pct);
+    txt = `<span class="muted">Average of ${H.apr1_index.stations.length} long-record stations (${H.apr1_index.stations.join(', ')}), each against its own median April 1.</span><br>Lowest: ${ranked.slice(0,3).map(y=>`<b>${y}</b> (${H.apr1_index.years[y].pct}%)`).join(', ')}. Highest: ${ranked.slice(-3).reverse().map(y=>`<b>${y}</b> (${H.apr1_index.years[y].pct}%)`).join(', ')}.`;
+  }
+  $('hist-stat').innerHTML = txt;
+}
+function buildEnso(){
+  const H=S.history, o=H.outlook, st=phaseStats();
+  $('enso-issued').textContent = o?.issued ? 'NOAA CPC · '+o.issued : 'NOAA CPC';
+  let rows='';
+  if(st){
+    rows = `<table class="phase-table"><tr><th>Winter type</th><th style="text-align:right">Years</th><th style="text-align:right">Typical Apr 1</th><th style="text-align:right">Below normal</th></tr>`
+      + PHASES.map(p=>{ const g=st[p]; if(!g.n) return ''; return `<tr><td><span class="phase-dot" style="background:${PHASE_COLOR[p]}"></span>${p}</td><td class="num">${g.n}</td><td class="num" style="color:${pctColor(g.median)}">${g.median}%</td><td class="num">${g.below} of ${g.n}</td></tr>`; }).join('')
+      + `</table><div class="explain">Rainier April 1 index (${st.all.n} winters since ${st.first}), grouped by NOAA's Dec–Feb Oceanic Niño Index: ±0.5 °C for El Niño/La Niña, ±1.5 °C for strong. "Typical" is the median winter in each group. Strong El Niño years: ${st['strong El Niño'].years.join(', ')||'—'}.</div>`;
+  }
+  $('enso-panel').innerHTML = (o ? `<div class="enso-status">${o.status}</div><div class="quote">${o.synopsis} <a href="${o.url}" target="_blank" rel="noopener">CPC ↗</a></div>` : '<div class="muted" style="font-size:.62rem">NOAA outlook unavailable this run.</div>') + rows;
+}
+function buildReview(){
+  const H=S.history, wy=H.through_wy; $('review-wy').textContent='Water year '+wy;
+  const par=H.stations['679:WA:SNTL'], y=par?.years?.[wy], idx=H.apr1_index?.years?.[wy];
+  if(!y){ $('review-panel').innerHTML='<div class="muted" style="font-size:.62rem">No complete record for last year yet.</div>'; return; }
+  const all=Object.entries(par.years).filter(([,v])=>v.apr1!=null).sort((a,b)=>a[1].apr1-b[1].apr1);
+  const rank=all.findIndex(([k])=>+k===wy)+1;
+  const idxAll=Object.values(H.apr1_index.years).map(v=>v.pct).sort((a,b)=>a-b);
+  const idxRank = idx ? idxAll.filter(v=>v<idx.pct).length+1 : null;
+  const p=S.byId['679:WA:SNTL']||{};
+  const meltShift = y.meltout && p.median_meltout_date ? daysBetween(p.median_meltout_date.replace(/^\d{4}/, String(wy)), y.meltout) : null;
+  const peakShift = y.peak_date && p.median_peak_date ? daysBetween(p.median_peak_date.replace(/^\d{4}/, String(wy)), y.peak_date) : null;
+  $('review-panel').innerHTML = `<div class="review-grid">
+    <div class="review-cell"><div class="l">Rainier April 1</div><div class="v" style="color:${pctColor(idx?.pct)}">${idx?idx.pct+'%':'—'}</div><div class="s">${idxRank?`${ordinal(idxRank)} lowest of ${idxAll.length} winters`:''}${phaseOf(wy)?` · ${phaseOf(wy)} winter`:''}</div></div>
+    <div class="review-cell"><div class="l">Paradise April 1</div><div class="v">${fmt(y.apr1)}″</div><div class="s">median ${fmt(par.apr1_median)}″ · ${ordinal(rank)} lowest since ${par.first_wy}</div></div>
+    <div class="review-cell"><div class="l">Paradise peak</div><div class="v">${fmt(y.peak)}″</div><div class="s">${isoToNice(y.peak_date)}${peakShift!=null?` · ${Math.abs(peakShift)} days ${peakShift<0?'before':'after'} the median peak date`:''}${p.median_peak_in?` · median peak ${fmt(p.median_peak_in)}″`:''}</div></div>
+    <div class="review-cell"><div class="l">Paradise melt-out</div><div class="v">${isoToNice(y.meltout)}</div><div class="s">${meltShift!=null?`${Math.abs(meltShift)} days ${meltShift<0?'earlier':'later'} than the median (${isoToNice(p.median_meltout_date)})`:''}</div></div>
+  </div>`;
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGaugeModal(); });
+// ── Temps & freezing level ────────────────────────────────────────────
+function buildTemps(){
+  const T=S.temps, names=Object.keys(T).sort((a,b)=>T[b].elevation-T[a].elevation);
+  if(!names.length){ $('hourly-subtitle').textContent='no data'; return; }
+  const labels=T[names[0]].labels||[];
+  const mins=[],maxes=[],latest=[]; let fz=0;
+  names.forEach(n=>{const s=T[n]; if(s.min_temp!=null)mins.push(s.min_temp); if(s.max_temp!=null)maxes.push(s.max_temp); if(s.latest!=null)latest.push(s.latest); fz+=(s.freezing||[]).filter(Boolean).length;});
+  $('hourly-stats').innerHTML=`<div class="temp-stat"><div class="temp-stat-label">48 h low</div><div class="temp-stat-val cold">${fmt(Math.min(...mins))}°F</div></div><div class="temp-stat"><div class="temp-stat-label">48 h high</div><div class="temp-stat-val hot">${fmt(Math.max(...maxes))}°F</div></div><div class="temp-stat"><div class="temp-stat-label">Now (avg)</div><div class="temp-stat-val">${fmt(latest.reduce((a,b)=>a+b,0)/latest.length)}°F</div></div><div class="temp-stat"><div class="temp-stat-label">Hrs ≤ 32°F</div><div class="temp-stat-val cold">${Math.round(fz/names.length)} h</div></div>`;
+  $('hourly-subtitle').textContent=`${labels[0]} → ${labels[labels.length-1]} PST`;
+  const hue=e=>Math.round(30+ (e-2200)/3700*170);   // low = warm orange, high = icy blue
+  const ds=names.map(n=>({label:`${n} (${T[n].elevation.toLocaleString()}′)`,data:T[n].temps,borderColor:`hsl(${hue(T[n].elevation)},80%,68%)`,borderWidth:1.4,pointRadius:0,pointHoverRadius:3,tension:.3,spanGaps:true}));
+  ds.push({label:'32°F',data:labels.map(()=>32),borderColor:'rgba(79,195,247,0.4)',borderWidth:1,borderDash:[5,5],pointRadius:0});
+  new Chart($('tempChart'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom',labels:{color:'rgba(180,196,214,0.7)',font:{family:'JetBrains Mono',size:8},boxWidth:10,padding:6,filter:i=>i.text!=='32°F'}},tooltip:{...TOOLTIP,filter:i=>i.dataset.label!=='32°F',callbacks:{label:i=>` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`}}},
+    scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},y:{ticks:{color:TICK,font:FONT,callback:v=>v+'°'},grid:{color:GRID},border:{color:BORDER}}}}});
+}
+function buildFreeze(){
+  const m=S.hourlyMeta; if(!m){ $('freeze-explain').textContent='No hourly data yet.'; return; }
+  const labels=(m.times||[]).map(t=>t.slice(5,16).replace('-','/'));
+  const vals=m.freezing_level_series||[];
+  const stations=S.stations.map(s=>s.elevation);
+  const top=Math.max(...stations), bot=Math.min(...stations);
+  new Chart($('freezeChart'),{type:'line',data:{labels,datasets:[
+    {label:'Freezing level',data:vals,borderColor:'#ffb74d',backgroundColor:'rgba(255,183,77,0.10)',fill:'origin',borderWidth:2,pointRadius:0,tension:.3,spanGaps:false},
+    {label:'Paradise 5,150′',data:labels.map(()=>5150),borderColor:'rgba(129,212,250,0.5)',borderDash:[4,4],borderWidth:1,pointRadius:0},
+    {label:'Highest station',data:labels.map(()=>top),borderColor:'rgba(255,255,255,0.18)',borderWidth:1,pointRadius:0},
+    {label:'Lowest station',data:labels.map(()=>bot),borderColor:'rgba(255,255,255,0.18)',borderWidth:1,pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:i=>i.datasetIndex===0?` freezing level ≈ ${i.raw!=null?Number(i.raw).toLocaleString()+' ft':'n/a (inversion or flat)'}`:` ${i.dataset.label}`}}},
+      scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},
+              y:{min:0,suggestedMax:9000,ticks:{color:TICK,font:FONT,callback:v=>(v/1000)+'k′'},grid:{color:GRID},border:{color:BORDER}}}}});
+  const fl=m.freezing_level||{};
+  $('freeze-explain').innerHTML = `Orange: estimated 32°F level each hour. Dashed: Paradise. Thin lines: the stations' range (${bot.toLocaleString()}–${top.toLocaleString()} ft); above or below it the line is an extrapolation. Gaps are hours with an inversion (warmer aloft) or too few stations.`
+    + (fl.r2!=null?` Latest fit: lapse ${fmt(Math.abs(fl.lapse_f_per_1000ft))}°F/1,000 ft, r² ${fl.r2}.`:'')
+    + ` When it sits above Paradise during a storm, the rain is falling on the snowpack.`;
+}
 
-
-
-// ── Sentinel / HLS Live Map ────────────────────────────────────────────────
-let _sentinelMap = null;
-let _sentinelLayer = null;
-
-const SNOTEL_STATIONS = [
-  {name:'Paradise',        lat:46.786, lng:-121.735, elev:5150},
-  {name:'Morse Lake',      lat:46.952, lng:-121.449, elev:5400},
-  {name:'Cayuse Pass',     lat:46.870, lng:-121.527, elev:5260},
-  {name:'Corral Pass',     lat:47.014, lng:-121.434, elev:5810},
-  {name:'Bumping Ridge',   lat:46.836, lng:-121.282, elev:4600},
-  {name:'Olallie Meadows', lat:46.770, lng:-121.543, elev:4010},
-  {name:'Cougar Mountain', lat:46.900, lng:-121.191, elev:3210},
+// ── Webcams ───────────────────────────────────────────────────────────
+const CAMS=[
+  {key:'mountain',label:'Mountain',name:'Paradise · the mountain',desc:'Is the mountain out? Looking up at Rainier from Paradise.',badge:'Paradise'},
+  {key:'gh',label:'Visitor Ctr',name:'Jackson Visitor Center',desc:'The Jackson Visitor Center at Paradise, 5,400 ft.',badge:'Paradise'},
+  {key:'east',label:'East',name:'Paradise East',desc:'Looking east from the Jackson Visitor Center.',badge:'Paradise'},
+  {key:'west',label:'West',name:'Paradise West',desc:'Looking west from the Jackson Visitor Center.',badge:'Paradise'},
+  {key:'tatoosh',label:'Tatoosh',name:'Tatoosh Range',desc:'Looking south to the Tatoosh Range.',badge:'Paradise'},
+  {key:'longmire',label:'Longmire',name:'Longmire',desc:'Looking southwest from the Administration Building, 2,760 ft.',badge:'Longmire'},
 ];
-
-function gibsWmsLayer(layer, date) {
-  // GIBS WMS endpoint -- most reliable for Leaflet, supports TIME parameter
-  return L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi', {
-    layers:      layer,
-    time:        date,
-    format:      'image/jpeg',
-    transparent: false,
-    opacity:     0.9,
-    tileSize:    256,
-    attribution: 'NASA GIBS',
-  });
+let cam=CAMS[0], camT=60, camInt=null;
+function loadCam(c){
+  cam=c; const img=$('webcam-img'); img.style.opacity='.6';
+  const t=new Image(); t.onload=()=>{img.src=t.src;img.style.opacity='1';img.style.visibility='visible';}; t.onerror=()=>{img.style.opacity='1';};
+  t.src=`https://www.nps.gov/webcams-mora/${c.key}.jpg?t=${Date.now()}`;
+  $('webcam-name').textContent=c.name; $('webcam-desc').textContent=c.desc; $('webcam-badge').textContent=c.badge;
+  document.querySelectorAll('#cam-selector .chip').forEach(b=>b.classList.toggle('active',b.dataset.key===c.key));
+  camT=60; clearInterval(camInt);
+  camInt=setInterval(()=>{ camT--; $('webcam-timer').textContent=`refreshes in ${camT}s`; if(camT<=0) loadCam(cam); },1000);
+}
+function buildCams(){
+  $('cam-selector').innerHTML=CAMS.map(c=>`<button class="chip" data-key="${c.key}">${c.label}</button>`).join('');
+  $('cam-selector').querySelectorAll('.chip').forEach(b=>b.onclick=()=>loadCam(CAMS.find(c=>c.key===b.dataset.key)));
+  loadCam(cam);
 }
 
-function initSentinelMap() {
-  if (_sentinelMap) return;
-
-  // Set default date to yesterday (most recent likely available)
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const dateStr = yesterday.toISOString().slice(0, 10);
-  const dateInput = document.getElementById('sentinel-date');
-  if (dateInput) { dateInput.value = dateStr; dateInput.max = dateStr; }
-
-  _sentinelMap = L.map('sentinel-map', {
-    center: [46.853, -121.727],
-    zoom: 10,
-    zoomControl: true,
-    attributionControl: false,
-  });
-
-  // Dark basemap
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-    maxNativeZoom: 16, maxZoom: 19, opacity: 0.5, attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
-  }).addTo(_sentinelMap);
-
-  // Initial GIBS layer — HLS true color
-  const activeBtn = document.querySelector('.sentinel-layer-btn.active');
-  const layer = activeBtn?.dataset.layer || 'HLS_L30_Nadir_BRDF_Adjusted_Reflectance';
-  const res   = activeBtn?.dataset.res   || 'GoogleMapsCompatible_Level12';
-  const fmt   = activeBtn?.dataset.fmt   || 'png';
-
-  _sentinelLayer = gibsWmsLayer(layer, dateStr).addTo(_sentinelMap);
-
-  // Mt Rainier summit marker
-  L.marker([46.8523, -121.7269], {
-    icon: L.divIcon({
-      html: '<div style="color:#69f0ae;font-size:16px;line-height:1;filter:drop-shadow(0 0 4px #069)">★</div>',
-      iconSize: [20, 20], iconAnchor: [10, 10], className: ''
-    })
-  }).addTo(_sentinelMap).bindPopup('<b style="font-family:monospace">Mt. Rainier · 14,411 ft</b>');
-
-  // SNOTEL station markers
-  SNOTEL_STATIONS.forEach(s => {
-    L.circleMarker([s.lat, s.lng], {
-      radius: 5, color: '#ff8a65', fillColor: '#ff8a65',
-      fillOpacity: 0.8, weight: 1.5
-    }).addTo(_sentinelMap)
-      .bindPopup(`<span style="font-family:monospace;font-size:0.75rem"><b>${s.name}</b><br>${s.elev.toLocaleString()} ft</span>`);
-  });
-
-  // Layer toggle buttons
-  document.querySelectorAll('.sentinel-layer-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.sentinel-layer-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      updateSentinelLayer();
-    });
-  });
-
-  // Date change
-  if (dateInput) {
-    dateInput.addEventListener('change', updateSentinelLayer);
-  }
+// ── MODIS & Sentinel ──────────────────────────────────────────────────
+function imageInto(id, src, alt){
+  const w=$(id), img=new Image(); img.alt=alt;
+  img.onload=()=>{w.innerHTML=''; w.appendChild(img);};
+  img.onerror=()=>{w.innerHTML='<div class="muted" style="font-size:.65rem;padding:30px">Image not available yet</div>';};
+  img.src=src;
+}
+function buildModis(){
+  const m=S.modis;
+  imageInto('modis-img', PATHS.modisPng+'?v='+(m?.date||''), 'MODIS snow cover map of the Mt. Rainier area');
+  if(!m){ $('modis-stats').innerHTML=''; return; }
+  const age = m.date ? daysBetween(m.date, new Date().toISOString().slice(0,10)) : null;
+  const legacy = m.satellite==null;   // written by the pre-Oct-2026 code: % snow was really % clear
+  $('modis-sub').textContent = `${m.product||'MOD10A1'} · ${m.satellite||'Terra'} · 500 m`;
+  $('modis-note').innerHTML = legacy
+    ? `<div class="stale-note">⚠ Last image ${isoToNice(m.date,true)}. The NASA download stopped in May when the Earthdata token expired; fixed Oct 2026 — the next run refreshes this.</div>`
+    : age!=null && age>3 ? `<div class="stale-note">⚠ Latest usable pass ${isoToNice(m.date,true)} (${age} days ago)${m.all_cloudy?' — every pass since has been cloudy':''}.</div>`
+    : `<div class="fresh-note">✓ Pass of ${isoToNice(m.date,true)}${m.pct_cloud!=null?` · ${m.pct_cloud}% cloud`:''}</div>`;
+  if(legacy){ $('modis-stats').innerHTML=''; return; }
+  const km = v => v==null?'—':Number(v).toLocaleString();
+  $('modis-stats').innerHTML = [
+    {l:'Snow · wider area',v:m.pct_snow!=null?m.pct_snow+'%':'—',s:`${km(m.snow_km2)} km² seen`},
+    {l:'Snow · national park',v:m.park?.pct_snow!=null?m.park.pct_snow+'%':'—',s:`${km(m.park?.snow_km2)} km² seen`},
+    {l:'Cloud',v:m.pct_cloud!=null?m.pct_cloud+'%':'—',s:m.pct_cloud>50?'much of it hidden':'clear enough'},
+    {l:'Snow NDSI (mean)',v:m.avg_ndsi!=null?(m.avg_ndsi/100).toFixed(2):'—',s:'brightness of snow signal'},
+  ].map(x=>`<div class="sat-stat"><div class="l">${x.l}</div><div class="v">${x.v}</div><div class="s">${x.s}</div></div>`).join('');
+}
+function buildSentinel(){
+  const s=S.sentinel;
+  const file = s?.image || 'sentinel_latest.png';
+  imageInto('s2-img', 'dashboard/'+file+'?v='+(s?.date||''), 'Sentinel-2 true-colour image of Mt. Rainier');
+  if(!s) return;
+  const age=daysBetween(s.date, new Date().toISOString().slice(0,10));
+  $('s2-sub').textContent = `${(s.platform||'Sentinel-2').replace('sentinel','Sentinel')} · ${s.resolution||'10 m'}`;
+  $('s2-note').innerHTML = age>20 ? `<div class="stale-note">Latest clear pass ${isoToNice(s.date,true)} — winter cloud often hides the mountain for weeks.</div>` : `<div class="fresh-note">✓ ${isoToNice(s.date,true)} · ${s.cloud_pct}% cloud in the tile</div>`;
 }
 
-function updateSentinelLayer() {
-  if (!_sentinelMap || !_sentinelLayer) return;
-  const activeBtn = document.querySelector('.sentinel-layer-btn.active');
-  const layer = activeBtn?.dataset.layer;
-  const res   = activeBtn?.dataset.res;
-  const fmt   = activeBtn?.dataset.fmt;
-  const date  = document.getElementById('sentinel-date')?.value;
-  if (!layer || !date) return;
+// ── Map ───────────────────────────────────────────────────────────────
+let map=null, gibs=null, gibsLayer='MODIS_Terra_CorrectedReflectance_TrueColor';
+function gibsTile(layer, date){
+  const fmtExt = /Snow_Cover|HLS/.test(layer) ? 'png' : 'jpg';
+  const lvl = /HLS/.test(layer) ? 'GoogleMapsCompatible_Level12' : /Snow_Cover/.test(layer) ? 'GoogleMapsCompatible_Level8' : 'GoogleMapsCompatible_Level9';
+  return L.tileLayer(`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/${lvl}/{z}/{y}/{x}.${fmtExt}`,
+    {maxNativeZoom: /HLS/.test(layer)?12:/Snow_Cover/.test(layer)?8:9, maxZoom:14, opacity:/Snow_Cover/.test(layer)?0.85:1, attribution:'NASA GIBS'});
+}
+function buildMap(){
+  if(typeof L==='undefined'){ $('snow-map').innerHTML='<div class="muted" style="padding:20px;font-size:.65rem">Map library did not load.</div>'; return; }
+  const y=new Date(); y.setDate(y.getDate()-1); const ds=y.toISOString().slice(0,10);
+  const di=$('map-date'); di.value=ds; di.max=ds;
+  map=L.map('snow-map',{center:[46.92,-121.65],zoom:9,attributionControl:true,scrollWheelZoom:false});
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:16,attribution:'Esri, HERE, Garmin, © OpenStreetMap'}).addTo(map);
+  gibs=gibsTile(gibsLayer, ds).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:16,opacity:.8}).addTo(map);
+  L.marker([46.8523,-121.7603],{icon:L.divIcon({html:'<div style="color:#69f0ae;font-size:18px;line-height:1;text-shadow:0 0 6px #000">★</div>',iconSize:[18,18],iconAnchor:[9,9],className:''})})
+    .addTo(map).bindPopup('<b>Mount Rainier</b><br>14,410 ft · Columbia Crest');
+  S.stations.forEach(s=>{
+    const c=pctColor(s.pct_median), col=c==='var(--dim)'?'#81d4fa':c;
+    L.circleMarker([s.lat,s.lon],{radius:7,color:'#060f1e',weight:2,fillColor:col,fillOpacity:.95}).addTo(map)
+      .bindPopup(`<b>${s.name}</b> · ${s.elevation.toLocaleString()} ft<br>SWE ${fmt(s.swe_in)}″${s.median_swe_in!=null?` · median ${fmt(s.median_swe_in)}″`:''}${s.pct_median!=null?` · <b style="color:${col}">${s.pct_median}%</b>`:''}<br>depth ${s.depth_in!=null?fmt(s.depth_in,0)+'″':'—'} · ${s.group==='rainier'?'Rainier station':'regional (not in the Rainier average)'}<br><a href="#season" onclick="selectSeason('${s.id}')">chart this station ↑</a>`)
+      .bindTooltip(s.name,{direction:'top',offset:[0,-6]});
+  });
+  $('map-legend').innerHTML = ['<b style="color:var(--text)">% of median</b>',['#ff5252','< 50'],['#ff8a65','50–70'],['#ffb74d','70–90'],['#69f0ae','90–110'],['#4fc3f7','110–130'],['#b388ff','> 130'],['#81d4fa','too early']].map(x=>typeof x==='string'?x:`<div><i style="background:${x[0]}"></i>${x[1]}</div>`).join('');
+  document.querySelectorAll('#layer-bar .chip').forEach(b=>{
+    b.classList.toggle('active', b.dataset.layer===gibsLayer);
+    b.onclick=()=>{ gibsLayer=b.dataset.layer; document.querySelectorAll('#layer-bar .chip').forEach(x=>x.classList.toggle('active',x===b)); refreshGibs(); };
+  });
+  di.onchange=refreshGibs;
+  map.on('click',()=>map.scrollWheelZoom.enable());
+}
+function refreshGibs(){ if(!map) return; map.removeLayer(gibs); gibs=gibsTile(gibsLayer,$('map-date').value).addTo(map); gibs.bringToBack(); map.eachLayer(l=>{ if(l._url&&/World_Dark_Gray_Base/.test(l._url)) l.bringToBack(); }); }
 
-  _sentinelMap.removeLayer(_sentinelLayer);
-  _sentinelLayer = gibsWmsLayer(layer, date).addTo(_sentinelMap);
-
-  const badge = document.getElementById('sentinel-badge');
-  if (badge) badge.textContent = `🛰 ${date}`;
+// ── Gauges ────────────────────────────────────────────────────────────
+function buildGauges(){
+  const d=S.gauges; if(!d){ $('gauge-grid').innerHTML='<div class="muted" style="font-size:.65rem">Gauge data unavailable.</div>'; return; }
+  const G=d.gauges||[], COL=['#81d4fa','#69f0ae','#ff8a65','#ce93d8'];
+  $('gauge-grid').innerHTML=G.map((g,i)=>{
+    const ch=g.change_24h, fp=g.latest_cfs&&g.flood_cfs?Math.round(100*g.latest_cfs/g.flood_cfs):null;
+    return `<div class="gauge-card ${g.flood_alert?'flood-warn':''}" data-i="${i}">
+      <div class="gauge-name">${g.name} ${g.flood_alert?'<span class="flood-badge">⚠ HIGH</span>':''}</div>
+      <div class="gauge-loc">${g.location} · USGS ${g.id}</div>
+      <div class="gauge-cfs">${g.latest_cfs!=null?g.latest_cfs.toLocaleString():'—'}<span>cfs</span></div>
+      <div class="gauge-meta">${ch!=null?`<span class="gauge-chg ${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'} ${Math.abs(ch).toLocaleString()} in 24 h</span>`:''}${fp!=null?` · ${fp}% of flood flow`:''}</div>
+      <div class="gauge-wrap"><canvas id="g-${i}"></canvas></div></div>`;}).join('');
+  G.forEach((g,i)=>{
+    if(!g.series?.length) return;
+    new Chart($('g-'+i),{type:'line',data:{labels:g.series.map(v=>v.dt),datasets:[
+      {data:g.series.map(v=>v.cfs),borderColor:COL[i],backgroundColor:COL[i]+'18',fill:true,borderWidth:1.5,pointRadius:0,tension:.3}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{title:it=>it[0].label.replace('T',' ')+' PT',label:i=>` ${i.raw.toLocaleString()} cfs`}}},
+        scales:{x:{display:false},y:{min:0,ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:3,callback:v=>v>=1000?(v/1000)+'k':v},grid:{color:GRID},border:{display:false}}}}});
+  });
+  // combined, each river as % of its own flood flow so big and small rivers share an axis
+  const all=[...new Set(G.flatMap(g=>(g.series||[]).map(v=>v.dt)))].sort();
+  const ds=G.map((g,i)=>{ const m=new Map((g.series||[]).map(v=>[v.dt,v.cfs])); return {label:g.name,data:all.map(t=>m.has(t)&&g.flood_cfs?Math.round(1000*m.get(t)/g.flood_cfs)/10:null),borderColor:COL[i],borderWidth:1.6,pointRadius:0,tension:.3,spanGaps:true}; });
+  const peakPct=Math.max(0,...ds.flatMap(d=>d.data.filter(v=>v!=null)));
+  if(peakPct>=40) ds.push({label:'Approx. flood flow',data:all.map(()=>100),borderColor:'rgba(255,138,101,0.6)',borderDash:[6,4],borderWidth:1,pointRadius:0});
+  new Chart($('gauge-combined'),{type:'line',data:{labels:all,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom',labels:{color:'rgba(180,196,214,0.75)',font:{family:'JetBrains Mono',size:9},boxWidth:12}},tooltip:{...TOOLTIP,filter:i=>i.raw!=null,callbacks:{title:it=>it[0].label.replace('T',' ')+' PT',label:i=>` ${i.dataset.label}: ${i.raw}%`}}},
+    scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:8,maxRotation:0,callback:(v,i)=>{const l=all[i];return l&&l.slice(11,13)==='00'?l.slice(5,10).replace('-','/'):'';}},grid:{color:GRID},border:{color:BORDER}},
+            y:{min:0,suggestedMax:20,title:{display:true,text:'% of flood flow',color:TICK,font:FONT},ticks:{color:TICK,font:FONT,callback:v=>v+'%'},grid:{color:GRID},border:{color:BORDER}}}}});
+  document.querySelectorAll('.gauge-card').forEach(c=>c.onclick=()=>window.open(`https://waterdata.usgs.gov/monitoring-location/USGS-${G[c.dataset.i].id}/`,'_blank','noopener'));
 }
 
+// ── Health footer ─────────────────────────────────────────────────────
+function buildHealth(){
+  const today=new Date().toISOString().slice(0,10);
+  const age = iso => iso ? daysBetween(iso.slice(0,10), today) : null;
+  const items=[
+    ['SNOTEL daily', S.latest?.data_through, 2],
+    ['Hourly temperatures', S.hourlyMeta?.times?.slice(-1)[0], 1],
+    ['Snow history & ENSO', S.history?.generated, 8],
+    ['MODIS snow cover', S.modis?.date, 4],
+    ['Sentinel-2', S.sentinel?.date, 45],
+    ['River gauges', S.gauges?.updated, 1],
+  ];
+  $('health').innerHTML = items.map(([n,iso,ok])=>{ const a=age(iso); const cls = iso==null?'missing':a>ok?'stale':''; return `<div class="${cls}">${n}: ${iso?isoToNice(iso.slice(0,10),true):'missing'}${a!=null&&a>ok?` (${a} days old)`:''}</div>`; }).join('');
+}
 
 init();
-// Init map after DOM ready
-document.addEventListener('DOMContentLoaded', () => setTimeout(initSentinelMap, 500));
 </script>
 </body>
 </html>

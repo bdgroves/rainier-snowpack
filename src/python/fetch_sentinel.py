@@ -20,7 +20,9 @@ import io
 logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
 LOG = logging.getLogger(__name__)
 
-RAINIER_BBOX  = (-122.5, 46.0, -121.0, 47.5)
+RAINIER_BBOX  = (-122.05, 46.66, -121.40, 47.04)   # the mountain and its ring of valleys
+SUMMIT        = (-121.7603, 46.8523)
+MAX_NODATA    = 5.0    # % of the tile outside the swath; above this the mountain may be cut off
 CLOUD_THRESH  = 30.0
 MAX_DAYS_BACK = 30
 
@@ -33,15 +35,11 @@ DASH_DIR    = Path("dashboard")
 ARCHIVE_DIR = Path("data/sentinel_archive")
 PROC_DIR    = Path("data/processed")
 
-STATIONS = [
-    ("Paradise",        -121.735, 46.786),
-    ("Morse Lake",      -121.449, 46.952),
-    ("Cayuse Pass",     -121.527, 46.870),
-    ("Corral Pass",     -121.434, 47.014),
-    ("Bumping Ridge",   -121.282, 46.836),
-    ("Olallie Meadows", -121.543, 46.770),
-    ("Cougar Mountain", -121.191, 46.900),
-]
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from stations import STATIONS as _ST  # noqa: E402
+
+STATIONS = [(s["name"], s["lon"], s["lat"]) for s in _ST]
 
 
 def search_scenes(client, days_back=MAX_DAYS_BACK):
@@ -51,9 +49,13 @@ def search_scenes(client, days_back=MAX_DAYS_BACK):
         f"{STAC_URL}/search",
         json={
             "collections": [COLLECTION],
-            "bbox":        list(RAINIER_BBOX),
+            # the tile must contain the summit and be (nearly) full — until Oct 2026 this
+            # searched a 1.5° box, could pick a tile that only clipped its corner,
+            # and published a mostly black image
+            "intersects":  {"type": "Point", "coordinates": list(SUMMIT)},
             "datetime":    f"{start}T00:00:00Z/{end}T23:59:59Z",
-            "query":       {"eo:cloud_cover": {"lt": CLOUD_THRESH}},
+            "query":       {"eo:cloud_cover": {"lt": CLOUD_THRESH},
+                            "s2:nodata_pixel_percentage": {"lt": MAX_NODATA}},
             "sortby":      [{"field": "datetime", "direction": "desc"}],
             "limit":       10,
         },
@@ -83,68 +85,54 @@ def download_band(client, url):
 
 
 def make_true_color_png(item, client, out_path):
+    """Read just the Rainier window from the tile's 8-bit true-colour COG (the
+    'visual' asset), warped to lon/lat at ~50 m. No full-tile downloads."""
     try:
-        bands = {}
-        for band, asset_key in [("red", "B04"), ("green", "B03"), ("blue", "B02")]:
-            LOG.info("  Downloading %s (%s)...", band, asset_key)
-            if asset_key not in item["assets"]:
-                LOG.warning("  Asset %s not found", asset_key)
-                return False
-            signed = get_signed_url(client, item, asset_key)
-            data   = download_band(client, signed)
-            with rasterio.open(io.BytesIO(data)) as src:
-                transform, width, height = calculate_default_transform(
-                    src.crs, "EPSG:4326", src.width, src.height, *src.bounds
-                )
-                arr = np.zeros((height, width), dtype=np.float32)
-                reproject(
-                    source=rasterio.band(src, 1),
-                    destination=arr,
-                    src_transform=src.transform,
-                    src_crs=src.crs,
-                    dst_transform=transform,
-                    dst_crs="EPSG:4326",
-                    resampling=Resampling.bilinear,
-                )
-                lon_min, lat_min, lon_max, lat_max = RAINIER_BBOX
-                row_start = max(0, int((lat_max - transform.f) / transform.e))
-                row_end   = min(height, int((lat_min - transform.f) / transform.e))
-                col_start = max(0, int((lon_min - transform.c) / transform.a))
-                col_end   = min(width,  int((lon_max - transform.c) / transform.a))
-                bands[band] = arr[row_start:row_end, col_start:col_end]
-
-        if not all(b in bands for b in ["red", "green", "blue"]):
+        from rasterio.transform import from_bounds as _tfb
+        if "visual" not in item["assets"]:
+            LOG.warning("  no visual asset")
             return False
+        href = get_signed_url(client, item, "visual")
+        w = int((RAINIER_BBOX[2] - RAINIER_BBOX[0]) / 0.0005)
+        h = int((RAINIER_BBOX[3] - RAINIER_BBOX[1]) / 0.00035)
+        dst_t = _tfb(*RAINIER_BBOX, w, h)
+        rgb = np.zeros((3, h, w), dtype=np.uint8)
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MULTIRANGE="YES"):
+            with rasterio.open(href) as src:
+                for b in range(3):
+                    reproject(source=rasterio.band(src, b + 1), destination=rgb[b],
+                              src_transform=src.transform, src_crs=src.crs,
+                              dst_transform=dst_t, dst_crs="EPSG:4326",
+                              resampling=Resampling.average, src_nodata=0, dst_nodata=0)
+        valid = (rgb.sum(axis=0) > 0).mean()
+        if valid < 0.9:
+            LOG.warning("  only %.0f%% of the Rainier window has data — skipping", 100 * valid)
+            return False
+        img = np.clip(np.moveaxis(rgb, 0, -1).astype(np.float32) / 255.0 * 1.1, 0, 1)
 
-        def norm(a):
-            pos = a[a > 0]
-            if pos.size == 0:
-                return np.zeros_like(a)
-            p2, p98 = np.percentile(pos, [2, 98])
-            return np.clip((a - p2) / (p98 - p2 + 1e-6), 0, 1)
-
-        rgb       = np.dstack([norm(bands["red"]), norm(bands["green"]), norm(bands["blue"])])
         obs_date  = item["properties"]["datetime"][:10]
         cloud_pct = item["properties"].get("eo:cloud_cover", 0)
 
-        fig, ax = plt.subplots(figsize=(10, 9))
+        fig, ax = plt.subplots(figsize=(11, 8.5))
         fig.patch.set_facecolor("#060f1e")
         ax.set_facecolor("#060f1e")
-        ax.imshow(rgb,
+        ax.imshow(img,
                   extent=[RAINIER_BBOX[0], RAINIER_BBOX[2], RAINIER_BBOX[1], RAINIER_BBOX[3]],
                   origin="upper", interpolation="bilinear")
 
         for name, lon, lat in STATIONS:
+            if not (RAINIER_BBOX[0] <= lon <= RAINIER_BBOX[2] and RAINIER_BBOX[1] <= lat <= RAINIER_BBOX[3]):
+                continue
             ax.plot(lon, lat, "o", color="#ff8a65", markersize=7, zorder=5)
             ax.annotate(name, (lon, lat), textcoords="offset points", xytext=(6, 3),
                         color="#cdd6f4", fontsize=7, fontfamily="monospace")
 
-        ax.plot(-121.7269, 46.8523, "*", color="#69f0ae", markersize=14, zorder=6)
-        ax.annotate("Mt. Rainier\n14,411 ft", (-121.7269, 46.8523),
+        ax.plot(-121.7603, 46.8523, "*", color="#69f0ae", markersize=14, zorder=6)
+        ax.annotate("Mt. Rainier\n14,410 ft", (-121.7603, 46.8523),
                     textcoords="offset points", xytext=(8, -14),
                     color="#69f0ae", fontsize=8, fontfamily="monospace", fontweight="bold")
         ax.text(0.02, 0.02,
-                "Cloud: %.1f%%  |  Sentinel-2 L2A 10m True Color" % cloud_pct,
+                "Tile cloud: %.1f%%  |  Sentinel-2 L2A true colour, shown at ~50 m" % cloud_pct,
                 transform=ax.transAxes, color="#5a6a8a", fontsize=7,
                 fontfamily="monospace", va="bottom")
         ax.set_title("Sentinel-2 True Color -- %s\nSentinel-2 L2A 10m Copernicus" % obs_date,
@@ -157,8 +145,8 @@ def make_true_color_png(item, client, out_path):
 
         plt.tight_layout()
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(out_path, dpi=150, bbox_inches="tight",
-                    facecolor="#060f1e", edgecolor="none")
+        plt.savefig(out_path, dpi=130, bbox_inches="tight",
+                    facecolor="#060f1e", edgecolor="none", pil_kwargs={"quality": 85})
         plt.close()
         LOG.info("Saved: %s", out_path)
         return True
@@ -186,19 +174,21 @@ def main():
             scene_id  = item["id"]
             LOG.info("Trying %s (%.1f%% cloud)...", obs_date, cloud_pct)
 
-            out_png     = OUT_DIR / "sentinel_latest.png"
-            archive_png = ARCHIVE_DIR / ("sentinel_" + obs_date + ".png")
+            # JPEG: a true-colour photo is ~4x smaller than PNG, and the archive is committed to git
+            out_png     = OUT_DIR / "sentinel_latest.jpg"
+            archive_png = ARCHIVE_DIR / ("sentinel_" + obs_date + ".jpg")
 
             if archive_png.exists():
                 LOG.info("Already archived: %s", archive_png.name)
                 shutil.copy(archive_png, out_png)
-                shutil.copy(out_png, DASH_DIR / "sentinel_latest.png")
+                shutil.copy(out_png, DASH_DIR / out_png.name)
                 break
 
             if make_true_color_png(item, client, out_png):
                 shutil.copy(out_png, archive_png)
-                shutil.copy(out_png, DASH_DIR / "sentinel_latest.png")
+                shutil.copy(out_png, DASH_DIR / out_png.name)
                 meta = {
+                    "image":      out_png.name,
                     "date":       obs_date,
                     "scene_id":   scene_id,
                     "cloud_pct":  round(cloud_pct, 1),
@@ -206,7 +196,6 @@ def main():
                     "platform":   item["properties"].get("platform", "sentinel-2"),
                 }
                 (PROC_DIR / "sentinel_latest.json").write_text(json.dumps(meta, indent=2))
-                (DASH_DIR / "sentinel_latest.json").write_text(json.dumps(meta, indent=2))
                 LOG.info("Archived: %s", archive_png.name)
                 print("\n" + "="*55)
                 print("  Sentinel-2 -- %s  cloud: %.1f%%" % (obs_date, cloud_pct))

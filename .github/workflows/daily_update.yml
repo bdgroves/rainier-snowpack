@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "0 * * * *"   # Every hour
   workflow_dispatch:
+concurrency:
+  group: snowpack-update
+  cancel-in-progress: false
 jobs:
   update:
     name: Fetch · Analyze · Deploy
@@ -37,10 +40,19 @@ jobs:
         run: pixi run fetch
       - name: Fetch hourly temps
         run: pixi run fetch-hourly
+        continue-on-error: true
+      - name: Snow history + ENSO (rebuilds weekly, outlook every run)
+        run: pixi run fetch-history
+        continue-on-error: true
       - name: Fetch stream gauges
+        env:
+          USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
         run: pixi run fetch-gauges
         continue-on-error: true
       - name: Fetch MODIS snow cover
+        env:
+          EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+          EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
         run: pixi run fetch-modis
         continue-on-error: true
       - name: Fetch Sentinel-2
@@ -48,25 +60,25 @@ jobs:
         continue-on-error: true
       - name: R analysis
         run: pixi run analyze
-      - name: Copy outputs to dashboard
+        continue-on-error: true
+      - name: Publish images
+        # the page reads JSON/CSV straight from data/processed/; only images go in dashboard/
         run: |
-          cp outputs/basin_swe_timeseries.png dashboard/
-          cp outputs/all_stations_swe.png dashboard/
-          cp outputs/station_swe_bars.png dashboard/
-          cp outputs/modis_snow_cover.png dashboard/
-          cp data/processed/snotel_latest.json dashboard/
-          cp data/processed/basin_daily.csv dashboard/
-          cp data/processed/hourly_temps.json dashboard/
-          cp data/processed/modis/modis_latest.json dashboard/
-          cp data/processed/gauges_latest.json dashboard/ || true
-          cp data/processed/snotel_wy2026.csv dashboard/ || true
-          cp outputs/sentinel_latest.png dashboard/ || true
-          cp data/processed/sentinel_latest.json dashboard/ || true
+          cp outputs/modis_snow_cover.png dashboard/ 2>/dev/null || true
       - name: Commit and push
+        # Hourly runs, but commits every 3 hours unless the daily data moved or a river is rising fast —
+        # every commit is kept in git forever, and most hours only the temperatures change.
         run: |
           git config user.name  "snowpack-bot[bot]"
           git config user.email "snowpack-bot@users.noreply.github.com"
-          git add data/processed/ outputs/ dashboard/ data/modis_archive/ data/sentinel_archive/
-          git diff --staged --quiet || git commit -m "data: hourly update $(date -u +%Y-%m-%dT%H:%M)Z"
-          git pull --rebase origin main
-          git push
+          git add data/processed/ dashboard/ data/modis_archive/ data/sentinel_archive/ data/archive/
+          if git diff --staged --quiet; then echo "nothing changed"; exit 0; fi
+          HOUR=$(date -u +%H)
+          DAILY=$(git diff --staged --name-only | grep -E 'snotel_daily|snow_history|modis_latest|sentinel_latest|archive/' || true)
+          STORM=$(python3 -c "import json;g=json.load(open('data/processed/gauges_latest.json'))['gauges'];print(any(x.get('flood_alert') or ((x.get('change_24h') or 0)>0.5*max(1,(x.get('latest_cfs') or 0)-(x.get('change_24h') or 0))) for x in g))" 2>/dev/null || echo False)
+          if [ $((10#$HOUR % 3)) -ne 0 ] && [ -z "$DAILY" ] && [ "$STORM" != "True" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "quiet hour — not committing (daily files unchanged, rivers steady)"; exit 0
+          fi
+          git commit -m "data: update $(date -u +%Y-%m-%dT%H:%M)Z"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
