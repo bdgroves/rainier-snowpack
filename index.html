@@ -776,9 +776,9 @@ function buildEnso(){
   $('enso-issued').textContent = o?.issued ? 'NOAA CPC · '+o.issued : 'NOAA CPC';
   let rows='';
   if(st){
-    rows = `<table class="phase-table"><tr><th>Winter type</th><th style="text-align:right">Years</th><th style="text-align:right">Typical Apr 1</th><th style="text-align:right">Below normal</th></tr>`
-      + PHASES.map(p=>{ const g=st[p]; if(!g.n) return ''; return `<tr><td><span class="phase-dot" style="background:${PHASE_COLOR[p]}"></span>${p}</td><td class="num">${g.n}</td><td class="num" style="color:${pctColor(g.median)}">${g.median}%</td><td class="num">${g.below} of ${g.n}</td></tr>`; }).join('')
-      + `</table><div class="explain">Rainier April 1 index (${st.all.n} winters since ${st.first}), grouped by NOAA's Dec–Feb Oceanic Niño Index: ±0.5 °C for El Niño/La Niña, ±1.5 °C for strong. "Typical" is the median winter in each group. Strong El Niño years: ${st['strong El Niño'].years.join(', ')||'—'}.</div>`;
+    rows = `<table class="phase-table"><tr><th>Winter type</th><th style="text-align:right">Years</th><th style="text-align:right">Typical Apr 1</th><th style="text-align:right">Range</th><th style="text-align:right">Below normal</th></tr>`
+      + PHASES.map(p=>{ const g=st[p]; if(!g.n) return ''; return `<tr><td><span class="phase-dot" style="background:${PHASE_COLOR[p]}"></span>${p}</td><td class="num">${g.n}</td><td class="num" style="color:${pctColor(g.median)}">${g.median}%</td><td class="num muted">${g.min}–${g.max}%</td><td class="num">${g.below} of ${g.n}</td></tr>`; }).join('')
+      + `</table><div class="explain">Rainier April 1 index (${st.all.n} winters since ${st.first}), grouped by NOAA's Dec–Feb Oceanic Niño Index: ±0.5 °C for El Niño/La Niña, ±1.5 °C for strong. "Typical" is the median winter in each group. Strong El Niño years: ${st['strong El Niño'].years.join(', ')||'—'}${(()=>{ const miss=Object.entries(H.phase||{}).filter(([y,p])=>p==='strong El Niño' && +y>=st.first && +y<=H.through_wy && !H.apr1_index.years[y]).map(([y])=>y); return miss.length?` (${miss.join(', ')} isn't in the station record)`:''; })()}. With this few winters per group, one year can swing a "typical" value; the spread matters as much as the middle.</div>`;
   }
   $('enso-panel').innerHTML = (o ? `<div class="enso-status">${o.status}</div><div class="quote">${o.synopsis} <a href="${o.url}" target="_blank" rel="noopener">CPC ↗</a></div>` : '<div class="muted" style="font-size:.62rem">NOAA outlook unavailable this run.</div>') + rows;
 }
@@ -815,7 +815,7 @@ function buildTemps(){
   ds.push({label:'32°F',data:labels.map(()=>32),borderColor:'rgba(79,195,247,0.4)',borderWidth:1,borderDash:[5,5],pointRadius:0});
   new Chart($('tempChart'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{position:'bottom',labels:{color:'rgba(180,196,214,0.7)',font:{family:'JetBrains Mono',size:8},boxWidth:10,padding:6,filter:i=>i.text!=='32°F'}},tooltip:{...TOOLTIP,filter:i=>i.dataset.label!=='32°F',callbacks:{label:i=>` ${i.dataset.label}: ${i.raw!=null?i.raw+'°F':'—'}`}}},
-    scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},y:{ticks:{color:TICK,font:FONT,callback:v=>v+'°'},grid:{color:GRID},border:{color:BORDER}}}}});
+    scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:innerWidth<640?4:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},y:{ticks:{color:TICK,font:FONT,callback:v=>v+'°'},grid:{color:GRID},border:{color:BORDER}}}}});
 }
 function buildFreeze(){
   const m=S.hourlyMeta; if(!m){ $('freeze-explain').textContent='No hourly data yet.'; return; }
@@ -830,7 +830,7 @@ function buildFreeze(){
     {label:'Lowest station',data:labels.map(()=>bot),borderColor:'rgba(255,255,255,0.18)',borderWidth:1,pointRadius:0}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:i=>i.datasetIndex===0?` freezing level ≈ ${i.raw!=null?Number(i.raw).toLocaleString()+' ft':'n/a (inversion or flat)'}`:` ${i.dataset.label}`}}},
-      scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},
+      scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:innerWidth<640?4:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},
               y:{min:0,suggestedMax:9000,ticks:{color:TICK,font:FONT,callback:v=>(v/1000)+'k′'},grid:{color:GRID},border:{color:BORDER}}}}});
   const fl=m.freezing_level||{};
   $('freeze-explain').innerHTML = `Orange: estimated 32°F level each hour. Dashed: Paradise. Thin lines: the stations' range (${bot.toLocaleString()}–${top.toLocaleString()} ft); above or below it the line is an extrapolation. Gaps are hours with an inversion, a poor fit (r² < 0.5), or a level more than 4,000 ft beyond the stations.`

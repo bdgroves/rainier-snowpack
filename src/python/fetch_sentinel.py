@@ -20,7 +20,7 @@ import io
 logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
 LOG = logging.getLogger(__name__)
 
-RAINIER_BBOX  = (-122.05, 46.66, -121.40, 47.04)   # the mountain and its ring of valleys
+RAINIER_BBOX  = (-122.05, 46.62, -121.40, 47.09)   # the mountain and its ring of valleys
 SUMMIT        = (-121.7603, 46.8523)
 MAX_NODATA    = 5.0    # % of the tile outside the swath; above this the mountain may be cut off
 CLOUD_THRESH  = 30.0
@@ -124,7 +124,7 @@ def make_true_color_png(items, client, out_path):
         if valid < 0.9:
             LOG.warning("  only %.0f%% of the Rainier window has data — skipping", 100 * valid)
             return False
-        img = np.clip(np.moveaxis(rgb, 0, -1).astype(np.float32) / 255.0 * 1.1, 0, 1)
+        img = np.moveaxis(rgb, 0, -1).astype(np.float32) / 255.0   # TCI is already stretched; brightening blows out the glaciers
 
         obs_date  = item["properties"]["datetime"][:10]
         cloud_pct = max(i["properties"].get("eo:cloud_cover", 0) for i in items)
@@ -151,7 +151,7 @@ def make_true_color_png(items, client, out_path):
                 "Tile cloud: %.1f%%  |  Sentinel-2 L2A true colour, shown at ~50 m" % cloud_pct,
                 transform=ax.transAxes, color="#5a6a8a", fontsize=7,
                 fontfamily="monospace", va="bottom")
-        ax.set_title("Sentinel-2 True Color -- %s\nSentinel-2 L2A 10m Copernicus" % obs_date,
+        ax.set_title("Mount Rainier from Sentinel-2 — %s\nESA Copernicus · L2A true colour" % obs_date,
                      color="#cdd6f4", fontsize=11, fontfamily="monospace", pad=12)
         ax.set_xlabel("Longitude", color="#5a6a8a", fontsize=8, fontfamily="monospace")
         ax.set_ylabel("Latitude",  color="#5a6a8a", fontsize=8, fontfamily="monospace")
