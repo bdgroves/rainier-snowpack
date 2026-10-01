@@ -878,7 +878,7 @@ function buildModis(){
   const legacy = m.satellite==null;   // written by the pre-Oct-2026 code: % snow was really % clear
   $('modis-sub').textContent = `${m.product||'MOD10A1'} · ${m.satellite||'Terra'} · 500 m`;
   $('modis-note').innerHTML = legacy
-    ? `<div class="stale-note">⚠ Last image ${isoToNice(m.date,true)}. The NASA download stopped in May when the Earthdata token expired; fixed Oct 2026 — the next run refreshes this.</div>`
+    ? `<div class="stale-note">⚠ Last image ${isoToNice(m.date,true)}. NASA downloads have failed since the Earthdata login token expired in May; the image returns once the login is renewed.</div>`
     : age!=null && age>3 ? `<div class="stale-note">⚠ Latest usable pass ${isoToNice(m.date,true)} (${age} days ago)${m.all_cloudy?' — every pass since has been cloudy':''}.</div>`
     : `<div class="fresh-note">✓ Pass of ${isoToNice(m.date,true)}${m.pct_cloud!=null?` · ${m.pct_cloud}% cloud`:''}</div>`;
   if(legacy){ $('modis-stats').innerHTML=''; return; }
