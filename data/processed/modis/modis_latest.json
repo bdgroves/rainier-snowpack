@@ -39,7 +39,7 @@
   },
   "checked": "2026-10-01",
   "token": {
-    "login_ok": false,
+    "login_ok": true,
     "source": "secret",
     "expires": "2026-11-30"
   }
