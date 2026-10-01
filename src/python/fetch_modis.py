@@ -13,8 +13,8 @@ Products: Terra MOD10A1 first, Aqua MYD10A1 as fallback (same format). Terra
           is near the end of its life; when it stops, Aqua carries on.
 
 Snow: NDSI_Snow_Cover holds NDSI x 100 for clear land (0-100) and codes above
-      200 for cloud, night, water and fill. A pixel counts as snow at NDSI >= 10
-      (NSIDC's suggested threshold); snow % is of the clear land seen that day.
+      200 for cloud, night, water and fill. A pixel counts as snow at NDSI >= 0.40
+      (see SNOW_NDSI_MIN); snow % is of the clear land seen that day.
       (Until Oct 2026 every clear pixel counted as snow, so the % was really
       "% not cloudy".)
 
@@ -48,7 +48,9 @@ PRODUCTS      = [("MOD10A1", "61", "Terra"), ("MYD10A1", "61", "Aqua")]
 TILE          = "h09v04"
 RAINIER_BBOX  = (-122.5, 46.0, -121.0, 47.5)
 PARK_BBOX     = (-121.92, 46.73, -121.45, 47.01)   # Mt. Rainier National Park, roughly
-SNOW_NDSI_MIN = 10
+SNOW_NDSI_MIN = 40   # NDSI ≥ 0.40 = snow. NSIDC's looser 0.10 lit up bare forest at 3,000 ft
+                     # in late Sept 2026 while every SNOTEL station read zero; 0.40 is the
+                     # classic MODIS threshold and still catches the glaciers (60–100).
 CLOUD_THRESH  = 80.0   # % cloud over the wider box above which a granule is unusable
 PARK_CLOUD_MAX = 50.0  # ...and the park itself must be at least half visible
 MAX_DAYS_BACK = 14     # how far back to search for a clean pass
@@ -342,8 +344,8 @@ def make_map(tif_path, stats, obs_date):
                 fontfamily="monospace", ha="right", va="top")
 
     ax.text(0.02, 0.02,
-            f"Snow: {stats['pct_snow']}% of clear land (NDSI ≥ {SNOW_NDSI_MIN})  |  Cloud: {stats['pct_cloud']}%  |  "
-            f"green = bare · grey = cloud · mauve = doubtful snow (cloud edge / poor QA)",
+            f"Snow: {stats['pct_snow']}% of clear land (NDSI ≥ {SNOW_NDSI_MIN / 100:.2f})  |  Cloud: {stats['pct_cloud']}%  |  "
+            f"green = no snow · grey = cloud · mauve = doubtful · navy = no data",
             transform=ax.transAxes, color="#5a6a8a", fontsize=7,
             fontfamily="monospace", va="bottom")
 

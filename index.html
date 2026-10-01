@@ -361,7 +361,7 @@
         <div id="modis-note"></div>
         <div class="sat-img" id="modis-img"><div class="muted" style="font-size:.65rem">Loading satellite image…</div></div>
         <div class="sat-stats" id="modis-stats"></div>
-        <div class="explain">Snow = NDSI ≥ 0.10, as a share of the land the satellite could actually see that day (cloud excluded). The box spans the Cascades from Enumclaw to Packwood; "park" is Mount Rainier National Park.</div>
+        <div class="explain">Snow = NDSI ≥ <span id="ndsi-min">0.40</span>, as a share of the land the satellite could actually see that day (cloud excluded; snow right at a cloud edge is set aside as doubtful). The box spans the Cascades from Enumclaw to Packwood; "park" is Mount Rainier National Park.</div>
       </div>
       <div class="panel">
         <div class="panel-title">Sentinel-2 · latest clear view <span id="s2-sub">ESA Copernicus · 10 m</span></div>
@@ -882,6 +882,7 @@ function buildModis(){
     : age!=null && age>3 ? `<div class="stale-note">⚠ Latest usable pass ${isoToNice(m.date,true)} (${age} days ago)${m.all_cloudy?' — every pass since has been cloudy':''}.</div>`
     : `<div class="fresh-note">✓ Pass of ${isoToNice(m.date,true)}${m.pct_cloud!=null?` · ${m.pct_cloud}% cloud`:''}</div>`;
   if(legacy){ $('modis-stats').innerHTML=''; return; }
+  if(m.snow_ndsi_min!=null) $('ndsi-min').textContent=(m.snow_ndsi_min/100).toFixed(2);
   const km = v => v==null?'—':Number(v).toLocaleString();
   $('modis-stats').innerHTML = [
     {l:'Snow · wider area',v:m.pct_snow!=null?m.pct_snow+'%':'—',s:`${km(m.snow_km2)} km² seen`},

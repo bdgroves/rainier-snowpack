@@ -65,7 +65,8 @@ April 1 SWE, peak SWE and date, snow onset and melt-out per station; percentile 
 
 ```
 MODIS:       MOD10A1 V061 (Terra), MYD10A1 V061 (Aqua) as backup · tile h09v04
-Snow:        NDSI ≥ 0.10, as % of the clear land seen that day — wider area and the park
+Snow:        NDSI ≥ 0.40, as % of the clear land seen that day — wider area and the park;
+             snow touching cloud, or with NSIDC 'poor' QA, is set aside as doubtful
 Auth:        Earthdata token; refreshed from username/password when it expires
 Sentinel-2:  L2A true colour, same-day tiles mosaicked over the mountain, < 30% cloud
              (Microsoft Planetary Computer, windowed reads — no full-tile downloads)
@@ -214,7 +215,7 @@ pixi run analyze         # R summary + plots (to outputs/)
 
 | Value | Meaning |
 |---|---|
-| **0 – 100** | NDSI × 100 for clear land. **≥ 10 counts as snow** (NSIDC's suggested threshold). |
+| **0 – 100** | NDSI × 100 for clear land. **≥ 40 counts as snow** (NSIDC's looser 10 showed snow in bare forest in late Sept 2026). |
 | **200 / 201** | Missing / no decision |
 | **211** | Night |
 | **237 / 239** | Inland water / ocean |
