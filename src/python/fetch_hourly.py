@@ -66,11 +66,21 @@ def freezing_level(points):
         # flat or inverted profile: the fit says nothing useful about a freezing level
         res.update(level_ft=None, note="inversion" if lapse > 0.5 else "flat")
         return res
+    if r2 < 0.5:
+        # temperatures don't line up with elevation (sun on some sensors, cold pools in
+        # valleys): no honest single number
+        res.update(level_ft=None, note="scattered")
+        return res
     level = mx + (32 - my) / slope
-    res["level_ft"] = int(round(level, -2))
-    res["extrapolated"] = not (min(xs) <= level <= max(xs))
-    if level < 0:
-        res["level_ft"], res["note"] = 0, "below sea level (very cold air mass)"
+    top, bottom = max(xs), min(xs)
+    res["extrapolated"] = not (bottom <= level <= top)
+    if level > top + 4000:
+        # a straight line pushed far above the highest sensor isn't worth a number
+        res.update(level_ft=None, note="above", above_ft=int(round(top + 4000, -2)))
+    elif level < max(0, bottom - 3000):
+        res.update(level_ft=None, note="below", below_ft=int(round(max(0, bottom - 3000), -2)))
+    else:
+        res["level_ft"] = int(round(level, -2))
     return res
 
 

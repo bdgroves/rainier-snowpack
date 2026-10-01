@@ -533,9 +533,17 @@ function buildHero(){
     if(fl.level_ft!=null){
       flBig = `${Number(fl.level_ft).toLocaleString()}<small>ft</small>`;
       flNote = `Snow above, rain below (roughly). ${fl.extrapolated?'Outside the stations\' 2,250–5,810 ft range, so extrapolated. ':''}Lapse ${fmt(Math.abs(fl.lapse_f_per_1000ft))}°F per 1,000 ft.`;
+    } else if(fl.note==='above'){
+      flBig = `> ${Number(fl.above_ft).toLocaleString()}<small>ft</small>`;
+      flNote = 'Above freezing at every station, and well above the mountain\'s snowpack — any precipitation now is rain.';
+    } else if(fl.note==='below'){
+      flBig = `< ${Number(fl.below_ft).toLocaleString()}<small>ft</small>`;
+      flNote = 'Below freezing at every station — snow to the lowest valleys.';
     } else {
-      flBig = fl.note==='inversion' ? 'Inverted' : 'Flat';
-      flNote = fl.note==='inversion' ? 'Warmer up high than down low — a temperature inversion, so a single freezing level doesn\'t apply.' : 'Temperature barely changes with elevation right now, so the fit gives no freezing level.';
+      flBig = fl.note==='inversion' ? 'Inverted' : fl.note==='scattered' ? 'Unclear' : 'Flat';
+      flNote = fl.note==='inversion' ? 'Warmer up high than down low — a temperature inversion, so a single freezing level doesn\'t apply.'
+        : fl.note==='scattered' ? 'Station temperatures don\'t line up with elevation right now (sun, valley cold pools), so no single freezing level fits.'
+        : 'Temperature barely changes with elevation right now, so the fit gives no freezing level.';
     }
   }
   const paradiseRaw = S.temps['Paradise']?.latest;
@@ -825,7 +833,7 @@ function buildFreeze(){
       scales:{x:{ticks:{color:TICK,font:{family:'JetBrains Mono',size:8},maxTicksLimit:8,maxRotation:0},grid:{color:GRID},border:{color:BORDER}},
               y:{min:0,suggestedMax:9000,ticks:{color:TICK,font:FONT,callback:v=>(v/1000)+'k′'},grid:{color:GRID},border:{color:BORDER}}}}});
   const fl=m.freezing_level||{};
-  $('freeze-explain').innerHTML = `Orange: estimated 32°F level each hour. Dashed: Paradise. Thin lines: the stations' range (${bot.toLocaleString()}–${top.toLocaleString()} ft); above or below it the line is an extrapolation. Gaps are hours with an inversion (warmer aloft) or too few stations.`
+  $('freeze-explain').innerHTML = `Orange: estimated 32°F level each hour. Dashed: Paradise. Thin lines: the stations' range (${bot.toLocaleString()}–${top.toLocaleString()} ft); above or below it the line is an extrapolation. Gaps are hours with an inversion, a poor fit (r² < 0.5), or a level more than 4,000 ft beyond the stations.`
     + (fl.r2!=null?` Latest fit: lapse ${fmt(Math.abs(fl.lapse_f_per_1000ft))}°F/1,000 ft, r² ${fl.r2}.`:'')
     + ` When it sits above Paradise during a storm, the rain is falling on the snowpack.`;
 }
