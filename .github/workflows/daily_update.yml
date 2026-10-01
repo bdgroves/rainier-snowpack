@@ -37,7 +37,10 @@ jobs:
           chmod 600 ~/.netrc
           echo "EARTHDATA_TOKEN=${EARTHDATA_TOKEN}" >> $GITHUB_ENV
       - name: Fetch SNOTEL
-        run: pixi run fetch
+        # on failure, the last lines of output become an annotation (readable without log access)
+        run: |
+          pixi run fetch > fetch.log 2>&1 || { cat fetch.log; echo "::error title=fetch_snotel::$(tail -25 fetch.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat fetch.log
       - name: Fetch hourly temps
         run: pixi run fetch-hourly
         continue-on-error: true
