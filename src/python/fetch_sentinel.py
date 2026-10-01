@@ -67,14 +67,26 @@ def search_scenes(client, days_back=MAX_DAYS_BACK):
     return items
 
 
+_TOKENS = {}
+
+
 def get_signed_url(client, item, asset):
+    """Planetary Computer SAS token, fetched once per collection (it lasts about an
+    hour) with backoff — asking for one per tile ran into HTTP 429."""
+    import time
     href = item["assets"][asset]["href"]
     collection = item["collection"]
-    r = client.get(f"{TOKEN_URL}/{collection}", timeout=15)
-    if r.status_code == 200:
-        token = r.json().get("token", "")
-        return f"{href}?{token}"
-    return href
+    if collection not in _TOKENS:
+        for wait in (0, 5, 15, 40):
+            time.sleep(wait)
+            r = client.get(f"{TOKEN_URL}/{collection}", timeout=15)
+            if r.status_code == 200:
+                _TOKENS[collection] = r.json().get("token", "")
+                break
+            LOG.warning("  SAS token: HTTP %s", r.status_code)
+        else:
+            raise RuntimeError("no Planetary Computer SAS token")
+    return f"{href}?{_TOKENS[collection]}"
 
 
 def download_band(client, url):
