@@ -1,0 +1,23 @@
+name: Probe
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install requests
+      - env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: python tools/probe.py
+      - run: |
+          git config user.name "snowpack-bot[bot]"
+          git config user.email "snowpack-bot@users.noreply.github.com"
+          git checkout --orphan probe-out
+          git rm -rq --cached .
+          git add -f tools/probe_out.json
+          git commit -qm "probe output"
+          git push -f origin probe-out

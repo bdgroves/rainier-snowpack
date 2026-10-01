@@ -1,0 +1,22 @@
+name: Screenshots
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  shoot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm i playwright@1.47 && npx playwright install --with-deps chromium
+      - run: mkdir -p tools/shots && node tools/shoot.mjs
+      - name: Publish to the shots branch (keeps main clean)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "snowpack-bot@users.noreply.github.com"
+          git checkout --orphan shots
+          git rm -rq --cached .
+          git add -f tools/shots
+          git commit -qm "Screenshots of the live site"
+          git push -f origin shots
