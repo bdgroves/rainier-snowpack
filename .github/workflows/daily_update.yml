@@ -42,27 +42,39 @@ jobs:
           pixi run fetch > fetch.log 2>&1 || { cat fetch.log; echo "::error title=fetch_snotel::$(tail -25 fetch.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
           cat fetch.log
       - name: Fetch hourly temps
-        run: pixi run fetch-hourly
+        run: |
+          pixi run fetch-hourly > fetch-hourly.log 2>&1 || { cat fetch-hourly.log; echo "::error title=fetch_hourly::$(tail -20 fetch-hourly.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat fetch-hourly.log
         continue-on-error: true
       - name: Snow history + ENSO (rebuilds weekly, outlook every run)
-        run: pixi run fetch-history
+        run: |
+          pixi run fetch-history > fetch-history.log 2>&1 || { cat fetch-history.log; echo "::error title=fetch_history::$(tail -20 fetch-history.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat fetch-history.log
         continue-on-error: true
       - name: Fetch stream gauges
         env:
           USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
-        run: pixi run fetch-gauges
+        run: |
+          pixi run fetch-gauges > fetch-gauges.log 2>&1 || { cat fetch-gauges.log; echo "::error title=fetch_gauges::$(tail -20 fetch-gauges.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat fetch-gauges.log
         continue-on-error: true
       - name: Fetch MODIS snow cover
         env:
           EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
           EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
-        run: pixi run fetch-modis
+        run: |
+          pixi run fetch-modis > fetch-modis.log 2>&1 || { cat fetch-modis.log; echo "::error title=fetch_modis::$(tail -20 fetch-modis.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat fetch-modis.log
         continue-on-error: true
       - name: Fetch Sentinel-2
-        run: pixi run fetch-sentinel
+        run: |
+          pixi run fetch-sentinel > fetch-sentinel.log 2>&1 || { cat fetch-sentinel.log; echo "::error title=fetch_sentinel::$(tail -20 fetch-sentinel.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat fetch-sentinel.log
         continue-on-error: true
       - name: R analysis
-        run: pixi run analyze
+        run: |
+          pixi run analyze > analyze.log 2>&1 || { cat analyze.log; echo "::error title=R::$(tail -20 analyze.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          cat analyze.log
         continue-on-error: true
       - name: Publish images
         # the page reads JSON/CSV straight from data/processed/; only images go in dashboard/

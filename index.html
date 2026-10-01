@@ -494,7 +494,7 @@ function buildHero(){
     else if(pp!=null && pct<75 && pp<75) sentence += ` Precipitation is only ${pp}% of median too: a <b>dry snow drought</b> — the storms haven't come.`;
     else if(pp!=null && pct>=110 && pp>=110) sentence += ` Precipitation is ${pp}% of median: a wet winter, and it's staying as snow.`;
   } else {
-    big = ty==null ? '0.0<small>in</small>' : `${fmt(ty)}<small>in</small>`;
+    big = ty==null ? '—' : `${fmt(ty)}<small>in</small>`;
     label = 'mean snow water · Rainier stations';
     sentence = `The snow season is just starting. % of median waits until the normal pack passes 1″`
       + (startDate ? ` — around <b>${isoToNice(startDate)}</b> on the Rainier stations.` : '.')
