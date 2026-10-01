@@ -96,6 +96,18 @@ def get_token():
     """A valid Earthdata bearer token: the secret if unexpired, else a fresh one."""
     token = os.environ.get("EARTHDATA_TOKEN", "").strip()
     exp = _jwt_exp(token) if token else None
+    # check the login every run, so a bad password shows up now, not when the token dies
+    creds = _credentials()
+    if creds:
+        try:
+            r = requests.post("https://urs.earthdata.nasa.gov/api/users/find_or_create_token",
+                              auth=creds, timeout=60)
+            TOKEN_INFO["login_ok"] = r.status_code == 200
+            if r.status_code != 200:
+                print(f"::warning::Earthdata login failed (HTTP {r.status_code}) — fix EARTHDATA_USERNAME/PASSWORD "
+                      f"before the token expires")
+        except Exception as e:
+            LOG.warning("login check: %s", e)
     if token and exp and exp > time.time() + 3600:
         TOKEN_INFO.update(source="secret", expires=time.strftime("%Y-%m-%d", time.gmtime(exp)))
         LOG.info("Using EARTHDATA_TOKEN (expires %s)", TOKEN_INFO["expires"])
