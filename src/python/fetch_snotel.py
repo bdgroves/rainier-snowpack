@@ -253,8 +253,13 @@ def main():
                  "prec_median": filled(season[sid]["prec_median"]),
                  "last": filled(season[sid]["last"])} for sid in rain_ids}
 
+    # a station with a big hole in last year's record (Mowich lost most of WY2026)
+    # is left out of the last-year line rather than breaking it
+    use = {key: [s for s in rain_ids if sum(v is not None for v in agg[s][key]) >= 0.95 * len(dates)]
+           for key in ("median", "prec_median", "last")}
+
     def strict_mean(key, i, nd=1):
-        v = [agg[s][key][i] for s in rain_ids]
+        v = [agg[s][key][i] for s in use[key]]
         return None if any(x is None for x in v) or not v else round(sum(v) / len(v), nd)
 
     def mean_of(key, i, ids):
@@ -325,7 +330,7 @@ def main():
     pd.DataFrame(rows).to_csv(PROC_DIR / "snotel_daily.csv", index=False)
     pd.DataFrame(basin_rows).to_csv(PROC_DIR / "basin_daily.csv", index=False)
     season_out = {"water_year": wy, "start": str(start), "dates_n": len(dates), "today_index": pos.get(str(today)),
-                  "rainier_ids": rain_ids, "rainier": rainier, "stations": season}
+                  "rainier_ids": rain_ids, "rainier_last_ids": use["last"], "rainier": rainier, "stations": season}
     (PROC_DIR / "snotel_season.json").write_text(json.dumps(season_out, separators=(",", ":")))
     (PROC_DIR / "snotel_latest.json").write_text(json.dumps({
         "updated": str(today),
