@@ -234,6 +234,29 @@ def main():
 
     # ── Rainier average: stations in the rainier group that have NRCS medians ─
     rain_ids = [s["id"] for s in STATIONS if s["group"] == "rainier" and any(v is not None for v in season[s["id"]]["median"])]
+
+    # For the Rainier average lines every station must count every day, or the line
+    # jumps when a station drops in or out. AWDB leaves the median blank where it is
+    # zero (low stations, early and late season), so a blank median is 0; short gaps
+    # in last year's record are filled by straight-line interpolation.
+    def filled(series, zero_blank=False, max_gap=10):
+        out = list(series)
+        if zero_blank:
+            return [0.0 if v is None else v for v in out]
+        known = [i for i, v in enumerate(out) if v is not None]
+        for a, b in zip(known, known[1:]):
+            if 1 < b - a <= max_gap + 1:
+                for k in range(a + 1, b):
+                    out[k] = out[a] + (out[b] - out[a]) * (k - a) / (b - a)
+        return out
+    agg = {sid: {"median": filled(season[sid]["median"], True),
+                 "prec_median": filled(season[sid]["prec_median"]),
+                 "last": filled(season[sid]["last"])} for sid in rain_ids}
+
+    def strict_mean(key, i, nd=1):
+        v = [agg[s][key][i] for s in rain_ids]
+        return None if any(x is None for x in v) or not v else round(sum(v) / len(v), nd)
+
     def mean_of(key, i, ids):
         v = [season[s][key][i] for s in ids if season[s][key][i] is not None]
         return (sum(v) / len(v), len(v)) if v else (None, 0)
@@ -242,16 +265,16 @@ def main():
     basin_rows = []
     for i, d in enumerate(dates):
         # matched pairs only, so a missing station can't shift the ratio
-        pairs = [(season[s]["swe"][i], season[s]["median"][i]) for s in rain_ids
-                 if season[s]["swe"][i] is not None and season[s]["median"][i] is not None]
+        pairs = [(season[s]["swe"][i], agg[s]["median"][i]) for s in rain_ids
+                 if season[s]["swe"][i] is not None]
         ppairs = [(season[s]["prec"][i], season[s]["prec_median"][i]) for s in rain_ids
                   if season[s]["prec"][i] is not None and season[s]["prec_median"][i] is not None]
         rainier["swe"].append(r1(sum(p[0] for p in pairs) / len(pairs)) if pairs else None)
         rainier["n"].append(len(pairs))
-        rainier["median"].append(r1(mean_of("median", i, rain_ids)[0]))
-        rainier["last"].append(r1(mean_of("last", i, rain_ids)[0]))
+        rainier["median"].append(strict_mean("median", i))
+        rainier["last"].append(strict_mean("last", i))
         rainier["prec"].append(r1(sum(p[0] for p in ppairs) / len(ppairs), 2) if ppairs else None)
-        rainier["prec_median"].append(r1(mean_of("prec_median", i, rain_ids)[0], 2))
+        rainier["prec_median"].append(strict_mean("prec_median", i, 2))
         if d <= str(today):
             all_swe = [season[s["id"]]["swe"][i] for s in STATIONS if season[s["id"]]["swe"][i] is not None]
             all_dep = [season[s["id"]]["depth"][i] for s in STATIONS if season[s["id"]]["depth"][i] is not None]
@@ -271,6 +294,9 @@ def main():
         row["swe_delta"] = round(row["rainier_swe"] - prev_swe, 2) if row["rainier_swe"] is not None and prev_swe is not None else None
 
     # current Rainier index from each station's latest value
+    for s in latest_list:                      # blank median = zero median (see filled())
+        if s["id"] in rain_ids and s["swe_in"] is not None and s["median_swe_in"] is None:
+            s["median_swe_in"] = 0.0
     rs = [s for s in latest_list if s["id"] in rain_ids and s["swe_in"] is not None and s["median_swe_in"] is not None]
     sum_swe, sum_med = sum(s["swe_in"] for s in rs), sum(s["median_swe_in"] for s in rs)
     rp = [s for s in latest_list if s["id"] in rain_ids and s["precip_wytd_in"] is not None and s["precip_median_in"]]
