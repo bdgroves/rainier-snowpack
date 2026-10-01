@@ -226,16 +226,19 @@ def reproject_to_wgs84(hdf_path, tif_path):
     LOG.info("Reprojected: %s", tif_path.name)
 
 
-CLOUD_EDGE_PX = 2   # snow pixels this close to cloud are treated as cloud
+CLOUD_EDGE_PX = 1   # snow pixels touching cloud are set aside as doubtful
+DOUBTFUL      = 248  # our own code (unused by NSIDC) for snow we don't trust
 
 
 def read_clean(ds, bbox):
-    """NDSI for a box with doubtful snow pixels turned into cloud (250).
+    """NDSI for a box with doubtful snow pixels recoded DOUBTFUL.
 
-    Doubtful = NSIDC basic QA worse than 'good' (≥ 2), or within CLOUD_EDGE_PX
-    pixels of a cloud pixel. Cloud edges and thin cloud are the classic MODIS
-    false snow; the first fixed run (28 Sep 2026) showed "snow" over the
-    lowlands west of the mountain, all of it at cloud edges."""
+    Doubtful = NSIDC basic QA 'poor' (3), or touching a cloud pixel. Cloud edges
+    are the classic MODIS false snow: the first run with a working token (28 Sep
+    2026) showed "snow" over the lowlands west of the mountain, all at cloud
+    edges. A stricter rule (QA ≥ 2, 2-px buffer) also threw out Rainier's and
+    Adams's glaciers, so it was relaxed. Doubtful pixels count as neither snow
+    nor clear land."""
     win = from_bounds(*bbox, ds.transform)
     data = ds.read(1, window=win).astype(np.int16)
     qa = ds.read(2, window=win) if ds.count >= 2 else np.zeros_like(data)
@@ -247,9 +250,9 @@ def read_clean(ds, bbox):
         grown[:, 1:] |= near[:, :-1]; grown[:, :-1] |= near[:, 1:]
         near = grown
     snow = (data >= SNOW_NDSI_MIN) & (data <= 100)
-    doubtful = snow & ((qa >= 2) & (qa <= 3) | near)
+    doubtful = snow & ((qa == 3) | near)
     out = data.copy()
-    out[doubtful] = 250
+    out[doubtful] = DOUBTFUL
     return out, int(doubtful.sum())
 
 
@@ -263,6 +266,7 @@ def _area_stats(data):
         "pct_cloud": round(100 * cloud.sum() / seen, 1) if seen else None,
         "avg_ndsi":  round(float(data[snow].mean()), 1) if snow.any() else None,
         "snow_pixels": int(snow.sum()), "clear_pixels": int(land.sum()), "cloud_pixels": int(cloud.sum()),
+        "doubtful_pixels": int((data == DOUBTFUL).sum()),
         "snow_km2": round(float(snow.sum()) * 0.2146, 0),   # 463 m MODIS pixel ≈ 0.2146 km²
     }
 
@@ -294,6 +298,7 @@ def make_map(tif_path, stats, obs_date):
     # snow-free clear land is drawn dark green, cloud grey, everything else (water, night, fill) background
     cloud = np.where(data == 250, 1.0, np.nan)
     bare  = np.where((data >= 0) & (data < SNOW_NDSI_MIN), 1.0, np.nan)
+    doubt = np.where(data == DOUBTFUL, 1.0, np.nan)
 
     fig, ax = plt.subplots(figsize=(10, 9))
     fig.patch.set_facecolor("#060f1e")
@@ -307,6 +312,8 @@ def make_map(tif_path, stats, obs_date):
                    vmin=0, vmax=100, interpolation="nearest")
 
     ax.imshow(bare, extent=extent, origin="upper", cmap=mcolors.ListedColormap(["#2b3a2e"]),
+              interpolation="nearest")
+    ax.imshow(doubt, extent=extent, origin="upper", cmap=mcolors.ListedColormap(["#6b5a7a"]),
               interpolation="nearest")
     cmap_cloud = mcolors.ListedColormap(["#3a3a4a"])
     ax.imshow(cloud, extent=extent, origin="upper", cmap=cmap_cloud,
@@ -335,7 +342,8 @@ def make_map(tif_path, stats, obs_date):
                 fontfamily="monospace", ha="right", va="top")
 
     ax.text(0.02, 0.02,
-            f"Snow: {stats['pct_snow']}% of clear land (NDSI ≥ {SNOW_NDSI_MIN})  |  Cloud: {stats['pct_cloud']}%",
+            f"Snow: {stats['pct_snow']}% of clear land (NDSI ≥ {SNOW_NDSI_MIN})  |  Cloud: {stats['pct_cloud']}%  |  "
+            f"green = bare · grey = cloud · mauve = doubtful snow (cloud edge / poor QA)",
             transform=ax.transAxes, color="#5a6a8a", fontsize=7,
             fontfamily="monospace", va="bottom")
 
