@@ -49,15 +49,14 @@ def search_scenes(client, days_back=MAX_DAYS_BACK):
         f"{STAC_URL}/search",
         json={
             "collections": [COLLECTION],
-            # the tile must contain the summit and be (nearly) full — until Oct 2026 this
-            # searched a 1.5° box, could pick a tile that only clipped its corner,
-            # and published a mostly black image
-            "intersects":  {"type": "Point", "coordinates": list(SUMMIT)},
+            # The Rainier window straddles MGRS tiles, so every tile touching it is
+            # fetched and same-day tiles are mosaicked (main). Until Oct 2026 one
+            # tile was used, and it could cover only a corner — a mostly black image.
+            "bbox":        list(RAINIER_BBOX),
             "datetime":    f"{start}T00:00:00Z/{end}T23:59:59Z",
-            "query":       {"eo:cloud_cover": {"lt": CLOUD_THRESH},
-                            "s2:nodata_pixel_percentage": {"lt": MAX_NODATA}},
+            "query":       {"eo:cloud_cover": {"lt": CLOUD_THRESH}},
             "sortby":      [{"field": "datetime", "direction": "desc"}],
-            "limit":       10,
+            "limit":       40,
         },
         timeout=30,
     )
@@ -84,26 +83,31 @@ def download_band(client, url):
     return r.content
 
 
-def make_true_color_png(item, client, out_path):
-    """Read just the Rainier window from the tile's 8-bit true-colour COG (the
-    'visual' asset), warped to lon/lat at ~50 m. No full-tile downloads."""
+def make_true_color_png(items, client, out_path):
+    """Read just the Rainier window from each same-day tile's 8-bit true-colour COG
+    (the 'visual' asset), warped to lon/lat at ~50 m and mosaicked. No full-tile
+    downloads."""
     try:
         from rasterio.transform import from_bounds as _tfb
-        if "visual" not in item["assets"]:
-            LOG.warning("  no visual asset")
-            return False
-        href = get_signed_url(client, item, "visual")
         w = int((RAINIER_BBOX[2] - RAINIER_BBOX[0]) / 0.0005)
         h = int((RAINIER_BBOX[3] - RAINIER_BBOX[1]) / 0.00035)
         dst_t = _tfb(*RAINIER_BBOX, w, h)
         rgb = np.zeros((3, h, w), dtype=np.uint8)
-        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MULTIRANGE="YES"):
-            with rasterio.open(href) as src:
-                for b in range(3):
-                    reproject(source=rasterio.band(src, b + 1), destination=rgb[b],
-                              src_transform=src.transform, src_crs=src.crs,
-                              dst_transform=dst_t, dst_crs="EPSG:4326",
-                              resampling=Resampling.average, src_nodata=0, dst_nodata=0)
+        for item in items:
+            if "visual" not in item["assets"]:
+                continue
+            href = get_signed_url(client, item, "visual")
+            part = np.zeros((3, h, w), dtype=np.uint8)
+            with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MULTIRANGE="YES"):
+                with rasterio.open(href) as src:
+                    for b in range(3):
+                        reproject(source=rasterio.band(src, b + 1), destination=part[b],
+                                  src_transform=src.transform, src_crs=src.crs,
+                                  dst_transform=dst_t, dst_crs="EPSG:4326",
+                                  resampling=Resampling.average, src_nodata=0, dst_nodata=0)
+            fill = (rgb.sum(axis=0) == 0) & (part.sum(axis=0) > 0)
+            rgb[:, fill] = part[:, fill]
+        item = items[0]
         valid = (rgb.sum(axis=0) > 0).mean()
         if valid < 0.9:
             LOG.warning("  only %.0f%% of the Rainier window has data — skipping", 100 * valid)
@@ -111,7 +115,7 @@ def make_true_color_png(item, client, out_path):
         img = np.clip(np.moveaxis(rgb, 0, -1).astype(np.float32) / 255.0 * 1.1, 0, 1)
 
         obs_date  = item["properties"]["datetime"][:10]
-        cloud_pct = item["properties"].get("eo:cloud_cover", 0)
+        cloud_pct = max(i["properties"].get("eo:cloud_cover", 0) for i in items)
 
         fig, ax = plt.subplots(figsize=(11, 8.5))
         fig.patch.set_facecolor("#060f1e")
@@ -168,11 +172,14 @@ def main():
             LOG.warning("No clear scenes found -- exiting")
             raise SystemExit(0)
 
-        for item in scenes:
-            obs_date  = item["properties"]["datetime"][:10]
-            cloud_pct = item["properties"].get("eo:cloud_cover", 100)
-            scene_id  = item["id"]
-            LOG.info("Trying %s (%.1f%% cloud)...", obs_date, cloud_pct)
+        by_date = {}
+        for it in scenes:
+            by_date.setdefault(it["properties"]["datetime"][:10], []).append(it)
+        for obs_date, items in sorted(by_date.items(), reverse=True):
+            item      = items[0]
+            cloud_pct = max(i["properties"].get("eo:cloud_cover", 100) for i in items)
+            scene_id  = ",".join(i["id"] for i in items)
+            LOG.info("Trying %s: %d tile(s), worst %.1f%% cloud", obs_date, len(items), cloud_pct)
 
             # JPEG: a true-colour photo is ~4x smaller than PNG, and the archive is committed to git
             out_png     = OUT_DIR / "sentinel_latest.jpg"
@@ -184,7 +191,7 @@ def main():
                 shutil.copy(out_png, DASH_DIR / out_png.name)
                 break
 
-            if make_true_color_png(item, client, out_png):
+            if make_true_color_png(items, client, out_png):
                 shutil.copy(out_png, archive_png)
                 shutil.copy(out_png, DASH_DIR / out_png.name)
                 meta = {

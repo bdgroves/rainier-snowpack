@@ -254,7 +254,7 @@
   </header>
 
   <nav class="jump">
-    <a href="#now">Now</a><a href="#season">Season</a><a href="#stations">Stations</a><a href="#history">45 winters</a>
+    <a href="#now">Now</a><a href="#season">Season</a><a href="#stations">Stations</a><a href="#history">History &amp; El Niño</a>
     <a href="#weather">Freezing level</a><a href="#eyes">Webcam &amp; satellites</a><a href="#rivers">Rivers</a><a href="#about">How it works</a>
   </nav>
 
@@ -295,7 +295,7 @@
     </div>
 
     <!-- ═══ HISTORY ═══ -->
-    <div class="section-head" id="history"><h2>45 winters, and what El Niño means here</h2>
+    <div class="section-head" id="history"><h2>Four decades of winters, and what El Niño means here</h2>
       <p>April 1 is the date water managers use to size up a winter. Bars are coloured by that winter's ENSO phase (NOAA's Oceanic Niño Index for Dec–Feb).</p></div>
     <div class="three">
       <div class="panel">
@@ -548,12 +548,14 @@ function buildHero(){
   // ENSO tile
   const H=S.history, o=H?.outlook, ol=H?.oni_latest;
   const st = phaseStats();
-  const nino = st && st['El Niño+'];
+  const strongNext = o && /strong/i.test(o.synopsis+' '+o.status);
+  const nino = st && (strongNext && st['strong El Niño'].n ? st['strong El Niño'] : st['El Niño+']);
+  const ninoLabel = strongNext && st && st['strong El Niño'].n ? 'strong El Niño' : 'El Niño';
   $('hero-enso').innerHTML = `
     <div class="hero-label">El Niño / La Niña</div>
     <div class="hero-big" style="font-size:1.45rem;line-height:1.15;color:${o&&/Ni(ñ|n)o/.test(o.status)?'var(--melt)':o&&/Ni(ñ|n)a/.test(o.status)?'var(--accent)':'#fff'}">${o?o.status.replace('ENSO Alert System Status:','').trim():'—'}</div>
     <div class="hero-sub">${ol?`Latest ONI ${signed(ol.oni)} (${ol.season} ${ol.year})`:''}</div>
-    <div class="tile-note">${nino && nino.n ? `In ${nino.n} El Niño winters since ${st.first}, the Rainier stations' April 1 snowpack was <b style="color:var(--text)">${nino.median}%</b> of median (median year), and ${nino.below} of ${nino.n} came in below normal.` : 'NOAA Climate Prediction Center outlook.'} <a href="#history">More ↓</a></div>`;
+    <div class="tile-note">${o?o.synopsis.split('.')[0]+'. ':''}${nino && nino.n ? `In the ${nino.n} ${ninoLabel} winters since ${st.first}, Rainier's April 1 snowpack was typically <b style="color:${pctColor(nino.median)}">${nino.median}%</b> of median; ${nino.below} of ${nino.n} came in below normal.` : ''} <a href="#history">More ↓</a></div>`;
 }
 
 // ── KPIs ──────────────────────────────────────────────────────────────
