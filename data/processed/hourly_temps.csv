@@ -1,7 +1,4 @@
 datetime,station_name,elevation_ft,temp_f
-2026-10-02 00:00,Paradise,5150,48.7
-2026-10-02 01:00,Paradise,5150,47.1
-2026-10-02 02:00,Paradise,5150,46.4
 2026-10-02 03:00,Paradise,5150,45.9
 2026-10-02 04:00,Paradise,5150,47.1
 2026-10-02 05:00,Paradise,5150,46.4
@@ -44,9 +41,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Paradise,5150,58.3
 2026-10-03 19:00,Paradise,5150,57.4
 2026-10-03 20:00,Paradise,5150,56.5
-2026-10-02 00:00,Cayuse Pass,5260,49.8
-2026-10-02 01:00,Cayuse Pass,5260,49.8
-2026-10-02 02:00,Cayuse Pass,5260,49.3
+2026-10-03 21:00,Paradise,5150,54.5
+2026-10-03 22:00,Paradise,5150,52.9
+2026-10-03 23:00,Paradise,5150,55.0
+2026-10-04 00:00,Paradise,5150,53.6
+2026-10-04 01:00,Paradise,5150,51.8
+2026-10-04 02:00,Paradise,5150,52.5
 2026-10-02 03:00,Cayuse Pass,5260,49.3
 2026-10-02 04:00,Cayuse Pass,5260,49.1
 2026-10-02 05:00,Cayuse Pass,5260,48.9
@@ -89,9 +89,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Cayuse Pass,5260,57.6
 2026-10-03 19:00,Cayuse Pass,5260,57.6
 2026-10-03 20:00,Cayuse Pass,5260,56.5
-2026-10-02 00:00,Morse Lake,5400,47.1
-2026-10-02 01:00,Morse Lake,5400,45.5
-2026-10-02 02:00,Morse Lake,5400,44.6
+2026-10-03 21:00,Cayuse Pass,5260,55.4
+2026-10-03 22:00,Cayuse Pass,5260,55.4
+2026-10-03 23:00,Cayuse Pass,5260,55.4
+2026-10-04 00:00,Cayuse Pass,5260,54.7
+2026-10-04 01:00,Cayuse Pass,5260,54.3
+2026-10-04 02:00,Cayuse Pass,5260,54.3
 2026-10-02 03:00,Morse Lake,5400,43.9
 2026-10-02 04:00,Morse Lake,5400,43.2
 2026-10-02 05:00,Morse Lake,5400,43.0
@@ -134,9 +137,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Morse Lake,5400,47.8
 2026-10-03 19:00,Morse Lake,5400,45.9
 2026-10-03 20:00,Morse Lake,5400,44.6
-2026-10-02 00:00,Corral Pass,5810,47.8
-2026-10-02 01:00,Corral Pass,5810,47.1
-2026-10-02 02:00,Corral Pass,5810,46.2
+2026-10-03 21:00,Morse Lake,5400,43.7
+2026-10-03 22:00,Morse Lake,5400,43.2
+2026-10-03 23:00,Morse Lake,5400,42.8
+2026-10-04 00:00,Morse Lake,5400,42.3
+2026-10-04 01:00,Morse Lake,5400,42.6
+2026-10-04 02:00,Morse Lake,5400,42.6
 2026-10-02 03:00,Corral Pass,5810,46.4
 2026-10-02 04:00,Corral Pass,5810,45.3
 2026-10-02 05:00,Corral Pass,5810,44.6
@@ -179,9 +185,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Corral Pass,5810,55.2
 2026-10-03 19:00,Corral Pass,5810,53.6
 2026-10-03 20:00,Corral Pass,5810,52.9
-2026-10-02 00:00,Bumping Ridge,4600,47.1
-2026-10-02 01:00,Bumping Ridge,4600,47.3
-2026-10-02 02:00,Bumping Ridge,4600,47.5
+2026-10-03 21:00,Corral Pass,5810,51.8
+2026-10-03 22:00,Corral Pass,5810,52.2
+2026-10-03 23:00,Corral Pass,5810,52.5
+2026-10-04 00:00,Corral Pass,5810,51.4
+2026-10-04 01:00,Corral Pass,5810,50.5
+2026-10-04 02:00,Corral Pass,5810,53.1
 2026-10-02 03:00,Bumping Ridge,4600,49.5
 2026-10-02 04:00,Bumping Ridge,4600,49.8
 2026-10-02 05:00,Bumping Ridge,4600,48.2
@@ -224,9 +233,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Bumping Ridge,4600,52.7
 2026-10-03 19:00,Bumping Ridge,4600,50.9
 2026-10-03 20:00,Bumping Ridge,4600,49.8
-2026-10-02 00:00,Skate Creek,3770,48.4
-2026-10-02 01:00,Skate Creek,3770,48.4
-2026-10-02 02:00,Skate Creek,3770,48.0
+2026-10-03 21:00,Bumping Ridge,4600,48.9
+2026-10-03 22:00,Bumping Ridge,4600,48.4
+2026-10-03 23:00,Bumping Ridge,4600,48.0
+2026-10-04 00:00,Bumping Ridge,4600,47.5
+2026-10-04 01:00,Bumping Ridge,4600,46.6
+2026-10-04 02:00,Bumping Ridge,4600,46.6
 2026-10-02 03:00,Skate Creek,3770,48.0
 2026-10-02 04:00,Skate Creek,3770,47.7
 2026-10-02 05:00,Skate Creek,3770,48.9
@@ -269,9 +281,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Skate Creek,3770,56.5
 2026-10-03 19:00,Skate Creek,3770,62.4
 2026-10-03 20:00,Skate Creek,3770,56.5
-2026-10-02 00:00,Mowich,3170,55.2
-2026-10-02 01:00,Mowich,3170,54.5
-2026-10-02 02:00,Mowich,3170,55.2
+2026-10-03 21:00,Skate Creek,3770,56.7
+2026-10-03 22:00,Skate Creek,3770,61.9
+2026-10-03 23:00,Skate Creek,3770,59.5
+2026-10-04 00:00,Skate Creek,3770,55.2
+2026-10-04 01:00,Skate Creek,3770,59.5
+2026-10-04 02:00,Skate Creek,3770,55.8
 2026-10-02 03:00,Mowich,3170,54.0
 2026-10-02 04:00,Mowich,3170,53.6
 2026-10-02 05:00,Mowich,3170,53.2
@@ -314,9 +329,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Mowich,3170,58.1
 2026-10-03 19:00,Mowich,3170,59.2
 2026-10-03 20:00,Mowich,3170,62.4
-2026-10-02 00:00,Huckleberry Creek,2250,47.1
-2026-10-02 01:00,Huckleberry Creek,2250,46.2
-2026-10-02 02:00,Huckleberry Creek,2250,45.0
+2026-10-03 21:00,Mowich,3170,62.1
+2026-10-03 22:00,Mowich,3170,60.6
+2026-10-03 23:00,Mowich,3170,60.8
+2026-10-04 00:00,Mowich,3170,59.0
+2026-10-04 01:00,Mowich,3170,59.9
+2026-10-04 02:00,Mowich,3170,60.4
 2026-10-02 03:00,Huckleberry Creek,2250,45.1
 2026-10-02 04:00,Huckleberry Creek,2250,43.0
 2026-10-02 05:00,Huckleberry Creek,2250,42.6
@@ -359,9 +377,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Huckleberry Creek,2250,57.2
 2026-10-03 19:00,Huckleberry Creek,2250,53.2
 2026-10-03 20:00,Huckleberry Creek,2250,52.3
-2026-10-02 00:00,Olallie Meadows,4010,49.6
-2026-10-02 01:00,Olallie Meadows,4010,50.7
-2026-10-02 02:00,Olallie Meadows,4010,51.4
+2026-10-03 21:00,Huckleberry Creek,2250,50.5
+2026-10-03 22:00,Huckleberry Creek,2250,49.3
+2026-10-03 23:00,Huckleberry Creek,2250,48.6
+2026-10-04 00:00,Huckleberry Creek,2250,47.8
+2026-10-04 01:00,Huckleberry Creek,2250,48.0
+2026-10-04 02:00,Huckleberry Creek,2250,47.1
 2026-10-02 03:00,Olallie Meadows,4010,51.8
 2026-10-02 04:00,Olallie Meadows,4010,52.2
 2026-10-02 05:00,Olallie Meadows,4010,51.4
@@ -404,9 +425,12 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Olallie Meadows,4010,59.5
 2026-10-03 19:00,Olallie Meadows,4010,58.3
 2026-10-03 20:00,Olallie Meadows,4010,57.6
-2026-10-02 00:00,Cougar Mountain,3210,50.5
-2026-10-02 01:00,Cougar Mountain,3210,50.0
-2026-10-02 02:00,Cougar Mountain,3210,50.0
+2026-10-03 21:00,Olallie Meadows,4010,56.5
+2026-10-03 22:00,Olallie Meadows,4010,55.2
+2026-10-03 23:00,Olallie Meadows,4010,55.2
+2026-10-04 00:00,Olallie Meadows,4010,55.9
+2026-10-04 01:00,Olallie Meadows,4010,55.0
+2026-10-04 02:00,Olallie Meadows,4010,55.9
 2026-10-02 03:00,Cougar Mountain,3210,50.7
 2026-10-02 04:00,Cougar Mountain,3210,50.5
 2026-10-02 05:00,Cougar Mountain,3210,49.6
@@ -449,3 +473,9 @@ datetime,station_name,elevation_ft,temp_f
 2026-10-03 18:00,Cougar Mountain,3210,61.9
 2026-10-03 19:00,Cougar Mountain,3210,62.1
 2026-10-03 20:00,Cougar Mountain,3210,61.2
+2026-10-03 21:00,Cougar Mountain,3210,60.8
+2026-10-03 22:00,Cougar Mountain,3210,60.6
+2026-10-03 23:00,Cougar Mountain,3210,60.1
+2026-10-04 00:00,Cougar Mountain,3210,59.9
+2026-10-04 01:00,Cougar Mountain,3210,60.8
+2026-10-04 02:00,Cougar Mountain,3210,60.6
