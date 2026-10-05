@@ -1,11 +1,11 @@
 "date","station_triplet","station_name","elevation_ft","group","swe_in","depth_in","temp_f","precip_in","precip_wytd_in","median_swe_in","median_precip_wytd_in","pct_median"
-2026-10-03,"418:WA:SNTL","Corral Pass",5810,"rainier",0.1,0,51.4,0.1,0.1,0,0.1,NA
-2026-10-03,"642:WA:SNTL","Morse Lake",5400,"rainier",0,0,42.3,0,0,0,0.2,NA
-2026-10-03,"1085:WA:SNTL","Cayuse Pass",5260,"rainier",0.1,NA,54.7,NA,NA,0,NA,NA
+2026-10-04,"418:WA:SNTL","Corral Pass",5810,"rainier",0.1,0,52.7,0,0.1,0,0.2,NA
+2026-10-04,"642:WA:SNTL","Morse Lake",5400,"rainier",0,0,43.9,0,0,0,0.2,NA
+2026-10-04,"1085:WA:SNTL","Cayuse Pass",5260,"rainier",0.1,NA,54.3,NA,NA,0,NA,NA
 2026-10-03,"679:WA:SNTL","Paradise",5150,"rainier",0,0,53.6,NA,NA,0,0.4,NA
-2026-10-03,"375:WA:SNTL","Bumping Ridge",4600,"rainier",0.1,0,47.5,NA,NA,0,0.2,NA
-2026-10-03,"672:WA:SNTL","Olallie Meadows",4010,"regional",0,0,55.9,0,0,0,0.2,NA
-2026-10-03,"1257:WA:SNTL","Skate Creek",3770,"rainier",0,0,55.2,NA,NA,NA,NA,NA
-2026-10-03,"420:WA:SNTL","Cougar Mountain",3210,"regional",0.6,0,59.9,NA,NA,0,0.2,NA
+2026-10-04,"375:WA:SNTL","Bumping Ridge",4600,"rainier",0.1,0,50.2,NA,NA,0,0.2,NA
+2026-10-04,"672:WA:SNTL","Olallie Meadows",4010,"regional",0,0,54.5,0,0,0,0.5,NA
+2026-10-04,"1257:WA:SNTL","Skate Creek",3770,"rainier",0,0,50.9,NA,0,NA,NA,NA
+2026-10-04,"420:WA:SNTL","Cougar Mountain",3210,"regional",0.6,0,52.7,NA,NA,0,0.5,NA
 2026-10-03,"941:WA:SNTL","Mowich",3170,"rainier",0.3,0,59,0,0,0,0.2,NA
-2026-10-03,"928:WA:SNTL","Huckleberry Creek",2250,"rainier",0.1,0,47.8,NA,0,0,0.1,NA
+2026-10-04,"928:WA:SNTL","Huckleberry Creek",2250,"rainier",0.1,0,46,0,0,0,0.1,NA
