@@ -24,8 +24,6 @@
   .grid-bg{position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;z-index:0;pointer-events:none;}
   .wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 28px 48px;}
   a{color:var(--cold);}
-  .bg-home{display:block;position:relative;z-index:50;padding:8px 16px 0;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:inherit;opacity:.65;text-decoration:none;width:max-content}
-  .bg-home:hover{opacity:1;text-decoration:underline}
 
   header{padding:24px 0 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);margin-bottom:14px;animation:fadeDown .6s ease both;}
   @keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
@@ -237,7 +235,7 @@
 </style>
 </head>
 <body>
-<a class="bg-home" href="https://brooksgroves.com/">&larr; brooksgroves.com</a>
+<nav class="bg-bar" aria-label="brooksgroves.com"><a href="https://brooksgroves.com/">&larr; brooksgroves.com</a><a href="https://brooksgroves.com/hydrology.html">Hydrology</a><a href="https://github.com/bdgroves/rainier-snowpack">Code</a></nav><style>.bg-bar{display:flex;flex-wrap:wrap;gap:4px 16px;position:relative;z-index:950;padding:8px 16px 0;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em}.bg-bar a{color:inherit;opacity:.65;text-decoration:none}.bg-bar a:hover,.bg-bar a:focus-visible{opacity:1;text-decoration:underline}</style>
 <div class="grid-bg"></div>
 <div class="wrap">
 
