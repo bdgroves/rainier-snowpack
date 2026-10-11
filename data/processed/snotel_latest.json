@@ -1,8 +1,8 @@
 {
- "updated": "2026-10-10",
- "generated": "2026-10-10T18:16Z",
+ "updated": "2026-10-11",
+ "generated": "2026-10-11T01:36Z",
  "water_year": 2027,
- "wy_day": 10,
+ "wy_day": 11,
  "data_through": "2026-10-09",
  "index": {
   "stations": [
@@ -26,7 +26,7 @@
  "basin": {
   "swe_change_24h": 0.01,
   "depth_change_24h": 0.5,
-  "days_since_snow": 1,
+  "days_since_snow": 2,
   "melt_alert": false,
   "density_pct": null
  },
@@ -104,7 +104,7 @@
    "precip_pct_median": 18,
    "swe_change_24h": 0.0,
    "depth_change_24h": 2.0,
-   "days_since_snow": 1,
+   "days_since_snow": 2,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 57.8,
