@@ -1,8 +1,8 @@
 {
- "updated": "2026-10-14",
- "generated": "2026-10-14T18:22Z",
+ "updated": "2026-10-15",
+ "generated": "2026-10-15T01:16Z",
  "water_year": 2027,
- "wy_day": 14,
+ "wy_day": 15,
  "data_through": "2026-10-13",
  "index": {
   "stations": [
@@ -26,7 +26,7 @@
  "basin": {
   "swe_change_24h": 0.08,
   "depth_change_24h": 0.4,
-  "days_since_snow": 1,
+  "days_since_snow": 2,
   "melt_alert": false,
   "density_pct": null
  },
@@ -77,7 +77,7 @@
    "precip_pct_median": null,
    "swe_change_24h": 0.1,
    "depth_change_24h": 2.0,
-   "days_since_snow": 1,
+   "days_since_snow": 2,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 65.3,
@@ -104,7 +104,7 @@
    "precip_pct_median": 7,
    "swe_change_24h": 0.0,
    "depth_change_24h": 1.0,
-   "days_since_snow": 5,
+   "days_since_snow": 6,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 57.8,
@@ -131,7 +131,7 @@
    "precip_pct_median": 20,
    "swe_change_24h": 0.2,
    "depth_change_24h": 0.0,
-   "days_since_snow": 1,
+   "days_since_snow": 2,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 38.2,
@@ -239,7 +239,7 @@
    "precip_pct_median": 0,
    "swe_change_24h": 0.2,
    "depth_change_24h": 0.0,
-   "days_since_snow": 1,
+   "days_since_snow": 2,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 3.9,
