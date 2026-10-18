@@ -1,8 +1,8 @@
 {
- "updated": "2026-10-17",
- "generated": "2026-10-17T21:18Z",
+ "updated": "2026-10-18",
+ "generated": "2026-10-18T03:32Z",
  "water_year": 2027,
- "wy_day": 17,
+ "wy_day": 18,
  "data_through": "2026-10-16",
  "index": {
   "stations": [
@@ -26,7 +26,7 @@
  "basin": {
   "swe_change_24h": 0.0,
   "depth_change_24h": -0.1,
-  "days_since_snow": 2,
+  "days_since_snow": 3,
   "melt_alert": false,
   "density_pct": null
  },
@@ -104,7 +104,7 @@
    "precip_pct_median": 5,
    "swe_change_24h": 0.0,
    "depth_change_24h": 0.0,
-   "days_since_snow": 8,
+   "days_since_snow": 9,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 57.8,
@@ -131,7 +131,7 @@
    "precip_pct_median": 18,
    "swe_change_24h": 0.0,
    "depth_change_24h": 0.0,
-   "days_since_snow": 2,
+   "days_since_snow": 3,
    "melt_alert": false,
    "density_pct": null,
    "median_peak_in": 38.2,
