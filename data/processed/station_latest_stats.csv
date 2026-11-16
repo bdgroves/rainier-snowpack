@@ -1,11 +1,11 @@
 "date","station_triplet","station_name","elevation_ft","group","swe_in","depth_in","temp_f","precip_in","precip_wytd_in","median_swe_in","median_precip_wytd_in","pct_median"
-2026-11-14,"418:WA:SNTL","Corral Pass",5810,"rainier",0.3,4,32.5,0.2,3.7,2.2,8.5,14
-2026-11-14,"642:WA:SNTL","Morse Lake",5400,"rainier",2.7,6,34.5,0.4,6.7,2.4,11.9,112
-2026-11-14,"1085:WA:SNTL","Cayuse Pass",5260,"rainier",0.3,NA,35.1,NA,NA,2.1,12.2,14
-2026-11-14,"679:WA:SNTL","Paradise",5150,"rainier",0,0,36.9,0.4,8.6,3.2,18.3,0
-2026-11-14,"375:WA:SNTL","Bumping Ridge",4600,"rainier",0.2,0,37,0,5.6,0.6,10.6,NA
-2026-11-14,"672:WA:SNTL","Olallie Meadows",4010,"regional",0.1,1,38.8,0.1,7.5,1,20.9,10
-2026-11-14,"1257:WA:SNTL","Skate Creek",3770,"rainier",0,0,40.5,0.2,6.3,NA,NA,NA
-2026-11-14,"420:WA:SNTL","Cougar Mountain",3210,"regional",0,1,42.3,0,7.9,0,15.4,NA
-2026-11-14,"941:WA:SNTL","Mowich",3170,"rainier",0.2,0,46.2,0.2,4.7,0,9.1,NA
-2026-11-14,"928:WA:SNTL","Huckleberry Creek",2250,"rainier",0.2,1,46.4,0,2.9,0,6.3,NA
+2026-11-15,"418:WA:SNTL","Corral Pass",5810,"rainier",0.5,4,25.9,0.2,3.9,2.3,8.9,22
+2026-11-15,"642:WA:SNTL","Morse Lake",5400,"rainier",2.8,8,30.9,0.7,7.4,2.6,12.1,108
+2026-11-15,"1085:WA:SNTL","Cayuse Pass",5260,"rainier",0.2,NA,30.7,NA,NA,2.6,12.4,8
+2026-11-15,"679:WA:SNTL","Paradise",5150,"rainier",0,0,27.5,0.7,9.3,3.3,18.5,0
+2026-11-15,"375:WA:SNTL","Bumping Ridge",4600,"rainier",0.2,0,30.9,0.6,6.2,0.6,10.6,NA
+2026-11-15,"672:WA:SNTL","Olallie Meadows",4010,"regional",0.1,2,32.7,0.3,7.8,1.2,21.1,8
+2026-11-15,"1257:WA:SNTL","Skate Creek",3770,"rainier",0,0,32.2,0.9,7.2,NA,NA,NA
+2026-11-15,"420:WA:SNTL","Cougar Mountain",3210,"regional",0,0,35.1,0.6,8.5,0,15.8,NA
+2026-11-15,"941:WA:SNTL","Mowich",3170,"rainier",0.1,0,35.8,0.1,4.8,0,9.4,NA
+2026-11-15,"928:WA:SNTL","Huckleberry Creek",2250,"rainier",0.1,1,37.2,0.5,3.4,0,6.6,NA
