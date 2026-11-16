@@ -1,14 +1,14 @@
 {
-  "pct_snow": 38.0,
-  "pct_cloud": 16.0,
-  "avg_ndsi": 54.3,
-  "snow_pixels": 5776,
-  "clear_pixels": 15198,
-  "cloud_pixels": 2896,
-  "doubtful_pixels": 48,
-  "snow_km2": 1240.0,
-  "masked_snow_pixels": 48,
-  "date": "2026-11-01",
+  "pct_snow": 10.0,
+  "pct_cloud": 69.3,
+  "avg_ndsi": 57.5,
+  "snow_pixels": 563,
+  "clear_pixels": 5632,
+  "cloud_pixels": 12726,
+  "doubtful_pixels": 474,
+  "snow_km2": 121.0,
+  "masked_snow_pixels": 474,
+  "date": "2026-11-02",
   "tile": "h09v04",
   "satellite": "Terra",
   "product": "MOD10A1",
@@ -22,14 +22,14 @@
     47.5
   ],
   "park": {
-    "pct_snow": 80.7,
-    "pct_cloud": 1.6,
-    "avg_ndsi": 63.1,
-    "snow_pixels": 784,
-    "clear_pixels": 971,
-    "cloud_pixels": 16,
-    "doubtful_pixels": 28,
-    "snow_km2": 168.0,
+    "pct_snow": 74.8,
+    "pct_cloud": 68.3,
+    "avg_ndsi": 60.6,
+    "snow_pixels": 226,
+    "clear_pixels": 302,
+    "cloud_pixels": 650,
+    "doubtful_pixels": 166,
+    "snow_km2": 48.0,
     "bbox": [
       -121.92,
       46.73,
@@ -37,10 +37,11 @@
       47.01
     ]
   },
-  "checked": "2026-11-15",
+  "checked": "2026-11-16",
   "token": {
     "login_ok": true,
     "source": "secret",
     "expires": "2026-11-30"
-  }
+  },
+  "all_cloudy": true
 }
