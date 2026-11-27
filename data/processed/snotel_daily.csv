@@ -111,9 +111,9 @@ date,station_triplet,station_name,elevation_ft,group,swe_in,depth_in,temp_f,prec
 2026-11-21,1085:WA:SNTL,Cayuse Pass,5260,rainier,0.6,3.0,26.6,,,3.9,15.0
 2026-11-22,1085:WA:SNTL,Cayuse Pass,5260,rainier,0.7,4.0,26.6,,,3.9,15.8
 2026-11-23,1085:WA:SNTL,Cayuse Pass,5260,rainier,0.8,3.0,30.7,,,4.2,16.2
-2026-11-24,1085:WA:SNTL,Cayuse Pass,5260,rainier,1.0,4.0,34.9,,,5.2,16.4
-2026-11-25,1085:WA:SNTL,Cayuse Pass,5260,rainier,1.1,,34.5,,,5.3,16.8
-2026-11-26,1085:WA:SNTL,Cayuse Pass,5260,rainier,1.7,,32.7,,,5.4,17.2
+2026-11-24,1085:WA:SNTL,Cayuse Pass,5260,rainier,1.0,5.0,34.9,,,5.2,16.4
+2026-11-25,1085:WA:SNTL,Cayuse Pass,5260,rainier,1.1,6.0,34.5,,,5.3,16.8
+2026-11-26,1085:WA:SNTL,Cayuse Pass,5260,rainier,1.7,11.0,32.7,,,5.4,17.2
 2026-11-27,1085:WA:SNTL,Cayuse Pass,5260,rainier,,,,,,6.0,17.4
 2026-10-01,642:WA:SNTL,Morse Lake,5400,rainier,0.0,0.0,47.1,0.0,0.0,0.0,0.0
 2026-10-02,642:WA:SNTL,Morse Lake,5400,rainier,0.0,0.0,40.3,0.0,0.0,0.0,0.2

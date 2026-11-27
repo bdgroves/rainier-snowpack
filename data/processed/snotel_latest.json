@@ -1,6 +1,6 @@
 {
  "updated": "2026-11-27",
- "generated": "2026-11-27T13:42Z",
+ "generated": "2026-11-27T22:31Z",
  "water_year": 2027,
  "wy_day": 58,
  "data_through": "2026-11-26",
@@ -25,10 +25,10 @@
  },
  "basin": {
   "swe_change_24h": 0.44,
-  "depth_change_24h": 1.5,
+  "depth_change_24h": 2.0,
   "days_since_snow": 1,
   "melt_alert": false,
-  "density_pct": 34.6
+  "density_pct": 29.2
  },
  "stations": [
   {
@@ -67,7 +67,7 @@
    "group": "rainier",
    "date": "2026-11-26",
    "swe_in": 1.7,
-   "depth_in": 4.0,
+   "depth_in": 11.0,
    "temp_f": 32.7,
    "median_swe_in": 5.4,
    "pct_median": 31,
@@ -76,10 +76,10 @@
    "precip_median_in": null,
    "precip_pct_median": null,
    "swe_change_24h": 0.6,
-   "depth_change_24h": 1.0,
+   "depth_change_24h": 5.0,
    "days_since_snow": 1,
    "melt_alert": false,
-   "density_pct": 42.5,
+   "density_pct": 15.5,
    "median_peak_in": 65.3,
    "median_peak_date": "2027-04-19",
    "median_onset_date": "2026-11-04",
